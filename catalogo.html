@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Voox 1956 — Cardápio de Serviços</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C4956A;--gold-light:#F2E8DC;--gold-dark:#9A6B3E;
+  --dark:#0F0E0C;--dark2:#1C1A17;--surface:#FFFFFF;
+  --muted:#8A8478;--border:#E8E2D9;
+  --cabelos:#C4956A;--manicuras:#9B6B8A;--estetica-facial:#7A9B8A;
+  --estetica-corp:#7A8A9B;--depilacoes:#9B8A7A;--combos:#8A9B7A;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Jost',sans-serif;background:var(--dark);color:var(--surface);min-height:100vh;overflow-x:hidden}
+
+/* HERO */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;padding:2rem;text-align:center;
+  background:radial-gradient(ellipse at 30% 20%, #2A1F14 0%, #0F0E0C 60%);
+  overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C4956A' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-eyebrow{font-size:11px;letter-spacing:0.3em;color:var(--gold);text-transform:uppercase;margin-bottom:1.5rem;opacity:0;animation:fadeUp 0.8s 0.2s forwards}
+.hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(3.5rem,10vw,7rem);font-weight:300;line-height:0.9;letter-spacing:-0.02em;margin-bottom:1.5rem;opacity:0;animation:fadeUp 0.8s 0.4s forwards}
+.hero h1 em{font-style:italic;color:var(--gold)}
+.hero-sub{font-size:13px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:3rem;opacity:0;animation:fadeUp 0.8s 0.6s forwards}
+.hero-line{width:1px;height:60px;background:linear-gradient(to bottom,var(--gold),transparent);margin:0 auto;opacity:0;animation:fadeUp 0.8s 0.8s forwards}
+
+/* NAV CATEGORIAS */
+.nav-cats{position:sticky;top:0;z-index:50;background:rgba(15,14,12,0.95);backdrop-filter:blur(10px);border-bottom:1px solid rgba(196,149,106,0.15);padding:0 1rem;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nav-cats::-webkit-scrollbar{display:none}
+.nav-inner{display:flex;gap:0;max-width:900px;margin:0 auto;min-width:max-content}
+.nav-btn{background:none;border:none;color:var(--muted);font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;padding:1.1rem 1.2rem;cursor:pointer;transition:color 0.2s;white-space:nowrap;position:relative}
+.nav-btn::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:1px;background:var(--gold);transition:width 0.3s}
+.nav-btn:hover,.nav-btn.active{color:var(--gold)}
+.nav-btn.active::after{width:60%}
+
+/* MAIN */
+.main{max-width:900px;margin:0 auto;padding:0 1rem 6rem}
+
+/* SECTION */
+.cat-section{padding:5rem 0 2rem;scroll-margin-top:60px}
+.cat-header{display:flex;align-items:center;gap:1.5rem;margin-bottom:3rem}
+.cat-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.cat-title{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:300;letter-spacing:-0.01em}
+.cat-title em{font-style:italic;color:var(--gold)}
+.cat-count{font-size:11px;color:var(--muted);letter-spacing:0.1em;margin-top:2px}
+
+/* GRID SERVIÇOS */
+.services-grid{display:grid;grid-template-columns:1fr;gap:1px;background:rgba(255,255,255,0.05);border-radius:16px;overflow:hidden}
+.service-item{background:var(--dark2);padding:1.1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;transition:background 0.2s}
+.service-item:hover{background:#23201C}
+.service-name{font-size:13px;font-weight:400;color:rgba(255,255,255,0.85);line-height:1.4;text-transform:capitalize}
+.service-price{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:400;color:var(--gold);white-space:nowrap;flex-shrink:0}
+.service-price.free{color:var(--muted);font-size:0.85rem;font-family:'Jost',sans-serif;letter-spacing:0.05em}
+
+/* BUSCA */
+.search-wrap{padding:3rem 0 0;max-width:900px;margin:0 auto;padding-left:1rem;padding-right:1rem}
+.search-box{position:relative}
+.search-box input{width:100%;background:var(--dark2);border:1px solid rgba(196,149,106,0.2);border-radius:12px;padding:1rem 1rem 1rem 3rem;font-family:'Jost',sans-serif;font-size:14px;color:var(--surface);outline:none;transition:border-color 0.2s}
+.search-box input::placeholder{color:var(--muted)}
+.search-box input:focus{border-color:var(--gold)}
+.search-icon{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px}
+#search-results{margin-top:1rem;display:none}
+
+/* WHATSAPP BTN */
+.wpp-fab{position:fixed;bottom:2rem;right:2rem;background:#25D366;color:#fff;border:none;border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(37,211,102,0.4);font-size:24px;text-decoration:none;transition:transform 0.2s}
+.wpp-fab:hover{transform:scale(1.1)}
+
+/* FOOTER */
+footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:12px;letter-spacing:0.1em;border-top:1px solid rgba(255,255,255,0.05)}
+footer span{color:var(--gold)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:600px){
+  .hero h1{font-size:3rem}
+  .service-item{padding:1rem}
+  .service-name{font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <p class="hero-eyebrow">Salão de Beleza & Estética</p>
+  <h1>Voox <em>1956</em></h1>
+  <p class="hero-sub">Tabela de Serviços & Preços</p>
+  <div class="hero-line"></div>
+</section>
+
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="busca" placeholder="Buscar serviço..." oninput="buscar(this.value)" />
+  </div>
+  <div id="search-results"></div>
+</div>
+
+<nav class="nav-cats">
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="scrollTo('cabelos',this)">Cabelos</button>
+    <button class="nav-btn" onclick="scrollTo('manicuras',this)">Manicuras & Pedicuras</button>
+    <button class="nav-btn" onclick="scrollTo('estetica-facial',this)">Estética Facial</button>
+    <button class="nav-btn" onclick="scrollTo('estetica-corp',this)">Estética Corporal</button>
+    <button class="nav-btn" onclick="scrollTo('depilacoes',this)">Depilações</button>
+    <button class="nav-btn" onclick="scrollTo('combos',this)">Combos</button>
+  </div>
+</nav>
+
+<main class="main" id="main">
+
+<section class="cat-section" id="cabelos">
+  <div class="cat-header">
+    <div class="cat-icon" style="background:rgba(196,149,106,0.15)">✂️</div>
+    <div><div class="cat-title">Ca<em>belos</em></div><div class="cat-count">28 serviços</div></div>
+  </div>
+  <div class="services-grid" id="grid-cabelos"></div>
+</section>
+
+<section class="cat-section" id="manicuras">
+  <div class="cat-header">
+    <div class="cat-icon" style="background:rgba(155,107,138,0.15)">💅</div>
+    <div><div class="cat-title">Manicuras & <em>Pedicuras</em></div><div class="cat-count">30 serviços</div></div>
+  </div>
+  <div class="services-grid" id="grid-manicuras"></div>
+</section>
+
+<section class="cat-section" id="estetica-facial">
+  <div class="cat-header">
+    <div class="cat-icon" style="background:rgba(122,155,138,0.15)">✨</div>
+    <div><div class="cat-title">Estética <em>Facial</em></div><div class="cat-count">25 serviços</div></div>
+  </div>
+  <div class="services-grid" id="grid-estetica-facial"></div>
+</section>
+
+<section class="cat-section" id="estetica-corp">
+  <div class="cat-header">
+    <div class="cat-icon" style="background:rgba(122,138,155,0.15)">🌿</div>
+    <div><div class="cat-title">Estética <em>Corporal</em></div><div class="cat-count">16 serviços</div></div>
+  </div>
+  <div class="services-grid" id="grid-estetica-corp"></div>
+</section>
+
+<section class="cat-section" id="depilacoes">
+  <div class="cat-header">
+    <div class="cat-icon" style="background:rgba(155,138,122,0.15)">🌸</div>
+    <div><div class="cat-title">Depi<em>lações</em></div><div class="cat-count">20 serviços</div></div>
+  </div>
+  <div class="services-grid" id="grid-depilacoes"></div>
+</section>
+
+<section class="cat-section" id="combos">
+  <div class="cat-header">
+    <div class="cat-icon" style="background:rgba(138,155,122,0.15)">⭐</div>
+    <div><div class="cat-title">Com<em>bos</em></div><div class="cat-count">Pacotes especiais</div></div>
+  </div>
+  <div class="services-grid" id="grid-combos"></div>
+</section>
+
+</main>
+
+<a class="wpp-fab" href="https://wa.me/55" target="_blank" title="Agendar pelo WhatsApp">📱</a>
+
+<footer>
+  <p><span>Voox 1956</span> — Salão de Beleza & Estética</p>
+  <p style="margin-top:6px">Preços sujeitos a alteração sem aviso prévio</p>
+</footer>
+
+<script>
+var servicos = {
+  cabelos: [
+    {n:"Aplicação de Tintura / Tonalizante", v:198},
+    {n:"Baby Liss Curto", v:124.30},
+    {n:"Baby Liss Extra Longo", v:201.30},
+    {n:"Baby Liss Longo", v:162.80},
+    {n:"Baby Liss Médio", v:151.80},
+    {n:"Baby Liss s/ Escova", v:80},
+    {n:"Babyliss", v:90},
+    {n:"Barba", v:55},
+    {n:"Chapinha", v:49.50},
+    {n:"Coloração de Barba", v:82.50},
+    {n:"Coloração Inoa", v:275},
+    {n:"Coloração Masculina", v:120},
+    {n:"Corte", v:100},
+    {n:"Corte Franja", v:27.50},
+    {n:"Corte Infantil Feminino (até 12 anos)", v:135.30},
+    {n:"Corte Infantil Masculino", v:77},
+    {n:"Corte Máquina", v:33},
+    {n:"Corte Masculino", v:99},
+    {n:"Escova Curta", v:70},
+    {n:"Escova Extra Longa", v:144},
+    {n:"Escova Longa", v:103.50},
+    {n:"Escova Média", v:89.70},
+    {n:"Exo Tratamento 6 Passos", v:119.90},
+    {n:"Hidratação Capilar Profissional (sem produto da casa)", v:176},
+    {n:"Hidratação Collor Motion", v:130},
+    {n:"Hidratação da Casa — Brilliance / Enrich", v:145},
+    {n:"Hidratação da Casa — Fusion / Oil Ref", v:181.50},
+    {n:"Hidratação da Casa — Sebastian (Reconstrução)", v:209},
+    {n:"Hidratação Infantil", v:140},
+    {n:"Lavado", v:25.30},
+    {n:"Lavado Especial Wella", v:75},
+    {n:"Matizador", v:121},
+    {n:"Mechas Feminino", v:330},
+    {n:"Mechas Masculino", v:220},
+    {n:"Nutrição da Casa — Oil Reflection", v:176},
+    {n:"Penteado", v:120},
+    {n:"Penteado Elaborado", v:319},
+    {n:"Penteado Infantil", v:157.30},
+    {n:"Penteado Noivas", v:385},
+    {n:"Penteado Simples", v:209},
+    {n:"Progressiva Contorno", v:135},
+    {n:"Progressiva Feminina", v:330},
+    {n:"Progressiva Masculina", v:220},
+    {n:"Reconstrução Fusion — Casa", v:165},
+    {n:"Retoque Raiz", v:236.50},
+    {n:"Sala Exclusiva", v:1000},
+    {n:"Secado", v:40.70},
+    {n:"Selagem", v:330},
+    {n:"Selagem Contorno", v:200},
+    {n:"Teste de Penteado", v:495},
+    {n:"Tintura (Coloração) Todo o Cabelo", v:253},
+    {n:"Tonalizante", v:275},
+  ],
+  manicuras: [
+    {n:"Alongamento em Fibra c/ Esmaltação em Gel", v:346.50},
+    {n:"Alongamento em Fibra s/ Esmaltação em Gel", v:262.50},
+    {n:"Alongamento em Fibra — Unidade", v:29.70},
+    {n:"Aplicação de Peeling Acetil", v:180},
+    {n:"Banho de Gel (Manutenção)", v:85},
+    {n:"Banho de Gel — Unidade", v:16.50},
+    {n:"Banho de Gel com Esmaltação", v:190},
+    {n:"Blindagem Gel", v:121},
+    {n:"Blindagem — Unidade", v:16.50},
+    {n:"Esmaltação em Gel — Manicure", v:126.50},
+    {n:"Esmaltação em Gel — Pedicure", v:138},
+    {n:"Esmaltação em Gel — Unidade", v:19.80},
+    {n:"Manicure", v:44},
+    {n:"Manicure Francesinha", v:49},
+    {n:"Manicure / Pedicure", v:92},
+    {n:"Manutenção Along. Fibra + Esmaltação em Gel", v:192.50},
+    {n:"Manutenção Alongamento em Fibra", v:126.50},
+    {n:"Manutenção Alongamento Gel + Esmaltação em Gel", v:192.50},
+    {n:"Manutenção em Fibra — Unidade", v:29.70},
+    {n:"Pedicure", v:48},
+    {n:"Pedicure Francesinha", v:53},
+    {n:"Pintura de Mãos", v:29.70},
+    {n:"Pintura de Mãos Francesinha", v:35.20},
+    {n:"Pintura de Pés", v:34},
+    {n:"Pintura de Pés Francesinha", v:39},
+    {n:"Plástica dos Pés", v:181.50},
+    {n:"Podologia", v:180},
+    {n:"Podologia — Calos", v:180},
+    {n:"Podologia — Calosidade", v:180},
+    {n:"Podologia — Rachaduras/Fissuras", v:180},
+    {n:"Podologia — Unhas Encravadas", v:180},
+    {n:"Podologia — Verrugas", v:180},
+    {n:"Podologia Infantil", v:180},
+    {n:"Podologia Laser", v:180},
+    {n:"Podoprofilaxia", v:180},
+    {n:"Reconstrução Onicomicose — Fungos", v:180},
+    {n:"Reconstrução Ungueal", v:180},
+    {n:"Reflexologia", v:180},
+    {n:"Remoção em Gel + Manicure", v:88},
+    {n:"Remoção em Gel + Pedicure", v:90},
+    {n:"Retirada de Alongamento", v:77},
+    {n:"Retirada Un. Alongamento", v:16.50},
+    {n:"Spa dos Pés", v:148.50},
+    {n:"Tratamento Onicofose", v:150},
+    {n:"Unha Decorada — Unidade", v:13},
+    {n:"Unha Postiça Só Aplicação", v:65},
+    {n:"Unhas Postiças Mão Completa", v:100},
+    {n:"Unhas Postiças — Unidade", v:17.50},
+    {n:"Espiculoectomia (Granuloma)", v:180},
+    {n:"Avaliação Podologia", v:0.01},
+  ],
+  'estetica-facial': [
+    {n:"Aplicação de Tintura / Sobrancelha", v:71.50},
+    {n:"Avaliação Facial", v:0},
+    {n:"Colocação de Cílios c/ Cílios", v:66},
+    {n:"Curso Auto Make", v:330},
+    {n:"Ext. Volume Brasileiro", v:255},
+    {n:"Henna", v:55},
+    {n:"Lash Lifting", v:180},
+    {n:"Lash Lifting + Tintura", v:200},
+    {n:"Limpeza de Pele (Rosto)", v:300},
+    {n:"Manutenção Cílios Vol. Brasileiro", v:137.50},
+    {n:"Maquiagem", v:220},
+    {n:"Maquiagem Artística", v:220},
+    {n:"Maquiagem Debutante", v:275},
+    {n:"Maquiagem Infantil (até 10 anos)", v:120},
+    {n:"Maquiagem Noiva", v:385},
+    {n:"Maquiagem Realce", v:165},
+    {n:"Maquiagem Realce c/ Cílios", v:190},
+    {n:"Massagem Drenagem Facial (5ª feiras R$90)", v:90},
+    {n:"Microagulhamento (+ massagem relaxante)", v:600},
+    {n:"Microblading", v:550},
+    {n:"Nutrição Facial", v:250},
+    {n:"Peeling de Diamante", v:280},
+    {n:"Peeling de Diamante (05 Sessões)", v:1400},
+    {n:"Peeling Ultrassônico", v:280},
+    {n:"Radiofrequência Facial", v:300},
+    {n:"Retirada de Cílios", v:66},
+    {n:"Teste de Maquiagem", v:385},
+    {n:"Tintura de Cílios", v:66},
+    {n:"Tintura Refectocil", v:65},
+    {n:"Tintura Sobrancelha", v:71.50},
+  ],
+  'estetica-corp': [
+    {n:"Analgesia (Dor Aguda, Ciático, Cervical, Toraxia e Lombar)", v:150},
+    {n:"Eletrolipolise", v:300},
+    {n:"Esfoliação", v:120},
+    {n:"Esfoliação e Hidratação", v:140},
+    {n:"Jet Bronze", v:264},
+    {n:"Limpeza de Pele (Costas)", v:300},
+    {n:"Massagem (Mãos)", v:99},
+    {n:"Massagem Drenagem Linfática", v:143},
+    {n:"Massagem Relaxante Feminina", v:143},
+    {n:"Massagem Relaxante Masculina", v:176},
+    {n:"Massagem Eletrônica + Drenagem Linfática", v:150},
+    {n:"Massagem — Modeladora Feminina", v:165},
+    {n:"Massagem — Pedras Quentes", v:180},
+    {n:"Massagem — Terapêutica Feminina", v:154},
+    {n:"Massagem — Terapêutica Masculino", v:176},
+    {n:"Massagem Bronzeadora", v:165},
+    {n:"Massagem Drenagem (Pacote c/ 05 Sessões)", v:617.50},
+    {n:"Massagem Express", v:99},
+    {n:"Massagem Podal", v:130},
+    {n:"Peeling de Diamante (Estrias)", v:300},
+    {n:"Radiofrequência (05 Sessões)", v:1500},
+    {n:"Radiofrequência (10 Sessões)", v:3000},
+    {n:"Radiofrequência + Corrente Russa + Gordura Loc. (05 Sessões)", v:1750},
+    {n:"Radiofrequência + Corrente Russa + Gordura Loc. (10 Sessões)", v:3500},
+    {n:"Reiki", v:130},
+    {n:"Tratamento Dermo Celular p/ Celulite", v:150},
+    {n:"Drenagem Térmica", v:160},
+  ],
+  depilacoes: [
+    {n:"Depilação — Braço/Antebraço", v:55},
+    {n:"Depilação — Axila Masculina", v:33},
+    {n:"Depilação — Virilha Masculina", v:132},
+    {n:"Depilação — Perna Int. Masculina", v:130},
+    {n:"Depilação — Buço", v:33},
+    {n:"Depilação 1/2 Perna", v:55},
+    {n:"Depilação Axila", v:35},
+    {n:"Depilação Completa", v:275},
+    {n:"Depilação Costas", v:77},
+    {n:"Depilação Coxa", v:66},
+    {n:"Depilação de Orelha", v:33},
+    {n:"Depilação do Queixo", v:33},
+    {n:"Depilação Nariz", v:33},
+    {n:"Depilação Peito", v:77},
+    {n:"Depilação Perna Inteira Feminino", v:88},
+    {n:"Depilação Perna Inteira Masculina", v:99},
+    {n:"Depilação Rosto", v:88},
+    {n:"Depilação Virilha", v:88},
+    {n:"Dep. Dedos Mãos", v:33},
+    {n:"Dep. Dedos Pés", v:33},
+    {n:"Sobrancelha", v:66},
+  ],
+  combos: [
+    {n:"Corte Feminino", v:201.30},
+    {n:"Hidro", v:150},
+    {n:"Combo (Realce + Escova)", v:200},
+    {n:"Camarim", v:250},
+    {n:"Corrente Russa", v:143},
+    {n:"Acessoria Exclusiva", v:600},
+  ]
+};
+
+function fmt(v){
+  if(v===0) return '<span class="service-price free">Consulte</span>';
+  if(v<=0.01) return '<span class="service-price free">Consulte</span>';
+  return '<span class="service-price">R$&nbsp;' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</span>';
+}
+
+function renderGrid(id, items){
+  var el = document.getElementById('grid-'+id);
+  if(!el) return;
+  el.innerHTML = items.sort(function(a,b){return a.n.localeCompare(b.n,'pt-BR')}).map(function(s){
+    return '<div class="service-item"><span class="service-name">'+s.n+'</span>'+fmt(s.v)+'</div>';
+  }).join('');
+}
+
+Object.keys(servicos).forEach(function(k){ renderGrid(k, servicos[k]); });
+
+function scrollTo(id, btn){
+  document.getElementById(id).scrollIntoView({behavior:'smooth'});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active')});
+  btn.classList.add('active');
+}
+
+function buscar(q){
+  var res = document.getElementById('search-results');
+  if(!q || q.length < 2){ res.style.display='none'; return; }
+  q = q.toLowerCase();
+  var todos = [];
+  Object.keys(servicos).forEach(function(k){
+    servicos[k].forEach(function(s){ todos.push({cat:k,item:s}); });
+  });
+  var encontrados = todos.filter(function(x){ return x.item.n.toLowerCase().includes(q); });
+  if(encontrados.length===0){
+    res.innerHTML='<div style="padding:1rem;color:var(--muted);font-size:13px;">Nenhum serviço encontrado.</div>';
+  } else {
+    res.innerHTML='<div style="background:var(--dark2);border-radius:12px;overflow:hidden;border:1px solid rgba(196,149,106,0.15)">'+
+      encontrados.map(function(x){
+        return '<div class="service-item"><span class="service-name">'+x.item.n+'</span>'+fmt(x.item.v)+'</div>';
+      }).join('')+'</div>';
+  }
+  res.style.display='block';
+}
+
+// Highlight nav on scroll
+var sections = ['cabelos','manicuras','estetica-facial','estetica-corp','depilacoes','combos'];
+window.addEventListener('scroll',function(){
+  var pos = window.scrollY + 120;
+  sections.forEach(function(id,i){
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(pos >= el.offsetTop){
+      document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active')});
+      document.querySelectorAll('.nav-btn')[i].classList.add('active');
+    }
+  });
+});
+</script>
+</body>
+</html>
