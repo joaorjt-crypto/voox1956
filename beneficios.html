@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Benefícios — Equipe</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&family=Great+Vibes&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F7F4EF; --surface: #FFFFFF; --accent: #C4956A; --accent-light: #F2E8DC;
+    --text: #1C1A17; --muted: #8A8478; --border: #E2DDD6;
+    --green: #4A7C59; --green-bg: #EAF2EC; --amber: #9A6B1F; --amber-bg: #FBF1DC;
+    --red: #9B3A3A; --red-bg: #FAE8E8; --radius: 14px; --radius-sm: 8px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+  header { background: var(--text); color: #F7F4EF; padding: 1.5rem; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; }
+  header::after { content: ''; position: absolute; right: -40px; top: -40px; width: 180px; height: 180px; border-radius: 50%; background: var(--accent); opacity: 0.15; pointer-events: none; }
+  .header-left { position: relative; z-index: 2; }
+  .header-right { position: relative; z-index: 2; }
+  .login-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #F7F4EF; border-radius: var(--radius-sm); padding: 7px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+  .login-btn:hover { background: rgba(255,255,255,0.2); }
+  .login-badge { display: flex; align-items: center; gap: 8px; }
+  .login-badge span { font-size: 12px; opacity: 0.7; }
+  .logout-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: #F7F4EF; border-radius: var(--radius-sm); padding: 5px 10px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .main { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .stat { background: var(--surface); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); text-align: center; }
+  .stat-num { font-family: 'DM Serif Display', serif; font-size: 2rem; line-height: 1; color: var(--accent); margin-bottom: 4px; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1rem; }
+  .card-title { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+  .card-admin { border-color: var(--accent); }
+  .card-admin .card-title { color: var(--accent); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  label { font-size: 12px; color: var(--muted); }
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.2s; }
+  input:focus, select:focus { border-color: var(--accent); }
+  .btn { width: 100%; padding: 12px; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-sm { width: auto; padding: 10px 18px; margin-top: 0; }
+  .alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 10px; display: none; }
+  .alert-ok { background: var(--green-bg); color: var(--green); }
+  .alert-err { background: var(--red-bg); color: var(--red); }
+  .prof-tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 24px; }
+  .prof-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-light); border-radius: 99px; padding: 4px 12px; }
+  .prof-tag span { font-size: 13px; color: var(--accent); font-weight: 500; }
+  .prof-tag button { background: none; border: none; cursor: pointer; color: var(--accent); font-size: 16px; line-height: 1; padding: 0 2px; opacity: 0.6; }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-light); color: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 15px; flex-shrink: 0; }
+  .item-info { flex: 1; min-width: 120px; }
+  .item-name { font-weight: 500; font-size: 14px; word-break: break-word; }
+  .item-sub { font-size: 12px; color: var(--muted); margin-top: 2px; word-break: break-word; }
+  .item-right { text-align: right; flex-shrink: 0; max-width: 160px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 500; margin-bottom: 4px; }
+  .badge-ok { background: var(--green-bg); color: var(--green); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); }
+  .badge-free { background: var(--accent-light); color: var(--accent); }
+  .badge-pendente { background: var(--amber-bg); color: var(--amber); }
+  .badge-aprovado { background: var(--green-bg); color: var(--green); }
+  .aprovar-btn { background: none; border: 1px solid var(--green); color: var(--green); border-radius: var(--radius-sm); padding: 3px 10px; font-size: 11px; font-weight: 500; cursor: pointer; margin-top: 4px; font-family: 'DM Sans', sans-serif; transition: background 0.2s; display: block; }
+  .aprovar-btn:hover { background: var(--green-bg); }
+  .item-next { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .del-btn { background: none; border: none; color: var(--border); cursor: pointer; font-size: 18px; line-height: 1; padding: 4px; transition: color 0.2s; flex-shrink: 0; }
+  .del-btn:hover { color: var(--red); }
+  .empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .filter-row { margin-bottom: 1rem; }
+  .google-btn { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 16px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); cursor: pointer; width: 100%; justify-content: center; margin-top: 8px; transition: background 0.2s; }
+  .google-btn:hover { background: var(--bg); }
+  .google-icon { width: 18px; height: 18px; }
+  @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } .stat-num { font-size: 1.5rem; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 190" style="height:46px;display:block;margin-bottom:4px">
+      <text x="150" y="34" font-family="'Great Vibes',cursive" font-size="32" font-weight="400" fill="white" text-anchor="middle">Estética</text>
+      <text x="150" y="112" font-family="Georgia,'Times New Roman',serif" font-size="82" font-weight="400" fill="white" text-anchor="middle" letter-spacing="-2">Voox</text>
+      <text x="150" y="177" font-family="Georgia,'Times New Roman',serif" font-size="58" font-weight="400" fill="white" text-anchor="middle" letter-spacing="2">1956</text>
+    </svg>
+    <p style="font-size:11px;opacity:0.45;font-weight:300;letter-spacing:0.08em;text-transform:uppercase">Benefícios da equipe</p>
+  </div>
+  <div class="header-right" id="header-auth">
+    <button class="login-btn" onclick="fazerLogin()">
+      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Entrar como admin
+    </button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="st-total">0</div><div class="stat-label">Profissionais</div></div>
+    <div class="stat"><div class="stat-num" id="st-ativos">0</div><div class="stat-label">Ativos</div></div>
+    <div class="stat"><div class="stat-num" id="st-livres">0</div><div class="stat-label">Liberados</div></div>
+  </div>
+
+  <div class="card card-admin" id="painel-admin" style="display:none;">
+    <div class="card-title">&#9670; Cadastro de profissionais — admin</div>
+    <div id="alert-prof" class="alert"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input type="text" id="novo-prof" placeholder="Nome do profissional" style="flex:1;" onkeydown="if(event.key==='Enter')adicionarProf()" />
+      <button class="btn btn-sm" onclick="adicionarProf()">Adicionar</button>
+    </div>
+    <div class="prof-tags" id="lista-profs">
+      <span style="font-size:13px;color:var(--muted);">Carregando...</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Registrar benefício</div>
+    <div id="alert" class="alert"></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Profissional</label>
+        <select id="nome"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-group">
+        <label>Data do serviço</label>
+        <input type="date" id="data" />
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>Serviço realizado</label>
+      <input type="text" id="servico" placeholder="Ex: Hidratação + escova" />
+    </div>
+    <button class="btn" onclick="registrar()">Registrar</button>
+  </div>
+
+  <div class="filter-row">
+    <input type="text" id="busca" placeholder="Buscar profissional no histórico..." oninput="renderizar()" />
+  </div>
+
+  <div class="list" id="lista"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyCXq8_1adhUWx7Au1IDszbpu5bZ5d0A8gk",
+  authDomain: "voox-1956.firebaseapp.com",
+  projectId: "voox-1956",
+  storageBucket: "voox-1956.firebasestorage.app",
+  messagingSenderId: "199589852171",
+  appId: "1:199589852171:web:c9196e78067bb7864fc30e"
+};
+
+var ADMIN_EMAIL = 'joaorjt@gmail.com';
+var GERENTE_EMAIL = 'admvoox1@gmail.com';
+var RECEPCAO_EMAIL = 'vooxrecepcao@gmail.com';
+var nivel = 'publico';
+var db, auth, logado = false, profissionais = [], dados = [];
+
+var profsPadrao = ['Andressa Muraro','Anelise Doere','Camila Freitas','Carliana Largher','Gilmara Francisco','Gisele Cooper','Itamar Frota','Jessica Garcia','Karina Maravalha','Luis Felipe','Luiza Benati','Marcia Bortolotto','Marcio Pereira','Miriam Quevedo','Núbia Beatriz','Prizia Carolina','Raphaela Santana','Rosani Bortolini','Tatiana Altermann','Tatiana Matte','Veridiana Rocha','Vivian Duarte','Vladimir Fraga'];
+
+function showAlert(id, msg, tipo) {
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'alert alert-' + tipo;
+  el.style.display = 'block';
+  setTimeout(function() { el.style.display = 'none'; }, 3500);
+}
+
+function diasRestantes(dataStr) {
+  var d = new Date(dataStr + 'T12:00:00');
+  var prox = new Date(d); prox.setDate(prox.getDate() + 45);
+  var hoje = new Date(); hoje.setHours(12,0,0,0);
+  return Math.ceil((prox - hoje) / 86400000);
+}
+
+function proximaData(dataStr) {
+  var d = new Date(dataStr + 'T12:00:00');
+  d.setDate(d.getDate() + 45);
+  return d.toLocaleDateString('pt-BR');
+}
+
+function iniciais(nome) {
+  return nome.trim().split(' ').map(function(p) { return p[0]; }).slice(0,2).join('').toUpperCase();
+}
+
+function fazerLogin() {
+  var provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(function(e) { alert('Erro ao fazer login: ' + e.message); });
+}
+
+function fazerLogout() {
+  auth.signOut();
+}
+
+function atualizarUI() {
+  var headerAuth = document.getElementById('header-auth');
+  var painelAdmin = document.getElementById('painel-admin');
+  if (logado) {
+    var nomeNivel = nivel === 'admin' ? 'Admin' : nivel === 'gerente' ? 'Gerente' : 'Recepção';
+    headerAuth.innerHTML = '<div class="login-badge"><span>' + nomeNivel + '</span><button class="logout-btn" onclick="fazerLogout()">Sair</button></div>';
+    painelAdmin.style.display = 'block';
+  } else {
+    headerAuth.innerHTML = '<button class="login-btn" onclick="fazerLogin()"><svg class="google-icon" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Entrar como admin</button>';
+    painelAdmin.style.display = 'none';
+  }
+  renderizarProfs();
+  renderizar();
+}
+
+function adicionarProf() {
+  if (nivel !== 'admin' && nivel !== 'gerente') return;
+  var input = document.getElementById('novo-prof');
+  var nome = input.value.trim();
+  if (!nome) return;
+  var existe = profissionais.some(function(p) { return p.nome.toLowerCase() === nome.toLowerCase(); });
+  if (existe) { showAlert('alert-prof', 'Profissional já cadastrado.', 'err'); return; }
+  db.collection('profissionais').add({ nome: nome }).then(function() {
+    input.value = '';
+    showAlert('alert-prof', nome + ' adicionado!', 'ok');
+  });
+}
+
+function removerProf(id, nome) {
+  if (nivel !== 'admin' && nivel !== 'gerente') return;
+  if (!confirm('Remover ' + nome + '?')) return;
+  db.collection('profissionais').doc(id).delete();
+}
+
+function renderizarProfs() {
+  var lista = document.getElementById('lista-profs');
+  var select = document.getElementById('nome');
+  var valorAtual = select.value;
+  if (profissionais.length === 0) {
+    lista.innerHTML = '<span style="font-size:13px;color:var(--muted);">Nenhum profissional cadastrado.</span>';
+  } else {
+    lista.innerHTML = profissionais.map(function(p) {
+      var safe = p.nome.replace(/'/g, "\\'");
+      return '<div class="prof-tag"><span>' + p.nome + '</span>' +
+        (logado ? '<button onclick="removerProf(\'' + p.id + '\',\'' + safe + '\')">×</button>' : '') + '</div>';
+    }).join('');
+  }
+  select.innerHTML = '<option value="">Selecione...</option>' +
+    profissionais.map(function(p) {
+      return '<option value="' + p.nome + '"' + (p.nome === valorAtual ? ' selected' : '') + '>' + p.nome + '</option>';
+    }).join('');
+}
+
+function registrar() {
+  var nome = document.getElementById('nome').value;
+  var data = document.getElementById('data').value;
+  var servico = document.getElementById('servico').value.trim();
+  if (!nome || !data || !servico) { showAlert('alert', 'Preencha todos os campos.', 'err'); return; }
+  var registrosProf = dados.filter(function(r) { return r.nome === nome; });
+  registrosProf.sort(function(a,b) { return new Date(b.data) - new Date(a.data); });
+  var ultimo = registrosProf[0];
+  if (ultimo && diasRestantes(ultimo.data) > 0) {
+    showAlert('alert', nome + ' ainda não pode usar o benefício. Liberado a partir de ' + proximaData(ultimo.data) + '.', 'err');
+    return;
+  }
+  db.collection('beneficios').add({ nome: nome, data: data, servico: servico, status: 'pendente', criadoEm: Date.now() }).then(function() {
+    document.getElementById('nome').value = '';
+    document.getElementById('servico').value = '';
+    showAlert('alert', 'Benefício registrado com sucesso!', 'ok');
+  });
+}
+
+function aprovar(id) {
+  if (nivel !== 'admin' && nivel !== 'gerente') return;
+  db.collection('beneficios').doc(id).update({ status: 'aprovado' });
+}
+
+function remover(id) {
+  if (nivel !== 'admin') return;
+  if (!confirm('Remover este registro?')) return;
+  db.collection('beneficios').doc(id).delete();
+}
+
+function renderizar() {
+  var busca = document.getElementById('busca').value.toLowerCase();
+  var lista = document.getElementById('lista');
+  var filtrados = busca ? dados.filter(function(r) { return r.nome && r.nome.toLowerCase().includes(busca); }) : dados;
+  var nomes = new Set(dados.map(function(r) { return r.nome; }));
+  var ativos = 0, livres = 0;
+  dados.forEach(function(r) { var d = diasRestantes(r.data); if (d >= 0) ativos++; else livres++; });
+  document.getElementById('st-total').textContent = nomes.size;
+  document.getElementById('st-ativos').textContent = ativos;
+  document.getElementById('st-livres').textContent = livres;
+  if (filtrados.length === 0) {
+    lista.innerHTML = '<div class="empty">' + (busca ? 'Nenhum resultado.' : 'Nenhum benefício registrado ainda.') + '</div>';
+    return;
+  }
+  lista.innerHTML = filtrados.map(function(r) {
+    var dias = diasRestantes(r.data);
+    var dataFmt = new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR');
+    var periodoBadge, sub;
+    if (dias < 0) { periodoBadge = '<span class="badge badge-free">Liberado</span>'; sub = 'Disponível agora'; }
+    else if (dias <= 7) { periodoBadge = '<span class="badge badge-warn">Vence em ' + dias + 'd</span>'; sub = 'Próximo: ' + proximaData(r.data); }
+    else { periodoBadge = '<span class="badge badge-ok">' + dias + ' dias</span>'; sub = 'Próximo: ' + proximaData(r.data); }
+    var isPendente = !r.status || r.status === 'pendente';
+    var statusBadge = isPendente ? '<span class="badge badge-pendente">Pendente</span>' : '<span class="badge badge-aprovado">Aprovado</span>';
+    var podeAprovar = (nivel === 'admin' || nivel === 'gerente') && isPendente;
+    var aprBtn = podeAprovar ? '<button class="aprovar-btn" onclick="aprovar(\'' + r.id + '\')">Aprovar</button>' : '';
+    return '<div class="item">' +
+      '<div class="avatar">' + iniciais(r.nome || '?') + '</div>' +
+      '<div class="item-info"><div class="item-name">' + (r.nome || '') + '</div><div class="item-sub">' + (r.servico || '') + ' · ' + dataFmt + '</div></div>' +
+      '<div class="item-right">' + statusBadge + (aprBtn ? '<div style="margin-top:4px;">' + aprBtn + '</div>' : '') + '<div class="item-next">' + periodoBadge + ' · ' + sub + '</div></div>' +
+      (nivel === 'admin' ? '<button class="del-btn" onclick="remover(\'' + r.id + '\')">×</button>' : '') +
+      '</div>';
+  }).join('');
+}
+
+async function seedProfissionais() {
+  var snap = await db.collection('profissionais').get();
+  var existentes = snap.docs.map(function(d) { return d.data().nome.toLowerCase(); });
+  var faltando = profsPadrao.filter(function(n) { return !existentes.includes(n.toLowerCase()); });
+  for (var i = 0; i < faltando.length; i++) {
+    await db.collection('profissionais').add({ nome: faltando[i] });
+  }
+}
+
+window.addEventListener('load', function() {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  auth = firebase.auth();
+
+  auth.onAuthStateChanged(function(user) {
+    if (!user) { nivel = 'publico'; logado = false; }
+    else if (user.email === ADMIN_EMAIL) { nivel = 'admin'; logado = true; }
+    else if (user.email === GERENTE_EMAIL) { nivel = 'gerente'; logado = true; }
+    else if (user.email === RECEPCAO_EMAIL) { nivel = 'recepcao'; logado = true; }
+    else { nivel = 'publico'; logado = false; auth.signOut(); }
+    atualizarUI();
+  });
+
+  db.collection('profissionais').onSnapshot(function(snap) {
+    profissionais = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+    profissionais.sort(function(a,b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+    renderizarProfs();
+  });
+
+  db.collection('beneficios').orderBy('criadoEm', 'desc').onSnapshot(function(snap) {
+    dados = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+    renderizar();
+  });
+
+  seedProfissionais();
+  document.getElementById('data').valueAsDate = new Date();
+});
+</script>
+</body>
+</html>
