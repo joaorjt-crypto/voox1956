@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Voox 1956 — Estética & Beleza</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400;500&family=Great+Vibes&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Jost',sans-serif;
+  background:#0A0908;
+  color:white;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:2rem 1rem;
+  position:relative;
+  overflow-x:hidden;
+  overflow-y:auto;
+}
+
+body::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(196,149,106,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196,149,106,0.04) 1px, transparent 1px);
+  background-size:50px 50px;
+  pointer-events:none;
+}
+
+body::after{
+  content:'';
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:600px;height:600px;
+  border-radius:50%;
+  background:radial-gradient(ellipse, rgba(196,149,106,0.06) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3rem;
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:600px;
+}
+
+/* LOGO */
+.logo{text-align:center}
+.logo-estetica{font-family:'Great Vibes',cursive;font-size:2rem;color:rgba(255,255,255,0.65);display:block;margin-bottom:4px}
+.logo-voox{font-family:'Cormorant Garamond',serif;font-size:5rem;font-weight:400;line-height:0.9;letter-spacing:-2px;color:white;display:block}
+.logo-ano{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:300;letter-spacing:6px;color:rgba(255,255,255,0.8);display:block;margin-top:4px}
+
+.divider{width:40px;height:1px;background:rgba(196,149,106,0.4);margin:0 auto}
+
+.tagline{
+  font-size:0.7rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,0.3);
+  text-align:center;
+}
+
+/* CARDS */
+.cards{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  width:100%;
+}
+.card-full{grid-column:1/-1}
+
+.card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(196,149,106,0.15);
+  border-radius:16px;
+  padding:2rem 1.5rem;
+  text-decoration:none;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:1rem;
+  text-align:center;
+  transition:all 0.3s;
+  position:relative;
+  overflow:hidden;
+}
+
+.card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,rgba(196,149,106,0.5),transparent);
+  opacity:0;
+  transition:opacity 0.3s;
+}
+
+.card:hover{
+  background:rgba(196,149,106,0.08);
+  border-color:rgba(196,149,106,0.35);
+  transform:translateY(-3px);
+}
+
+.card:hover::before{opacity:1}
+
+.card-icon{
+  font-size:2rem;
+  opacity:0.7;
+}
+
+.card-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.4rem;
+  font-weight:300;
+}
+
+.card-title em{
+  font-style:italic;
+  color:#C4956A;
+}
+
+.card-desc{
+  font-size:0.7rem;
+  color:rgba(255,255,255,0.35);
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  line-height:1.6;
+}
+
+.card-arrow{
+  font-size:0.8rem;
+  color:rgba(196,149,106,0.5);
+  letter-spacing:0.1em;
+  margin-top:auto;
+}
+
+/* FOOTER */
+.footer{
+  font-size:0.65rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,0.2);
+  text-align:center;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.logo{animation:fadeUp 0.8s 0.1s both}
+.divider{animation:fadeUp 0.8s 0.3s both}
+.tagline{animation:fadeUp 0.8s 0.4s both}
+.cards{animation:fadeUp 0.8s 0.5s both}
+.footer{animation:fadeUp 0.8s 0.7s both}
+
+@media(max-width:480px){
+  .logo-estetica{font-size:1.5rem}
+  .logo-voox{font-size:3.5rem}
+  .logo-ano{font-size:2.2rem}
+  .cards{grid-template-columns:1fr;max-width:340px;margin:0 auto}
+  .card{padding:1.5rem 1.2rem}
+  .wrap{gap:2rem}
+  body{padding:1.5rem 1rem}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="logo">
+    <span class="logo-estetica">Estética</span>
+    <span class="logo-voox">Voox</span>
+    <span class="logo-ano">1956</span>
+  </div>
+
+  <div class="divider"></div>
+  <div class="tagline">Beleza & bem-estar com excelência</div>
+
+  <div class="cards">
+    <a class="card" href="/catalogo.html">
+      <div class="card-icon">✦</div>
+      <div class="card-title">Nosso <em>Catálogo</em></div>
+      <div class="card-desc">Serviços & preços</div>
+      <div class="card-arrow">entrar →</div>
+    </a>
+    <a class="card" href="/fila.html">
+      <div class="card-icon">◈</div>
+      <div class="card-title">Lista de <em>Espera</em></div>
+      <div class="card-desc">Entre na fila de atendimento</div>
+      <div class="card-arrow">entrar →</div>
+    </a>
+    <a class="card card-full" href="/bebidas.html">
+      <div class="card-icon">☕</div>
+      <div class="card-title">Cardápio de <em>Bebidas</em></div>
+      <div class="card-desc">Quentes & frias — aprecie à vontade</div>
+      <div class="card-arrow">ver →</div>
+    </a>
+  </div>
+
+  <div class="footer">(51) 99274-0380 &nbsp;·&nbsp; @voox_1956</div>
+
+</div>
+
+</body>
+</html>
