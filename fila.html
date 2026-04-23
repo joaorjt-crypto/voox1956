@@ -272,6 +272,7 @@ window.addEventListener('load', function() {
     else if (user.email === RECEPCAO_EMAIL) { nivel = 'recepcao'; logado = true; }
     else { nivel = 'publico'; logado = false; auth.signOut(); }
     atualizarHeader();
+    renderFila();
   });
   db.collection('fila_espera').orderBy('criadoEm','asc').onSnapshot(function(snap) {
     fila = snap.docs.map(function(d) { return Object.assign({id:d.id},d.data()); });
