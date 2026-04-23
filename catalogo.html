@@ -117,6 +117,7 @@ footer span{color:var(--gold)}
     <button class="nav-btn" onclick="irParaSecao('estetica-facial',this)">Estética Facial</button>
     <button class="nav-btn" onclick="irParaSecao('estetica-corp',this)">Estética Corporal</button>
     <button class="nav-btn" onclick="irParaSecao('depilacoes',this)">Depilações</button>
+    <button class="nav-btn" onclick="irParaSecao('podologia',this)">Podologia</button>
     <button class="nav-btn" onclick="irParaSecao('combos',this)">Pacotes</button>
   </div>
 </nav>
@@ -183,6 +184,19 @@ footer span{color:var(--gold)}
     <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Depi<em>lações</em></div><div class="cat-count">20 serviços</div></div>
   </div>
   <div class="services-grid" id="grid-depilacoes"></div>
+</section>
+
+<section class="cat-section" id="podologia">
+  <div class="cat-header">
+    <div class="cat-icon" style="background:rgba(122,155,155,0.15)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C4956A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
+    </div>
+    <div>
+      <div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Podo<em>logia</em></div>
+      <div class="cat-count">11 serviços</div>
+    </div>
+  </div>
+  <div class="services-grid" id="grid-podologia"></div>
 </section>
 
 <section class="cat-section" id="combos">
@@ -331,6 +345,20 @@ var servicos = {
     {n:"Limpeza de Pele Facial", v:300},
     {n:"Tratamento Dermo Celular para Celulite", v:150},
   ],
+  podologia: [
+    {n:"Podologia — Verrugas", v:180},
+    {n:"Podologia — Calosidade", v:180},
+    {n:"Unhas Encravadas", v:180},
+    {n:"Podoprofilaxia", v:180},
+    {n:"Reflexologia", v:180},
+    {n:"Podologia — Rachaduras", v:180},
+    {n:"Espiculoectomia (Granuloma)", v:180},
+    {n:"Aplicação de Peeling Acetil", v:180},
+    {n:"Reconstrução Ungueal", v:180},
+    {n:"Reconstrução — Fungos", v:180},
+    {n:"Tratamento Onicofose", v:180},
+    {n:"Podologia — Laser", v:180},
+  ],
   combos: [
     {n:"Pacote Drenagem Feminina — 05 sessões", v:600},
     {n:"Pacote Relaxante Feminina — 05 sessões", v:600},
@@ -389,7 +417,7 @@ function buscar(q){
 }
 
 // Highlight nav on scroll
-var sections = ['cabelos','manicure','estetica-facial','estetica-corp','depilacoes','combos'];
+var sections = ['cabelos','manicure','estetica-facial','estetica-corp','depilacoes','podologia','combos'];
 window.addEventListener('scroll',function(){
   var pos = window.scrollY + 120;
   sections.forEach(function(id,i){
