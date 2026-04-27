@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Seed Profissionais - Voox 1956</title>
+<style>
+  body { font-family: 'Jost', sans-serif; background: #0A0908; color: #fff; padding: 40px; max-width: 700px; margin: 0 auto; }
+  h1 { color: #C4956A; font-family: 'Cormorant Garamond', serif; font-weight: 300; }
+  button { background: #C4956A; color: #0A0908; border: none; padding: 14px 28px; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: 500; letter-spacing: 1px; margin-right: 10px; margin-bottom: 10px; }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secundario { background: #444; color: #fff; }
+  #log { margin-top: 30px; background: #1a1716; padding: 20px; border-radius: 4px; font-family: monospace; font-size: 13px; white-space: pre-wrap; max-height: 400px; overflow-y: auto; border-left: 3px solid #C4956A; }
+  .ok { color: #8fbf6e; }
+  .err { color: #d97a7a; }
+  .info { color: #C4956A; }
+  .warn { color: #e0c074; }
+  #status { padding: 12px 16px; background: #1a1716; border-radius: 4px; margin: 20px 0; border-left: 3px solid #d97a7a; }
+  #status.logado { border-left-color: #8fbf6e; }
+</style>
+</head>
+<body>
+
+<h1>Seed Profissionais</h1>
+<p>Popula a coleção <code>profissionais</code> no Firestore do projeto <strong>voox-1956</strong>.</p>
+<p style="color: #e0c074;">⚠️ Antes de rodar: confira se a coleção está realmente vazia, pra não duplicar.</p>
+
+<div id="status">🔒 Não autenticado — faça login antes de popular.</div>
+
+<button id="btnLogin" onclick="login()">Entrar com Google</button>
+<button id="btnLogout" onclick="logout()" class="secundario" style="display:none;">Sair</button>
+<br>
+<button id="btnSeed" onclick="seed()" disabled>Popular profissionais</button>
+<button id="btnCheck" onclick="checar()" class="secundario">Conferir coleção atual</button>
+
+<div id="log"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyCXq8_1adhUWx7Au1IDszbpu5bZ5d0A8gk",
+  authDomain: "voox-1956.firebaseapp.com",
+  projectId: "voox-1956",
+  storageBucket: "voox-1956.firebasestorage.app",
+  messagingSenderId: "199589852171",
+  appId: "1:199589852171:web:c9196e78067bb7864fc30e"
+};
+
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+var auth = firebase.auth();
+
+var EMAILS_AUTORIZADOS = ['joaorjt@gmail.com', 'admvoox1@gmail.com'];
+
+var profissionais = [
+  'Camila Freitas',
+  'Gilmara Francisco',
+  'Gisele Cooper',
+  'Itamar Frota',
+  'Jessica Garcia',
+  'Karina Maravalha',
+  'Luis Felipe',
+  'Miriam Quevedo',
+  'Raphaela Santana',
+  'Rosani Bortolini',
+  'Tatiana Altermann',
+  'Vladimir Fraga',
+  'Veridiana Rocha',
+  'Marcio Pereira',
+  'Andressa Muraro',
+  'Carliana Largher',
+  'Luiza Benati',
+  'Anelise Doere',
+  'Vivian Duarte',
+  'Núbia Beatriz',
+  'Tatiana Matte',
+  'Marcia Bortolotto'
+];
+
+function log(msg, classe) {
+  var el = document.getElementById('log');
+  var span = document.createElement('span');
+  span.className = classe || '';
+  span.textContent = msg + '\n';
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+
+auth.onAuthStateChanged(function(user) {
+  var statusEl = document.getElementById('status');
+  var btnLogin = document.getElementById('btnLogin');
+  var btnLogout = document.getElementById('btnLogout');
+  var btnSeed = document.getElementById('btnSeed');
+
+  if (user && EMAILS_AUTORIZADOS.indexOf(user.email) !== -1) {
+    statusEl.textContent = '✅ Logado como ' + user.email + ' — autorizado a escrever.';
+    statusEl.className = 'logado';
+    btnLogin.style.display = 'none';
+    btnLogout.style.display = 'inline-block';
+    btnSeed.disabled = false;
+    log('Login realizado: ' + user.email, 'ok');
+  } else if (user) {
+    statusEl.textContent = '⛔ Logado como ' + user.email + ', mas não autorizado. Faça logout e entre com joaorjt@gmail.com ou admvoox1@gmail.com.';
+    statusEl.className = '';
+    btnLogin.style.display = 'none';
+    btnLogout.style.display = 'inline-block';
+    btnSeed.disabled = true;
+    log('Email não autorizado: ' + user.email, 'err');
+  } else {
+    statusEl.textContent = '🔒 Não autenticado — faça login antes de popular.';
+    statusEl.className = '';
+    btnLogin.style.display = 'inline-block';
+    btnLogout.style.display = 'none';
+    btnSeed.disabled = true;
+  }
+});
+
+function login() {
+  var provider = new firebase.auth.GoogleAuthProvider();
+  log('Abrindo popup de login Google...', 'info');
+  auth.signInWithPopup(provider).catch(function(err) {
+    log('Erro no login: ' + err.message, 'err');
+  });
+}
+
+function logout() {
+  auth.signOut().then(function() {
+    log('Logout realizado.', 'info');
+  });
+}
+
+function checar() {
+  log('Consultando coleção profissionais...', 'info');
+  db.collection('profissionais').get().then(function(snap) {
+    log('Total de documentos encontrados: ' + snap.size, snap.size === 0 ? 'warn' : 'ok');
+    snap.forEach(function(doc) {
+      var d = doc.data();
+      log('  • ' + (d.nome || '(sem nome)') + '  [id: ' + doc.id + ']');
+    });
+  }).catch(function(err) {
+    log('Erro ao consultar: ' + err.message, 'err');
+  });
+}
+
+function seed() {
+  var btn = document.getElementById('btnSeed');
+  btn.disabled = true;
+  btn.textContent = 'Populando...';
+
+  log('Iniciando seed de ' + profissionais.length + ' profissionais...', 'info');
+
+  var batch = db.batch();
+  var col = db.collection('profissionais');
+
+  profissionais.forEach(function(nome) {
+    var ref = col.doc();
+    batch.set(ref, {
+      nome: nome,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+
+  batch.commit().then(function() {
+    log('✅ ' + profissionais.length + ' profissionais adicionados com sucesso!', 'ok');
+    btn.textContent = 'Concluído';
+  }).catch(function(err) {
+    log('❌ Erro ao popular: ' + err.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Tentar novamente';
+  });
+}
+</script>
+
+</body>
+</html>
