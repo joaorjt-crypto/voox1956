@@ -335,7 +335,15 @@ window.addEventListener('load', function() {
   });
 
   db.collection('profissionais').onSnapshot(function(snap) {
-    profissionais = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+    var todos = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+    // Deduplicar por nome (manter apenas primeiro de cada nome)
+    var vistos = {};
+    profissionais = todos.filter(function(p) {
+      var chave = p.nome ? p.nome.toLowerCase().trim() : '';
+      if (vistos[chave]) return false;
+      vistos[chave] = true;
+      return true;
+    });
     profissionais.sort(function(a,b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
     renderizarProfs();
   });
