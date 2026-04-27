@@ -155,6 +155,7 @@ var firebaseConfig = {
 var ADMIN_EMAIL = 'joaorjt@gmail.com';
 var GERENTE_EMAIL = 'admvoox1@gmail.com';
 var RECEPCAO_EMAIL = 'vooxrecepcao@gmail.com';
+var INTERVALO_DIAS = 60;
 var nivel = 'publico';
 var db, auth, logado = false, profissionais = [], dados = [];
 
@@ -170,14 +171,14 @@ function showAlert(id, msg, tipo) {
 
 function diasRestantes(dataStr) {
   var d = new Date(dataStr + 'T12:00:00');
-  var prox = new Date(d); prox.setDate(prox.getDate() + 45);
+  var prox = new Date(d); prox.setDate(prox.getDate() + INTERVALO_DIAS);
   var hoje = new Date(); hoje.setHours(12,0,0,0);
   return Math.ceil((prox - hoje) / 86400000);
 }
 
 function proximaData(dataStr) {
   var d = new Date(dataStr + 'T12:00:00');
-  d.setDate(d.getDate() + 45);
+  d.setDate(d.getDate() + INTERVALO_DIAS);
   return d.toLocaleDateString('pt-BR');
 }
 
