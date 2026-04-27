@@ -133,7 +133,7 @@ footer span{color:var(--gold)}
     <line x1="8.12" y1="8.12" x2="12" y2="12"/>
   </svg>
 </div>
-    <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Ca<em>belos</em></div><div class="cat-count">28 serviços</div></div>
+    <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Ca<em>belos</em></div><div class="cat-count">27 serviços</div></div>
   </div>
   <div class="services-grid" id="grid-cabelos"></div>
 </section>
@@ -228,7 +228,7 @@ footer span{color:var(--gold)}
 <script>
 var servicos = {
   cabelos: [
-    {n:"Aplicação de Tintura / Tonalizante", v:268},
+    {n:"Aplicação de Tintura/Tonalizante (Escovado)", v:268, partir:true},
     {n:"Baby Liss", v:124.30, partir:true},
     {n:"Barba", v:55},
     {n:"Barba Coloração", v:82.50},
@@ -236,7 +236,6 @@ var servicos = {
     {n:"Corte de Franja", v:27.50},
     {n:"Corte Infantil Feminino (até 12 anos)", v:135.30},
     {n:"Corte Infantil Masculino (até 12 anos)", v:77},
-    {n:"Corte de Máquina", v:33},
     {n:"Corte Masculino", v:99},
     {n:"Corte Feminino", v:201.30},
     {n:"Escova", v:95.30, partir:true},
@@ -250,8 +249,8 @@ var servicos = {
     {n:"Progressiva Masculina", v:220, partir:true},
     {n:"Retoque de Raiz", v:306.50, partir:true},
     {n:"Selagem", v:330, partir:true},
-    {n:"Coloração Feminina", v:323, partir:true},
-    {n:"Tonalizante", v:345, partir:true},
+    {n:"Coloração Feminina (Escovado)", v:323, partir:true},
+    {n:"Tonalizante (Escovado)", v:345, partir:true},
   ],
   manicure: [
     {n:"Manicure", v:44},
@@ -411,7 +410,7 @@ function buscar(q){
   } else {
     res.innerHTML='<div style="background:var(--dark2);border-radius:12px;overflow:hidden;border:1px solid rgba(196,149,106,0.15)">'+
       encontrados.map(function(x){
-        return '<div class="service-item"><span class="service-name">'+x.item.n+'</span>'+fmt(x.item.v)+'</div>';
+        return '<div class="service-item"><span class="service-name">'+x.item.n+'</span>'+fmt(x.item.v, x.item.partir)+'</div>';
       }).join('')+'</div>';
   }
   res.style.display='block';
