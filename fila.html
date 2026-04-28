@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Voox 1956 — Lista de Espera</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -30,6 +31,7 @@ label{font-size:11px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter
 input,select{width:100%;padding:10px 12px;background:var(--dark3);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);font-family:'Jost',sans-serif;font-size:14px;color:var(--surface);outline:none;transition:border-color 0.2s}
 input:focus,select:focus{border-color:rgba(196,149,106,0.5)}
 input::placeholder{color:var(--muted)}
+input.flatpickr-input{cursor:pointer;background-color:var(--dark3) !important}
 select option{background:var(--dark2)}
 .btn-submit{width:100%;padding:13px;background:var(--gold);color:var(--dark);border:none;border-radius:var(--radius-sm);font-family:'Jost',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px}
 .alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px;display:none}
@@ -54,6 +56,7 @@ select option{background:var(--dark2)}
 .badge-contatada{background:rgba(58,106,155,0.15);color:#7AABE0}
 .badge-confirmada{background:rgba(74,124,89,0.15);color:#7EC89A}
 .badge-horario,.badge-tempo{background:rgba(255,255,255,0.05);color:var(--muted)}
+.badge-data{background:rgba(196,149,106,0.12);color:var(--gold);border:1px solid rgba(196,149,106,0.2)}
 .badge-removido{background:rgba(155,58,58,0.15);color:#E07070}
 .fila-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
 .action-btn{display:flex;align-items:center;gap:5px;background:none;border:1px solid rgba(255,255,255,0.08);color:var(--muted);border-radius:var(--radius-sm);padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Jost',sans-serif;text-decoration:none;white-space:nowrap}
@@ -64,7 +67,29 @@ select option{background:var(--dark2)}
 .confirmacao-title{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;color:white;margin-bottom:0.75rem}
 .confirmacao-title em{font-style:italic;color:var(--gold)}
 .confirmacao-text{font-size:13px;color:var(--muted);line-height:1.8}
+.hint{font-size:11px;color:var(--muted);margin-top:4px;font-style:italic}
 @media(max-width:520px){.form-grid{grid-template-columns:1fr}.fila-item{flex-wrap:wrap}.fila-actions{flex-direction:row;width:100%}}
+
+/* FLATPICKR — tema escuro Voox */
+.flatpickr-calendar{background:var(--dark2);border:1px solid rgba(196,149,106,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.5);font-family:'Jost',sans-serif;border-radius:var(--radius)}
+.flatpickr-calendar.arrowTop:before,.flatpickr-calendar.arrowTop:after{border-bottom-color:rgba(196,149,106,0.3)}
+.flatpickr-months{background:transparent;color:white}
+.flatpickr-month{background:transparent;color:white;height:42px}
+.flatpickr-current-month{color:white;font-family:'Cormorant Garamond',serif;font-weight:400;font-size:1.1rem;padding-top:6px}
+.flatpickr-current-month .flatpickr-monthDropdown-months{background:var(--dark2);color:white}
+.flatpickr-current-month .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month{background:var(--dark2);color:white}
+.flatpickr-current-month input.cur-year{color:white;font-family:'Cormorant Garamond',serif;font-weight:400}
+.flatpickr-prev-month,.flatpickr-next-month{color:var(--gold);fill:var(--gold);padding:8px}
+.flatpickr-prev-month svg,.flatpickr-next-month svg{fill:var(--gold)}
+.flatpickr-weekdays{background:transparent;color:var(--muted)}
+span.flatpickr-weekday{background:transparent;color:var(--muted);font-weight:500;font-size:11px;letter-spacing:0.05em}
+.flatpickr-day{color:rgba(255,255,255,0.85);border-radius:50%;font-weight:400;border-color:transparent}
+.flatpickr-day:hover{background:rgba(196,149,106,0.15);border-color:transparent}
+.flatpickr-day.today{border-color:var(--gold);color:var(--gold)}
+.flatpickr-day.today:hover{background:rgba(196,149,106,0.2);color:var(--gold)}
+.flatpickr-day.selected,.flatpickr-day.selected:hover{background:var(--gold);border-color:var(--gold);color:var(--dark)}
+.flatpickr-day.flatpickr-disabled,.flatpickr-day.flatpickr-disabled:hover,.flatpickr-day.prevMonthDay,.flatpickr-day.nextMonthDay{color:rgba(255,255,255,0.18);background:transparent;cursor:not-allowed}
+.flatpickr-day.flatpickr-disabled:hover{background:transparent}
 </style>
 </head>
 <body>
@@ -95,6 +120,10 @@ select option{background:var(--dark2)}
       <div class="form-group"><label>Nome completo</label><input type="text" id="f-nome" placeholder="Seu nome"/></div>
       <div class="form-group"><label>WhatsApp</label><input type="tel" id="f-tel" placeholder="(51) 99999-9999"/></div>
       <div class="form-group"><label>Serviço desejado</label><input type="text" id="f-servico" placeholder="Ex: Escova, Manicure..."/></div>
+      <div class="form-group"><label>Data desejada</label>
+        <input type="text" id="f-data" placeholder="Selecione uma data" readonly/>
+        <div class="hint">Não atendemos aos domingos</div>
+      </div>
       <div class="form-group"><label>Horário preferido</label>
         <select id="f-horario">
           <option value="">Sem preferência</option>
@@ -138,6 +167,8 @@ select option{background:var(--dark2)}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://npmcdn.com/flatpickr@4.6.13/dist/l10n/pt.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -156,6 +187,9 @@ var GERENTE_EMAIL = 'admvoox1@gmail.com';
 var RECEPCAO_EMAIL = 'vooxrecepcao@gmail.com';
 var nivel = 'publico';
 var db, auth, logado = false, fila = [], filtroAtual = 'todos';
+var datePicker;
+
+var DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
 function tempoAtras(ts) {
   var diff = Math.floor((Date.now() - ts) / 60000);
@@ -164,6 +198,16 @@ function tempoAtras(ts) {
   var h = Math.floor(diff / 60);
   if (h < 24) return h + 'h atrás';
   return Math.floor(h/24) + 'd atrás';
+}
+
+function formatarDataDesejada(dataStr) {
+  if (!dataStr) return '';
+  var d = new Date(dataStr + 'T12:00:00');
+  var dia = String(d.getDate()).padStart(2,'0');
+  var mes = String(d.getMonth()+1).padStart(2,'0');
+  var ano = d.getFullYear();
+  var diaSemana = DIAS_SEMANA[d.getDay()];
+  return dia + '/' + mes + '/' + ano + ' (' + diaSemana + ')';
 }
 
 function showAlert(id, msg, tipo) {
@@ -197,19 +241,23 @@ function entrarFila() {
   var nome = document.getElementById('f-nome').value.trim();
   var tel = document.getElementById('f-tel').value.trim();
   var servico = document.getElementById('f-servico').value.trim();
+  var dataDesejada = (datePicker && datePicker.selectedDates[0]) ? flatpickr.formatDate(datePicker.selectedDates[0], 'Y-m-d') : '';
   var horario = document.getElementById('f-horario').value;
   var obs = document.getElementById('f-obs').value.trim();
   var lgpd = document.getElementById('lgpd-check');
+
   if (!nome || !tel || !servico) { showAlert('alert-form', 'Preencha nome, WhatsApp e serviço desejado.', 'err'); return; }
+  if (!dataDesejada) { showAlert('alert-form', 'Selecione a data desejada para o atendimento.', 'err'); return; }
   if (!lgpd.checked) { showAlert('alert-form', 'Você precisa concordar com a política de privacidade para continuar.', 'err'); return; }
-  db.collection('fila_espera').add({ nome:nome, tel:tel, servico:servico, horario:horario, obs:obs, status:'aguardando', criadoEm:Date.now() }).then(function() {
+
+  db.collection('fila_espera').add({ nome:nome, tel:tel, servico:servico, dataDesejada:dataDesejada, horario:horario, obs:obs, status:'aguardando', criadoEm:Date.now() }).then(function() {
     document.getElementById('form-card').style.display = 'none';
     document.getElementById('confirmacao').style.display = 'block';
   }).catch(function() { showAlert('alert-form', 'Erro ao salvar. Tente novamente.', 'err'); });
 }
 
 function mudarStatus(id, status) {
-  if (!logado) return; // recepcao, gerente e admin podem mudar status
+  if (!logado) return;
   db.collection('fila_espera').doc(id).update({ status: status });
 }
 
@@ -241,6 +289,7 @@ function renderFila() {
   var labels = { aguardando:'Aguardando', contatada:'Contatada', confirmada:'Confirmada', removido:'Removido' };
   lista.innerHTML = visiveis.map(function(r, i) {
     var statusBadge = '<span class="badge ' + (badges[r.status]||'badge-aguardando') + '">' + (labels[r.status]||'Aguardando') + '</span>';
+    var dataDesejadaBadge = r.dataDesejada ? '<span class="badge badge-data">📅 ' + formatarDataDesejada(r.dataDesejada) + '</span>' : '';
     var horarioBadge = r.horario ? '<span class="badge badge-horario">' + r.horario + '</span>' : '';
     var tempoBadge = '<span class="badge badge-tempo">' + tempoAtras(r.criadoEm) + '</span>';
     var dataHora = new Date(r.criadoEm);
@@ -248,7 +297,8 @@ function renderFila() {
     var dataBadge = '<span class="badge badge-tempo">' + dataFmt + '</span>';
     var telLimpo = r.tel.replace(/[^0-9]/g,'');
     if (telLimpo.length <= 11) telLimpo = '55' + telLimpo;
-    var msgWpp = encodeURIComponent('Ola ' + r.nome + '! Somos do Voox 1956. Temos disponibilidade para o seu ' + r.servico + '. Podemos agendar?');
+    var dataMsg = r.dataDesejada ? ' no dia ' + formatarDataDesejada(r.dataDesejada) : '';
+    var msgWpp = encodeURIComponent('Ola ' + r.nome + '! Somos do Voox 1956. Temos disponibilidade para o seu ' + r.servico + dataMsg + '. Podemos agendar?');
     var adminActions = '<a class="action-btn wpp" href="https://wa.me/' + telLimpo + '?text=' + msgWpp + '" target="_blank">WhatsApp</a>' +
       (r.status==='aguardando' ? '<button class="action-btn" onclick="mudarStatus(\'' + r.id + '\',\'contatada\')">Contatada</button>' : '') +
       (r.status==='contatada' ? '<button class="action-btn" onclick="mudarStatus(\'' + r.id + '\',\'confirmada\')">Confirmada</button>' : '') +
@@ -256,7 +306,7 @@ function renderFila() {
     return '<div class="fila-item">' +
       '<div class="fila-num">' + (i+1) + '</div>' +
       '<div class="fila-info"><div class="fila-nome">' + r.nome + '</div><div class="fila-servico">' + r.servico + (r.obs?' — '+r.obs:'') + '</div>' +
-      '<div class="fila-meta">' + statusBadge + horarioBadge + tempoBadge + dataBadge + '</div></div>' +
+      '<div class="fila-meta">' + statusBadge + dataDesejadaBadge + horarioBadge + tempoBadge + dataBadge + '</div></div>' +
       '<div class="fila-actions">' + adminActions + '</div></div>';
   }).join('');
 }
@@ -265,6 +315,22 @@ window.addEventListener('load', function() {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
   auth = firebase.auth();
+
+  // Inicializar o flatpickr no campo de data
+  var fimAno = new Date(new Date().getFullYear(), 11, 31);
+  datePicker = flatpickr('#f-data', {
+    locale: 'pt',
+    dateFormat: 'd/m/Y (l)',
+    minDate: 'today',
+    maxDate: fimAno,
+    disableMobile: true,
+    disable: [
+      function(date) {
+        return date.getDay() === 0; // bloqueia domingos no calendário
+      }
+    ]
+  });
+
   auth.onAuthStateChanged(function(user) {
     if (!user) { nivel = 'publico'; logado = false; }
     else if (user.email === ADMIN_EMAIL) { nivel = 'admin'; logado = true; }
