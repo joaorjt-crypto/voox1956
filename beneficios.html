@@ -264,18 +264,20 @@ function registrar() {
     document.getElementById('nome').value = '';
     document.getElementById('servico').value = '';
     showAlert('alert', 'Benefício registrado com sucesso!', 'ok');
-  });
+  }).catch(function(e) { showAlert('alert', 'Não foi possível registrar: ' + e.message, 'err'); });
 }
 
 function aprovar(id) {
   if (nivel !== 'admin' && nivel !== 'gerente') return;
-  db.collection('beneficios').doc(id).update({ status: 'aprovado' });
+  db.collection('beneficios').doc(id).update({ status: 'aprovado' })
+    .catch(function(e) { showAlert('alert', 'Não foi possível aprovar: ' + e.message, 'err'); });
 }
 
 function remover(id) {
   if (nivel !== 'admin') return;
   if (!confirm('Remover este registro?')) return;
-  db.collection('beneficios').doc(id).delete();
+  db.collection('beneficios').doc(id).delete()
+    .catch(function(e) { showAlert('alert', 'Não foi possível remover: ' + e.message, 'err'); });
 }
 
 function renderizar() {
