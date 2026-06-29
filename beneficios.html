@@ -274,7 +274,7 @@ function aprovar(id) {
 }
 
 function remover(id) {
-  if (nivel !== 'admin') return;
+  if (nivel !== 'admin' && nivel !== 'gerente') return;
   if (!confirm('Remover este registro?')) return;
   db.collection('beneficios').doc(id).delete()
     .catch(function(e) { showAlert('alert', 'Não foi possível remover: ' + e.message, 'err'); });
@@ -309,7 +309,7 @@ function renderizar() {
       '<div class="avatar">' + iniciais(r.nome || '?') + '</div>' +
       '<div class="item-info"><div class="item-name">' + (r.nome || '') + '</div><div class="item-sub">' + (r.servico || '') + ' · ' + dataFmt + '</div></div>' +
       '<div class="item-right">' + statusBadge + (aprBtn ? '<div style="margin-top:4px;">' + aprBtn + '</div>' : '') + '<div class="item-next">' + periodoBadge + ' · ' + sub + '</div></div>' +
-      (nivel === 'admin' ? '<button class="del-btn" onclick="remover(\'' + r.id + '\')">×</button>' : '') +
+      ((nivel === 'admin' || nivel === 'gerente') ? '<button class="del-btn" onclick="remover(\'' + r.id + '\')">×</button>' : '') +
       '</div>';
   }).join('');
 }
