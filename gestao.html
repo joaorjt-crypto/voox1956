@@ -136,6 +136,8 @@
   .seg-opt.sel.red { background: var(--red); color: var(--bg); border-color: var(--red); }
   .seg-opt.sel.amber { background: var(--amber); color: var(--bg); border-color: var(--amber); }
   .seg-opt.sel.blue { background: var(--blue); color: var(--bg); border-color: var(--blue); }
+  .seg-opt.sel.gold { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+  .seg-opt.sel.green { background: var(--green); color: var(--bg); border-color: var(--green); }
   .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
   .btn-primary { background: var(--gold); color: var(--bg); margin-top: 8px; }
   .btn-primary:hover { background: var(--gold-soft); }
@@ -278,8 +280,11 @@ var tarefas = [], reunioes = [], metas = [], decisoes = [];
 var view = 'tarefas';
 var fStatus = 'abertas', fPrazo = 'todos';
 var novaPrio = 'media';
+var editPrio = 'media', editStatus = 'aberta';
 
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
+function optionsHtml(arr, sel){ return arr.map(function(o){ return '<option'+(o===sel?' selected':'')+'>'+esc(o)+'</option>'; }).join(''); }
 function hojeStr(){ var d=new Date(); var o=d.getTimezoneOffset(); var l=new Date(d.getTime()-o*60000); return l.toISOString().slice(0,10); }
 function fmtData(s){ if(!s) return '—'; return new Date(s+'T12:00:00').toLocaleDateString('pt-BR'); }
 function diasAte(s){ if(!s) return null; var p=new Date(s+'T12:00:00'); var h=new Date(); h.setHours(12,0,0,0); return Math.round((p-h)/86400000); }
@@ -506,21 +511,39 @@ function salvarTarefa(){
 }
 function abrirTarefa(id){
   var t=tarefas.find(function(x){return x.id===id;}); if(!t) return;
-  var prioTxt={alta:'Alta',media:'Média',baixa:'Baixa'}[t.prioridade];
-  abrir(head(esc(t.titulo))+'<div class="modal-body">'+
-    (t.descricao?'<div class="detail-block"><div class="detail-label">Detalhes</div><div class="detail-value">'+esc(t.descricao)+'</div></div>':'')+
-    '<div class="detail-block"><div class="detail-label">Situação</div><div class="status-seg" id="st-seg">'+
-      '<button data-s="aberta" class="'+(t.status==='aberta'?'cur':'')+'">Aberta</button>'+
-      '<button data-s="andamento" class="'+(t.status==='andamento'?'cur':'')+'">Em execução</button>'+
-      '<button data-s="concluida" class="'+(t.status==='concluida'?'cur':'')+'">Concluída</button></div></div>'+
-    '<div class="detail-block"><div class="detail-label">Responsável · Prioridade · Prazo</div><div class="detail-value">'+esc(t.responsavel||'—')+' · '+prioTxt+' · '+fmtData(t.prazo)+'</div></div>'+
-    '<button class="btn btn-danger" onclick="removerTarefa(\''+id+'\')">Remover tarefa</button></div>');
-  document.getElementById('st-seg').addEventListener('click', function(e){
-    var b=e.target.closest('button'); if(!b) return;
-    db.collection('gestao_tarefas').doc(id).update({status:b.dataset.s})
-      .then(function(){ fechar(); toast('Atualizado!','ok'); })
-      .catch(function(err){ toast('Erro: '+err.message,'err'); });
+  editPrio=t.prioridade||'media'; editStatus=t.status||'aberta';
+  function so(s,label,color){ return '<div class="seg-opt '+color+(editStatus===s?' sel':'')+'" data-s="'+s+'">'+label+'</div>'; }
+  abrir(head('Editar tarefa')+'<div class="modal-body">'+
+    '<div class="field"><label>Título</label><input id="e-titulo" value="'+escAttr(t.titulo)+'"></div>'+
+    '<div class="field"><label>Detalhes</label><textarea id="e-desc">'+esc(t.descricao||'')+'</textarea></div>'+
+    '<div class="field"><label>Situação</label><div class="seg" id="eseg-status">'+
+      so('aberta','Aberta','gold')+so('andamento','Execução','amber')+so('concluida','Concluída','green')+'</div></div>'+
+    '<div class="field"><label>Prioridade</label><div class="seg" id="eseg-prio">'+
+      '<div class="seg-opt blue'+(editPrio==='baixa'?' sel':'')+'" data-p="baixa">Baixa</div>'+
+      '<div class="seg-opt amber'+(editPrio==='media'?' sel':'')+'" data-p="media">Média</div>'+
+      '<div class="seg-opt red'+(editPrio==='alta'?' sel':'')+'" data-p="alta">Alta</div></div></div>'+
+    '<div class="field-row"><div class="field"><label>Responsável</label><select id="e-resp">'+optionsHtml(['João','Adriana','Tania'], t.responsavel)+'</select></div>'+
+      '<div class="field"><label>Prazo</label><input type="date" id="e-prazo" value="'+(t.prazo||'')+'"></div></div>'+
+    '<button class="btn btn-primary" onclick="salvarEdicaoTarefa(\''+id+'\')">Salvar alterações</button>'+
+    '<button class="btn btn-danger" style="margin-top:10px;" onclick="removerTarefa(\''+id+'\')">Remover tarefa</button></div>');
+  document.getElementById('eseg-status').addEventListener('click', function(e){
+    var o=e.target.closest('.seg-opt'); if(!o) return; editStatus=o.dataset.s;
+    this.querySelectorAll('.seg-opt').forEach(function(x){ x.classList.toggle('sel', x===o); });
   });
+  document.getElementById('eseg-prio').addEventListener('click', function(e){
+    var o=e.target.closest('.seg-opt'); if(!o) return; editPrio=o.dataset.p;
+    this.querySelectorAll('.seg-opt').forEach(function(x){ x.classList.toggle('sel', x===o); });
+  });
+}
+function salvarEdicaoTarefa(id){
+  var titulo=document.getElementById('e-titulo').value.trim();
+  if(!titulo){ toast('O título não pode ficar vazio.','err'); return; }
+  db.collection('gestao_tarefas').doc(id).update({
+    titulo:titulo, descricao:document.getElementById('e-desc').value.trim(),
+    prioridade:editPrio, status:editStatus,
+    responsavel:document.getElementById('e-resp').value, prazo:document.getElementById('e-prazo').value||''
+  }).then(function(){ fechar(); toast('Tarefa atualizada!','ok'); })
+    .catch(function(e){ toast('Erro: '+e.message,'err'); });
 }
 function removerTarefa(id){
   if(!confirm('Remover esta tarefa?')) return;
@@ -550,11 +573,24 @@ function salvarReuniao(){
 }
 function abrirReuniao(id){
   var r=reunioes.find(function(x){return x.id===id;}); if(!r) return;
-  abrir(head(esc(r.titulo||'Reunião'))+'<div class="modal-body">'+
-    '<div class="detail-block"><div class="detail-label">Data · Participantes</div><div class="detail-value">'+fmtData(r.data)+(r.participantes?' · '+esc(r.participantes):'')+'</div></div>'+
-    (r.resumo?'<div class="detail-block"><div class="detail-label">Resumo</div><div class="detail-value">'+esc(r.resumo)+'</div></div>':'')+
-    (r.decisoes?'<div class="detail-block"><div class="detail-label">Decisões / próximos passos</div><div class="detail-value">'+esc(r.decisoes)+'</div></div>':'')+
-    '<button class="btn btn-danger" onclick="removerReuniao(\''+id+'\')">Remover resumo</button></div>');
+  abrir(head('Editar reunião')+'<div class="modal-body">'+
+    '<div class="field-row"><div class="field"><label>Data</label><input type="date" id="e-rdata" value="'+(r.data||'')+'"></div>'+
+      '<div class="field"><label>Participantes</label><input id="e-rpart" value="'+escAttr(r.participantes||'')+'"></div></div>'+
+    '<div class="field"><label>Título / pauta</label><input id="e-rtit" value="'+escAttr(r.titulo||'')+'"></div>'+
+    '<div class="field"><label>Resumo</label><textarea id="e-rres">'+esc(r.resumo||'')+'</textarea></div>'+
+    '<div class="field"><label>Decisões / próximos passos</label><textarea id="e-rdec">'+esc(r.decisoes||'')+'</textarea></div>'+
+    '<button class="btn btn-primary" onclick="salvarEdicaoReuniao(\''+id+'\')">Salvar alterações</button>'+
+    '<button class="btn btn-danger" style="margin-top:10px;" onclick="removerReuniao(\''+id+'\')">Remover resumo</button></div>');
+}
+function salvarEdicaoReuniao(id){
+  var tit=document.getElementById('e-rtit').value.trim(), res=document.getElementById('e-rres').value.trim();
+  if(!tit && !res){ toast('Preenche título ou resumo.','err'); return; }
+  db.collection('gestao_reunioes').doc(id).update({
+    data:document.getElementById('e-rdata').value||hojeStr(), titulo:tit,
+    participantes:document.getElementById('e-rpart').value.trim(), resumo:res,
+    decisoes:document.getElementById('e-rdec').value.trim()
+  }).then(function(){ fechar(); toast('Reunião atualizada!','ok'); })
+    .catch(function(e){ toast('Erro: '+e.message,'err'); });
 }
 function removerReuniao(id){
   if(!confirm('Remover este resumo?')) return;
@@ -582,18 +618,27 @@ function salvarMeta(){
 function abrirMeta(id){
   var m=metas.find(function(x){return x.id===id;}); if(!m) return;
   var pct=m.alvo>0?Math.min(100,Math.round(m.atual/m.alvo*100)):0; var u=m.unidade?' '+esc(m.unidade):'';
-  abrir(head(esc(m.nome))+'<div class="modal-body">'+
-    '<div class="detail-block"><div class="detail-label">Progresso'+(m.periodo?' · '+esc(m.periodo):'')+'</div>'+
+  abrir(head('Editar meta')+'<div class="modal-body">'+
+    '<div class="detail-block"><div class="detail-label">Progresso atual</div>'+
       '<div class="meta-row"><div class="meta-val">'+fmtNum(m.atual)+u+' <small>/ '+fmtNum(m.alvo)+u+'</small></div><div class="meta-pct" style="color:'+(pct>=100?'var(--green)':'var(--gold)')+'">'+pct+'%</div></div>'+
       '<div class="progress"><div class="progress-fill'+(pct>=100?' full':'')+'" style="width:'+pct+'%"></div></div></div>'+
-    '<div class="field" style="margin-top:16px;"><label>Atualizar valor atual</label><input type="number" id="m-novo" step="any" value="'+m.atual+'"></div>'+
-    '<div class="btn-row"><button class="btn btn-primary" onclick="atualizarMeta(\''+id+'\')">Salvar valor</button>'+
-      '<button class="btn btn-danger" onclick="removerMeta(\''+id+'\')">Remover</button></div></div>');
+    '<div class="field" style="margin-top:16px;"><label>Nome da meta</label><input id="e-mnome" value="'+escAttr(m.nome)+'"></div>'+
+    '<div class="field-row"><div class="field"><label>Valor atual</label><input type="number" id="e-matual" step="any" value="'+m.atual+'"></div>'+
+      '<div class="field"><label>Meta (alvo)</label><input type="number" id="e-malvo" step="any" value="'+m.alvo+'"></div></div>'+
+    '<div class="field-row"><div class="field"><label>Unidade</label><input id="e-munid" value="'+escAttr(m.unidade||'')+'"></div>'+
+      '<div class="field"><label>Período</label><input id="e-mper" value="'+escAttr(m.periodo||'')+'"></div></div>'+
+    '<button class="btn btn-primary" onclick="salvarEdicaoMeta(\''+id+'\')">Salvar alterações</button>'+
+    '<button class="btn btn-danger" style="margin-top:10px;" onclick="removerMeta(\''+id+'\')">Remover meta</button></div>');
 }
-function atualizarMeta(id){
-  var v=parseFloat(document.getElementById('m-novo').value);
-  if(isNaN(v)){ toast('Valor inválido.','err'); return; }
-  db.collection('gestao_metas').doc(id).update({atual:v}).then(function(){ fechar(); toast('Valor atualizado!','ok'); }).catch(function(e){ toast('Erro: '+e.message,'err'); });
+function salvarEdicaoMeta(id){
+  var nome=document.getElementById('e-mnome').value.trim(), alvo=parseFloat(document.getElementById('e-malvo').value);
+  if(!nome){ toast('Dá um nome pra meta.','err'); return; }
+  if(isNaN(alvo)||alvo<=0){ toast('Informe um alvo válido.','err'); return; }
+  db.collection('gestao_metas').doc(id).update({
+    nome:nome, alvo:alvo, atual:parseFloat(document.getElementById('e-matual').value)||0,
+    unidade:document.getElementById('e-munid').value.trim(), periodo:document.getElementById('e-mper').value.trim()
+  }).then(function(){ fechar(); toast('Meta atualizada!','ok'); })
+    .catch(function(e){ toast('Erro: '+e.message,'err'); });
 }
 function removerMeta(id){
   if(!confirm('Remover esta meta?')) return;
@@ -618,10 +663,22 @@ function salvarDecisao(){
 }
 function abrirDecisao(id){
   var d=decisoes.find(function(x){return x.id===id;}); if(!d) return;
-  abrir(head(esc(d.decisao))+'<div class="modal-body">'+
-    '<div class="detail-block"><div class="detail-label">Data · Responsável</div><div class="detail-value">'+fmtData(d.data)+' · '+esc(d.responsavel||'—')+'</div></div>'+
-    (d.contexto?'<div class="detail-block"><div class="detail-label">Contexto</div><div class="detail-value">'+esc(d.contexto)+'</div></div>':'')+
-    '<button class="btn btn-danger" onclick="removerDecisao(\''+id+'\')">Remover decisão</button></div>');
+  abrir(head('Editar decisão')+'<div class="modal-body">'+
+    '<div class="field-row"><div class="field"><label>Data</label><input type="date" id="e-ddata" value="'+(d.data||'')+'"></div>'+
+      '<div class="field"><label>Responsável</label><select id="e-dresp">'+optionsHtml(['João','Adriana','Tania','Em conjunto'], d.responsavel)+'</select></div></div>'+
+    '<div class="field"><label>Decisão</label><input id="e-ddec" value="'+escAttr(d.decisao)+'"></div>'+
+    '<div class="field"><label>Contexto / motivo</label><textarea id="e-dctx">'+esc(d.contexto||'')+'</textarea></div>'+
+    '<button class="btn btn-primary" onclick="salvarEdicaoDecisao(\''+id+'\')">Salvar alterações</button>'+
+    '<button class="btn btn-danger" style="margin-top:10px;" onclick="removerDecisao(\''+id+'\')">Remover decisão</button></div>');
+}
+function salvarEdicaoDecisao(id){
+  var dec=document.getElementById('e-ddec').value.trim();
+  if(!dec){ toast('Descreve a decisão.','err'); return; }
+  db.collection('gestao_decisoes').doc(id).update({
+    data:document.getElementById('e-ddata').value||hojeStr(), decisao:dec,
+    contexto:document.getElementById('e-dctx').value.trim(), responsavel:document.getElementById('e-dresp').value
+  }).then(function(){ fechar(); toast('Decisão atualizada!','ok'); })
+    .catch(function(e){ toast('Erro: '+e.message,'err'); });
 }
 function removerDecisao(id){
   if(!confirm('Remover esta decisão?')) return;
