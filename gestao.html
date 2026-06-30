@@ -268,8 +268,7 @@ var firebaseConfig = {
 // (Os MESMOS e-mails precisam estar nas regras do Firestore.)
 var USUARIOS = {
   'joaorjt@gmail.com':  { nivel: 'admin',   nome: 'João' },
-  'admvoox1@gmail.com': { nivel: 'gerente', nome: 'Tania' }
-   'esteticabellaltda@gmail.com': { nivel: 'admin', nome: 'Adriana' }
+  'admvoox1@gmail.com': { nivel: 'gerente', nome: 'Gerência' }
   // , 'EMAIL-DA-ADRIANA@gmail.com': { nivel: 'equipe', nome: 'Adriana' }
   // , 'EMAIL-DA-TANIA@gmail.com':   { nivel: 'equipe', nome: 'Tania' }
 };
@@ -293,7 +292,19 @@ function toast(msg, tipo){
   setTimeout(function(){ t.className='toast '+(tipo||''); }, 3200);
 }
 
-function login(){ var p=new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(p).catch(function(e){ alert('Erro ao entrar: '+e.message); }); }
+function login(){
+  if(!auth){ toast('Ainda carregando — tenta de novo.','err'); return; }
+  var p=new firebase.auth.GoogleAuthProvider();
+  p.setCustomParameters({ prompt: 'select_account' });
+  auth.signInWithPopup(p).catch(function(e){
+    var c=e.code||'';
+    if(c==='auth/popup-blocked' || c==='auth/cancelled-popup-request' || c==='auth/popup-closed-by-user' || c==='auth/operation-not-supported-in-this-environment'){
+      auth.signInWithRedirect(p).catch(function(e2){ toast('Login: '+(e2.code||e2.message),'err'); });
+    } else {
+      toast('Login: '+(c||e.message),'err');
+    }
+  });
+}
 function logout(){ auth.signOut(); }
 
 function aplicarUI(){
@@ -624,29 +635,31 @@ document.body.addEventListener('click', function(e){
   it=e.target.closest('[data-dec]'); if(it){ abrirDecisao(it.dataset.dec); return; }
 });
 
-window.addEventListener('load', function(){
-  firebase.initializeApp(firebaseConfig);
-  db=firebase.firestore(); auth=firebase.auth();
+/* inicializa o Firebase imediatamente (não depende do evento 'load') */
+firebase.initializeApp(firebaseConfig);
+db=firebase.firestore(); auth=firebase.auth();
 
-  auth.onAuthStateChanged(function(user){
-    var u = user ? USUARIOS[(user.email||'').toLowerCase()] : null;
-    if(u){ nivel=u.nivel; nome=u.nome; logado=true; }
-    else {
-      nivel='publico'; logado=false;
-      if(user){
-        document.getElementById('gate-title').textContent='Sem acesso';
-        document.getElementById('gate-msg').textContent='A conta '+user.email+' não tem permissão neste painel.';
-        auth.signOut();
-      }
+/* se voltou de um login por redirect, captura erro (se houver) */
+auth.getRedirectResult().catch(function(e){ toast('Login: '+(e.code||e.message),'err'); });
+
+auth.onAuthStateChanged(function(user){
+  var u = user ? USUARIOS[(user.email||'').toLowerCase()] : null;
+  if(u){ nivel=u.nivel; nome=u.nome; logado=true; }
+  else {
+    nivel='publico'; logado=false;
+    if(user){
+      document.getElementById('gate-title').textContent='Sem acesso';
+      document.getElementById('gate-msg').textContent='A conta '+user.email+' não tem permissão neste painel.';
+      auth.signOut();
     }
-    aplicarUI();
-  });
-
-  db.collection('gestao_tarefas').onSnapshot(function(s){ tarefas=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); renderTar(); if(logado) atualizarHero(); }, function(e){ toast('Tarefas: '+e.message,'err'); });
-  db.collection('gestao_reunioes').onSnapshot(function(s){ reunioes=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); renderReu(); }, function(e){ toast('Reuniões: '+e.message,'err'); });
-  db.collection('gestao_metas').onSnapshot(function(s){ metas=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); renderMet(); }, function(e){ toast('Metas: '+e.message,'err'); });
-  db.collection('gestao_decisoes').onSnapshot(function(s){ decisoes=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); renderDec(); }, function(e){ toast('Decisões: '+e.message,'err'); });
+  }
+  aplicarUI();
 });
+
+db.collection('gestao_tarefas').onSnapshot(function(s){ tarefas=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); renderTar(); if(logado) atualizarHero(); }, function(e){ if(logado) toast('Tarefas: '+e.message,'err'); });
+db.collection('gestao_reunioes').onSnapshot(function(s){ reunioes=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); renderReu(); }, function(e){ if(logado) toast('Reuniões: '+e.message,'err'); });
+db.collection('gestao_metas').onSnapshot(function(s){ metas=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); renderMet(); }, function(e){ if(logado) toast('Metas: '+e.message,'err'); });
+db.collection('gestao_decisoes').onSnapshot(function(s){ decisoes=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); renderDec(); }, function(e){ if(logado) toast('Decisões: '+e.message,'err'); });
 </script>
 </body>
 </html>
