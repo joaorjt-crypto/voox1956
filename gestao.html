@@ -116,10 +116,10 @@
   .nav-item.active::before { content: ''; position: absolute; top: 0; left: 28%; right: 28%; height: 2px; background: var(--gold); border-radius: 2px; }
   .nav-item svg { width: 21px; height: 21px; }
 
-  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
   .backdrop.open { display: flex; }
-  .modal { background: var(--bg); width: 100%; max-width: 540px; max-height: 92vh; overflow-y: auto; border-top: 2px solid var(--gold); border-radius: 18px 18px 0 0; animation: slideUp 0.3s cubic-bezier(0.2,0.8,0.2,1); }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal { background: var(--bg); width: 100%; max-width: 540px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--line-2); border-top: 2px solid var(--gold); border-radius: 16px; animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1); }
+  @keyframes popIn { from { transform: translateY(12px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
   .modal-head { position: sticky; top: 0; background: var(--bg); padding: 18px 22px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; z-index: 5; }
   .modal-title { font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.15; }
   .modal-close { background: none; border: none; color: var(--ink-mute); font-size: 24px; cursor: pointer; width: 30px; height: 30px; display: grid; place-items: center; flex-shrink: 0; }
@@ -263,8 +263,15 @@ var firebaseConfig = {
   messagingSenderId: "199589852171",
   appId: "1:199589852171:web:c9196e78067bb7864fc30e"
 };
-var ADMIN_EMAIL = 'joaorjt@gmail.com';
-var GERENTE_EMAIL = 'admvoox1@gmail.com';
+// Usuários autorizados a acessar o painel.
+// Para liberar alguém: descomente a linha e troque pelo e-mail Google da pessoa.
+// (Os MESMOS e-mails precisam estar nas regras do Firestore.)
+var USUARIOS = {
+  'joaorjt@gmail.com':  { nivel: 'admin',   nome: 'João' },
+  'admvoox1@gmail.com': { nivel: 'gerente', nome: 'Gerência' }
+  // , 'EMAIL-DA-ADRIANA@gmail.com': { nivel: 'equipe', nome: 'Adriana' }
+  // , 'EMAIL-DA-TANIA@gmail.com':   { nivel: 'equipe', nome: 'Tania' }
+};
 
 var db, auth, nivel = 'publico', logado = false, nome = '';
 var tarefas = [], reunioes = [], metas = [], decisoes = [];
@@ -292,7 +299,7 @@ function aplicarUI(){
   var gate=document.getElementById('gate'), app=document.getElementById('app');
   if(logado){
     gate.style.display='none'; app.style.display='block';
-    var rotulo = nivel==='admin' ? 'Direção' : 'Gerência';
+    var rotulo = nivel==='admin' ? 'Direção' : nivel==='gerente' ? 'Gerência' : esc(nome);
     document.getElementById('user-badge').innerHTML='<span class="role">'+rotulo+'</span><button class="logout" onclick="logout()">Sair</button>';
     atualizarHero();
   } else {
@@ -467,7 +474,7 @@ function criarTarefaModal(){
       '<div class="seg-opt blue" data-p="baixa">Baixa</div>'+
       '<div class="seg-opt amber sel" data-p="media">Média</div>'+
       '<div class="seg-opt red" data-p="alta">Alta</div></div></div>'+
-    '<div class="field-row"><div class="field"><label>Responsável</label><select id="f-resp"><option>João</option><option>Gerente</option><option>Equipe</option></select></div>'+
+    '<div class="field-row"><div class="field"><label>Responsável</label><select id="f-resp"><option>João</option><option>Adriana</option><option>Tania</option></select></div>'+
       '<div class="field"><label>Prazo</label><input type="date" id="f-prazo"></div></div>'+
     '<button class="btn btn-primary" onclick="salvarTarefa()">Adicionar tarefa</button></div>');
   document.getElementById('seg-prio').addEventListener('click', function(e){
@@ -584,7 +591,7 @@ function removerMeta(id){
 function criarDecisaoModal(){
   abrir(head('Registrar decisão')+'<div class="modal-body">'+
     '<div class="field-row"><div class="field"><label>Data</label><input type="date" id="d-data" value="'+hojeStr()+'"></div>'+
-      '<div class="field"><label>Responsável</label><select id="d-resp"><option>João</option><option>Gerente</option><option>Em conjunto</option></select></div></div>'+
+      '<div class="field"><label>Responsável</label><select id="d-resp"><option>João</option><option>Adriana</option><option>Tania</option><option>Em conjunto</option></select></div></div>'+
     '<div class="field"><label>Decisão</label><input id="d-dec" placeholder="Ex: Adotar pacote de progressiva no catálogo"></div>'+
     '<div class="field"><label>Contexto / motivo</label><textarea id="d-ctx" placeholder="Por que foi decidido assim..."></textarea></div>'+
     '<button class="btn btn-primary" onclick="salvarDecisao()">Registrar</button></div>');
@@ -621,14 +628,15 @@ window.addEventListener('load', function(){
   db=firebase.firestore(); auth=firebase.auth();
 
   auth.onAuthStateChanged(function(user){
-    if(!user){ nivel='publico'; logado=false; }
-    else if(user.email===ADMIN_EMAIL){ nivel='admin'; logado=true; nome='João'; }
-    else if(user.email===GERENTE_EMAIL){ nivel='gerente'; logado=true; nome='Equipe'; }
+    var u = user ? USUARIOS[(user.email||'').toLowerCase()] : null;
+    if(u){ nivel=u.nivel; nome=u.nome; logado=true; }
     else {
       nivel='publico'; logado=false;
-      document.getElementById('gate-title').textContent='Sem acesso';
-      document.getElementById('gate-msg').textContent='A conta '+user.email+' não tem permissão neste painel.';
-      auth.signOut();
+      if(user){
+        document.getElementById('gate-title').textContent='Sem acesso';
+        document.getElementById('gate-msg').textContent='A conta '+user.email+' não tem permissão neste painel.';
+        auth.signOut();
+      }
     }
     aplicarUI();
   });
