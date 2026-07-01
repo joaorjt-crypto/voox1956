@@ -3,36 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0A0908">
+<meta name="theme-color" content="#1C160F">
 <title>Voox 1956 · Gestão</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0A0908; --bg-2: #14110E; --bg-3: #1F1813;
-    --line: rgba(196,149,106,0.10); --line-2: rgba(196,149,106,0.20);
-    --ink: #ECE4D8; --ink-mute: #9A8D7C; --ink-faint: #5E5446;
-    --gold: #C4956A; --gold-soft: #A87A4F;
-    --green: #6FA37C; --green-bg: rgba(111,163,124,0.14);
-    --amber: #D9A85C; --amber-bg: rgba(217,168,92,0.14);
-    --red: #C8736B; --red-bg: rgba(200,115,107,0.14);
-    --blue: #7C95AE;
+    --bg: #F1ECE3; --bg-2: #FCFAF6; --bg-3: #E9E2D5;
+    --surface: #FFFFFF; --dark: #1C160F;
+    --line: rgba(40,30,20,0.10); --line-2: rgba(176,126,74,0.30);
+    --ink: #2A241D; --ink-mute: #7C7266; --ink-faint: #B4A996;
+    --gold: #B07D4C; --gold-soft: #946438;
+    --green: #4E8A5F; --green-bg: rgba(78,138,95,0.14);
+    --amber: #B07E2A; --amber-bg: rgba(176,126,42,0.16);
+    --red: #B5473F; --red-bg: rgba(181,71,63,0.12);
+    --blue: #5A7C99;
     --display: 'Cormorant Garamond', serif;
     --sans: 'Jost', sans-serif;
     --script: 'Great Vibes', cursive;
   }
   body { font-family: var(--sans); background: var(--bg); color: var(--ink); min-height: 100vh; font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; padding-bottom: 90px; }
 
-  header { position: sticky; top: 0; z-index: 60; background: rgba(10,9,8,0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  header { position: sticky; top: 0; z-index: 60; background: var(--dark); border-bottom: 1px solid rgba(196,149,106,0.25); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   .brand { line-height: 1; }
-  .brand .script { font-family: var(--script); font-size: 22px; color: var(--gold); display: block; margin-bottom: -4px; }
-  .brand .name { font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: 0.02em; }
-  .brand .sub { font-family: var(--sans); font-size: 8px; letter-spacing: 0.28em; color: var(--ink-mute); text-transform: uppercase; margin-top: 3px; }
-  .user-badge { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 12px; background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 99px; }
-  .user-badge .role { font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
-  .logout { background: none; border: none; color: var(--ink-mute); cursor: pointer; font-size: 11px; font-family: var(--sans); letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 8px; border-left: 1px solid var(--line-2); }
-  .logout:hover { color: var(--ink); }
+  .brand .script { font-family: var(--script); font-size: 22px; color: #C4956A; display: block; margin-bottom: -4px; }
+  .brand .name { font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: 0.02em; color: #F4EFE6; }
+  .brand .sub { font-family: var(--sans); font-size: 8px; letter-spacing: 0.28em; color: rgba(244,239,230,0.45); text-transform: uppercase; margin-top: 3px; }
+  .user-badge { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(196,149,106,0.35); border-radius: 99px; }
+  .user-badge .role { font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: #C4956A; }
+  .logout { background: none; border: none; color: rgba(244,239,230,0.6); cursor: pointer; font-size: 11px; font-family: var(--sans); letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 8px; border-left: 1px solid rgba(255,255,255,0.15); }
+  .logout:hover { color: #F4EFE6; }
 
   .gate { max-width: 420px; margin: 12vh auto 0; padding: 0 24px; text-align: center; }
   .gate .script { font-family: var(--script); font-size: 40px; color: var(--gold); line-height: 1; }
@@ -40,7 +41,7 @@
   .gate .sub { font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 36px; }
   .gate h2 { font-family: var(--display); font-size: 22px; font-weight: 600; margin-bottom: 10px; }
   .gate p { color: var(--ink-mute); font-size: 14px; margin-bottom: 26px; }
-  .google-btn { display: flex; align-items: center; gap: 10px; background: var(--gold); border: none; border-radius: 6px; padding: 13px 18px; font-family: var(--sans); font-weight: 500; font-size: 14px; color: var(--bg); cursor: pointer; width: 100%; justify-content: center; transition: background 0.2s; letter-spacing: 0.02em; }
+  .google-btn { display: flex; align-items: center; gap: 10px; background: var(--gold); border: none; border-radius: 6px; padding: 13px 18px; font-family: var(--sans); font-weight: 500; font-size: 14px; color: #FFF8EF; cursor: pointer; width: 100%; justify-content: center; transition: background 0.2s; letter-spacing: 0.02em; }
   .google-btn:hover { background: var(--gold-soft); }
   .google-btn svg { width: 18px; height: 18px; background: #fff; border-radius: 2px; padding: 1px; }
 
@@ -70,7 +71,7 @@
   .filter-bar.sub { padding-top: 0; }
   .chip { flex-shrink: 0; padding: 7px 13px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 99px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); cursor: pointer; transition: all 0.15s; }
   .chip:hover { color: var(--ink); }
-  .chip.active { background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: 500; }
+  .chip.active { background: var(--gold); color: #FFF8EF; border-color: var(--gold); font-weight: 500; }
   .chip.sub-chip.active { background: transparent; color: var(--gold); border-color: var(--gold); }
 
   .list { padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 12px; }
@@ -101,45 +102,58 @@
   .progress-fill { height: 100%; background: var(--gold); border-radius: 99px; transition: width 0.5s; }
   .progress-fill.full { background: var(--green); }
 
+  .chart-wrap { padding: 8px 20px 0; }
+  .chart-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 12px; box-shadow: 0 2px 10px rgba(40,30,20,0.04); }
+  .chart-card .ctitle { font-family: var(--display); font-size: 20px; font-weight: 600; line-height: 1.1; }
+  .chart-card .csub { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mute); margin: 2px 0 8px; }
+  .chart-card .cbig { font-family: var(--display); font-size: 26px; font-weight: 600; color: var(--gold); }
+  .chart-card .cbig small { font-family: var(--sans); font-size: 12px; color: var(--ink-mute); font-weight: 400; }
+  .spark { margin-top: 8px; }
+  .mes-row { display: grid; grid-template-columns: 1.1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .mes-row .mes-del { background: none; border: 1px solid var(--line); color: var(--ink-mute); border-radius: 8px; width: 40px; height: 44px; font-size: 18px; line-height: 1; cursor: pointer; }
+  .mes-row .mes-del:hover { border-color: var(--red); color: var(--red); }
+  .btn-add-mes { width: 100%; padding: 11px; background: var(--bg-3); border: 1px dashed var(--line-2); border-radius: 8px; color: var(--gold); font-family: var(--sans); font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
+  .btn-add-mes:hover { background: var(--bg); }
+
   .empty { text-align: center; padding: 60px 24px; color: var(--ink-mute); }
   .empty .ico { font-size: 30px; margin-bottom: 12px; opacity: 0.4; }
   .empty h3 { font-family: var(--display); font-size: 20px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
   .empty p { font-size: 13px; max-width: 240px; margin: 0 auto; }
 
-  .fab { position: fixed; bottom: 86px; right: 20px; width: 56px; height: 56px; background: var(--gold); border: none; border-radius: 50%; color: var(--bg); font-size: 28px; font-weight: 300; cursor: pointer; z-index: 70; box-shadow: 0 10px 28px rgba(196,149,106,0.35), 0 4px 8px rgba(0,0,0,0.4); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .fab { position: fixed; bottom: 86px; right: 20px; width: 56px; height: 56px; background: var(--gold); border: none; border-radius: 50%; color: #FFF8EF; font-size: 28px; font-weight: 300; cursor: pointer; z-index: 70; box-shadow: 0 10px 28px rgba(176,125,76,0.4), 0 4px 8px rgba(40,30,20,0.2); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; line-height: 1; }
   .fab:hover { transform: translateY(-2px) rotate(90deg); }
   .fab:active { transform: scale(0.94); }
 
-  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,9,8,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--line-2); display: grid; grid-template-columns: repeat(4, 1fr); z-index: 65; padding-bottom: env(safe-area-inset-bottom); }
-  .nav-item { background: none; border: none; padding: 12px 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--ink-mute); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; position: relative; font-family: var(--sans); }
-  .nav-item.active { color: var(--gold); }
-  .nav-item.active::before { content: ''; position: absolute; top: 0; left: 28%; right: 28%; height: 2px; background: var(--gold); border-radius: 2px; }
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--dark); border-top: 1px solid rgba(196,149,106,0.25); display: grid; grid-template-columns: repeat(4, 1fr); z-index: 65; padding-bottom: env(safe-area-inset-bottom); }
+  .nav-item { background: none; border: none; padding: 12px 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 5px; color: rgba(244,239,230,0.5); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; position: relative; font-family: var(--sans); }
+  .nav-item.active { color: #C4956A; }
+  .nav-item.active::before { content: ''; position: absolute; top: 0; left: 28%; right: 28%; height: 2px; background: #C4956A; border-radius: 2px; }
   .nav-item svg { width: 21px; height: 21px; }
 
   .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
   .backdrop.open { display: flex; }
-  .modal { background: var(--bg); width: 100%; max-width: 540px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--line-2); border-top: 2px solid var(--gold); border-radius: 16px; animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1); }
+  .modal { background: var(--bg-2); width: 100%; max-width: 540px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--line-2); border-top: 2px solid var(--gold); border-radius: 16px; box-shadow: 0 20px 60px rgba(40,30,20,0.25); animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1); }
   @keyframes popIn { from { transform: translateY(12px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
-  .modal-head { position: sticky; top: 0; background: var(--bg); padding: 18px 22px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; z-index: 5; }
+  .modal-head { position: sticky; top: 0; background: var(--bg-2); padding: 18px 22px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; z-index: 5; }
   .modal-title { font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.15; }
   .modal-close { background: none; border: none; color: var(--ink-mute); font-size: 24px; cursor: pointer; width: 30px; height: 30px; display: grid; place-items: center; flex-shrink: 0; }
   .modal-close:hover { color: var(--ink); }
   .modal-body { padding: 20px 22px 26px; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 7px; }
-  .field input, .field textarea, .field select { width: 100%; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); padding: 12px 13px; font-family: var(--sans); font-size: 14px; outline: none; transition: border-color 0.15s; }
+  .field input, .field textarea, .field select { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); padding: 12px 13px; font-family: var(--sans); font-size: 14px; outline: none; transition: border-color 0.15s; }
   .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--gold); }
   .field textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .seg-opt { padding: 10px 6px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); cursor: pointer; text-align: center; transition: all 0.15s; }
+  .seg-opt { padding: 10px 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); cursor: pointer; text-align: center; transition: all 0.15s; }
   .seg-opt.sel.red { background: var(--red); color: var(--bg); border-color: var(--red); }
   .seg-opt.sel.amber { background: var(--amber); color: var(--bg); border-color: var(--amber); }
   .seg-opt.sel.blue { background: var(--blue); color: var(--bg); border-color: var(--blue); }
   .seg-opt.sel.gold { background: var(--gold); color: var(--bg); border-color: var(--gold); }
   .seg-opt.sel.green { background: var(--green); color: var(--bg); border-color: var(--green); }
   .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
-  .btn-primary { background: var(--gold); color: var(--bg); margin-top: 8px; }
+  .btn-primary { background: var(--gold); color: #FFF8EF; margin-top: 8px; }
   .btn-primary:hover { background: var(--gold-soft); }
   .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red-bg); }
   .btn-danger:hover { background: var(--red-bg); }
@@ -220,6 +234,7 @@
 
   <section data-view="metas" style="display:none;">
     <div class="section-head"><span class="script">Metas</span><h1>Metas &amp; KPIs</h1><p>Acompanhe o progresso da equipe</p></div>
+    <div class="chart-wrap" id="met-chart"></div>
     <div class="list" id="lista-met"></div>
   </section>
 
@@ -290,6 +305,55 @@ function fmtData(s){ if(!s) return '—'; return new Date(s+'T12:00:00').toLocal
 function diasAte(s){ if(!s) return null; var p=new Date(s+'T12:00:00'); var h=new Date(); h.setHours(12,0,0,0); return Math.round((p-h)/86400000); }
 function atrasada(t){ var d=diasAte(t.prazo); return t.prazo && t.status!=='concluida' && d!=null && d<0; }
 function fmtNum(n){ return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:2}); }
+var MESES_ABREV=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function fmtMes(s){ if(!s) return ''; var p=String(s).split('-'); if(p.length<2) return s; var i=parseInt(p[1],10)-1; return (MESES_ABREV[i]||'')+'/'+p[0].slice(2); }
+function serieOrdenada(m){ var s=(m&&m.serie)?m.serie.slice():[]; s.sort(function(a,b){ return (a.mes||'').localeCompare(b.mes||''); }); return s; }
+function valorAtualMeta(m){ var s=serieOrdenada(m); return s.length? s[s.length-1].valor : (m.atual||0); }
+
+/* gera um gráfico de linha em SVG a partir de [{mes,valor}] */
+function lineChart(serie, opts){
+  opts=opts||{}; if(!serie||!serie.length) return '';
+  var W=opts.w||560, H=opts.h||170, labels=!!opts.labels;
+  var padL=10, padR=10, padT=14, padB=labels?26:8;
+  var pts=serie.map(function(p){ return {mes:p.mes, v:Number(p.valor)||0}; });
+  var vals=pts.map(function(p){return p.v;});
+  var extra=(opts.alvo!=null&&!isNaN(opts.alvo))?[opts.alvo]:[];
+  var maxV=Math.max.apply(null, vals.concat(extra));
+  var minV=Math.min.apply(null, vals.concat([0]));
+  if(maxV===minV) maxV=minV+1;
+  var iw=W-padL-padR, ih=H-padT-padB;
+  function X(i){ return padL+(pts.length===1? iw/2 : iw*i/(pts.length-1)); }
+  function Y(v){ return padT+ih*(1-(v-minV)/(maxV-minV)); }
+  var line=pts.map(function(p,i){ return (i?'L':'M')+X(i).toFixed(1)+' '+Y(p.v).toFixed(1); }).join(' ');
+  var area='M'+X(0).toFixed(1)+' '+(padT+ih)+' '+pts.map(function(p,i){ return 'L'+X(i).toFixed(1)+' '+Y(p.v).toFixed(1); }).join(' ')+' L'+X(pts.length-1).toFixed(1)+' '+(padT+ih)+' Z';
+  var dots=pts.map(function(p,i){ return '<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="'+(labels?3.2:2.4)+'" fill="var(--gold)"/>'; }).join('');
+  var alvoLine=(extra.length && opts.alvo>=minV && opts.alvo<=maxV)? '<line x1="'+padL+'" y1="'+Y(opts.alvo).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+Y(opts.alvo).toFixed(1)+'" stroke="var(--green)" stroke-width="1.2" stroke-dasharray="5 4" opacity="0.75"/>':'';
+  var xl=''; if(labels){ xl=pts.map(function(p,i){ return '<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9" fill="var(--ink-mute)" font-family="Jost,sans-serif">'+esc(fmtMes(p.mes))+'</text>'; }).join(''); }
+  var gid='g'+Math.random().toString(36).slice(2,7);
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;height:auto;">'+
+    '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--gold)" stop-opacity="0.20"/><stop offset="1" stop-color="var(--gold)" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="'+area+'" fill="url(#'+gid+')"/>'+alvoLine+
+    '<path d="'+line+'" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>'+
+    dots+xl+'</svg>';
+}
+
+/* meses dinâmicos no modal de meta */
+function addMesRow(mes, valor){
+  var c=document.getElementById('serie-rows'); if(!c) return;
+  var div=document.createElement('div'); div.className='mes-row';
+  div.innerHTML='<input type="month" class="mes-in" value="'+(mes||'')+'"><input type="number" step="any" class="val-in" placeholder="valor" value="'+(valor!=null&&valor!==''?valor:'')+'"><button type="button" class="mes-del">&times;</button>';
+  div.querySelector('.mes-del').addEventListener('click', function(){ div.remove(); });
+  c.appendChild(div);
+}
+function coletarSerie(){
+  var arr=[]; var rows=document.querySelectorAll('#serie-rows .mes-row');
+  rows.forEach(function(r){
+    var mes=r.querySelector('.mes-in').value; var val=r.querySelector('.val-in').value;
+    if(mes && val!=='') arr.push({mes:mes, valor:parseFloat(val)||0});
+  });
+  arr.sort(function(a,b){ return (a.mes||'').localeCompare(b.mes||''); });
+  return arr;
+}
 
 function toast(msg, tipo){
   var t=document.getElementById('toast');
@@ -440,17 +504,40 @@ function renderReu(){
 
 function renderMet(){
   var lista=metas.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); });
+
+  // headline: primeira meta com "fatur" no nome e série com 2+ meses
+  var chartEl=document.getElementById('met-chart');
+  var fat=lista.filter(function(m){ return /fatur/i.test(m.nome||'') && (m.serie||[]).length>=2; })[0];
+  if(fat){
+    var s=serieOrdenada(fat); var u=fat.unidade?' '+esc(fat.unidade):'';
+    chartEl.innerHTML='<div class="chart-card">'+
+      '<div class="ctitle">'+esc(fat.nome)+'</div>'+
+      '<div class="csub">Evolução mensal</div>'+
+      '<div class="cbig">'+(fat.unidade?esc(fat.unidade)+' ':'')+fmtNum(s[s.length-1].valor)+' <small>· '+fmtMes(s[s.length-1].mes)+'</small></div>'+
+      '<div class="spark">'+lineChart(s,{w:560,h:180,labels:true,alvo:fat.alvo>0?fat.alvo:null})+'</div>'+
+    '</div>';
+  } else { chartEl.innerHTML=''; }
+
   var el=document.getElementById('lista-met');
   if(!lista.length){ el.innerHTML='<div class="empty"><div class="ico">&#10022;</div><h3>Sem metas</h3><p>Defina metas e KPIs da equipe no +.</p></div>'; return; }
   el.innerHTML=lista.map(function(m){
-    var pct=m.alvo>0?Math.min(100,Math.round(m.atual/m.alvo*100)):0;
-    var full=pct>=100; var u=m.unidade?' '+esc(m.unidade):'';
-    return '<div class="item '+(full?'b-green':'b-gold')+'" data-met="'+m.id+'">'+
-      '<div class="item-top"><div class="item-title">'+esc(m.nome)+'</div>'+
-        (m.periodo?'<span class="tag tag-mute" style="align-self:center;">'+esc(m.periodo)+'</span>':'')+'</div>'+
-      '<div class="meta-row"><div class="meta-val">'+fmtNum(m.atual)+u+' <small>/ '+fmtNum(m.alvo)+u+'</small></div>'+
+    var s=serieOrdenada(m);
+    var atual=valorAtualMeta(m);
+    var temAlvo=m.alvo>0;
+    var pct=temAlvo?Math.min(100,Math.round(atual/m.alvo*100)):0;
+    var full=temAlvo&&pct>=100; var u=m.unidade?' '+esc(m.unidade):'';
+    var bloco;
+    if(temAlvo){
+      bloco='<div class="meta-row"><div class="meta-val">'+fmtNum(atual)+u+' <small>/ '+fmtNum(m.alvo)+u+'</small></div>'+
         '<div class="meta-pct" style="color:'+(full?'var(--green)':'var(--gold)')+'">'+pct+'%</div></div>'+
-      '<div class="progress"><div class="progress-fill'+(full?' full':'')+'" style="width:'+pct+'%"></div></div>'+
+        '<div class="progress"><div class="progress-fill'+(full?' full':'')+'" style="width:'+pct+'%"></div></div>';
+    } else {
+      bloco='<div class="meta-row"><div class="meta-val">'+fmtNum(atual)+u+(s.length?' <small>· '+fmtMes(s[s.length-1].mes)+'</small>':'')+'</div></div>';
+    }
+    return '<div class="item '+(full?'b-green':'b-gold')+'" data-met="'+m.id+'">'+
+      '<div class="item-top"><div class="item-title">'+esc(m.nome)+'</div></div>'+
+      bloco+
+      (s.length>=2?'<div class="spark">'+lineChart(s,{w:320,h:80})+'</div>':'')+
     '</div>';
   }).join('');
 }
@@ -599,44 +686,61 @@ function removerReuniao(id){
 
 function criarMetaModal(){
   abrir(head('Nova meta / KPI')+'<div class="modal-body">'+
-    '<div class="field"><label>Nome da meta</label><input id="m-nome" placeholder="Ex: Faturamento do mês"></div>'+
-    '<div class="field-row"><div class="field"><label>Valor atual</label><input type="number" id="m-atual" step="any" placeholder="0"></div>'+
-      '<div class="field"><label>Meta (alvo)</label><input type="number" id="m-alvo" step="any" placeholder="0"></div></div>'+
+    '<div class="field"><label>Nome da meta</label><input id="m-nome" placeholder="Ex: Faturamento"></div>'+
     '<div class="field-row"><div class="field"><label>Unidade</label><input id="m-unid" placeholder="R$, %, agend..."></div>'+
-      '<div class="field"><label>Período</label><input id="m-per" placeholder="Julho/2026"></div></div>'+
+      '<div class="field"><label>Meta / alvo (opcional)</label><input type="number" id="m-alvo" step="any" placeholder="0"></div></div>'+
+    '<div class="field"><label>Evolução mensal (opcional)</label><div id="serie-rows"></div>'+
+      '<button type="button" class="btn-add-mes" onclick="addMesRow()">+ Adicionar mês</button></div>'+
     '<button class="btn btn-primary" onclick="salvarMeta()">Adicionar meta</button></div>');
+  addMesRow();
 }
 function salvarMeta(){
-  var nome=document.getElementById('m-nome').value.trim(), alvo=parseFloat(document.getElementById('m-alvo').value);
+  var nome=document.getElementById('m-nome').value.trim();
   if(!nome){ toast('Dá um nome pra meta.','err'); return; }
-  if(isNaN(alvo)||alvo<=0){ toast('Informe um alvo válido.','err'); return; }
+  var serie=coletarSerie();
+  var alvoRaw=document.getElementById('m-alvo').value;
+  var alvo=alvoRaw!==''?(parseFloat(alvoRaw)||0):0;
+  var atual=serie.length? serie[serie.length-1].valor : 0;
   db.collection('gestao_metas').add({
-    nome:nome, alvo:alvo, atual:parseFloat(document.getElementById('m-atual').value)||0,
-    unidade:document.getElementById('m-unid').value.trim(), periodo:document.getElementById('m-per').value.trim(), criadoEm:Date.now()
+    nome:nome, alvo:alvo, atual:atual,
+    unidade:document.getElementById('m-unid').value.trim(),
+    periodo:'', serie:serie, criadoEm:Date.now()
   }).then(function(){ fechar(); toast('Meta adicionada!','ok'); }).catch(function(e){ toast('Erro: '+e.message,'err'); });
 }
 function abrirMeta(id){
   var m=metas.find(function(x){return x.id===id;}); if(!m) return;
-  var pct=m.alvo>0?Math.min(100,Math.round(m.atual/m.alvo*100)):0; var u=m.unidade?' '+esc(m.unidade):'';
+  var s=serieOrdenada(m); var atual=valorAtualMeta(m);
+  var temAlvo=m.alvo>0; var pct=temAlvo?Math.min(100,Math.round(atual/m.alvo*100)):0; var u=m.unidade?' '+esc(m.unidade):'';
+  var topo;
+  if(s.length>=2){
+    topo='<div class="detail-block"><div class="detail-label">Evolução mensal</div>'+
+      '<div class="spark" style="margin-top:4px;">'+lineChart(s,{w:520,h:170,labels:true,alvo:temAlvo?m.alvo:null})+'</div></div>';
+  } else if(temAlvo){
+    topo='<div class="detail-block"><div class="detail-label">Progresso</div>'+
+      '<div class="meta-row"><div class="meta-val">'+fmtNum(atual)+u+' <small>/ '+fmtNum(m.alvo)+u+'</small></div><div class="meta-pct" style="color:'+(pct>=100?'var(--green)':'var(--gold)')+'">'+pct+'%</div></div>'+
+      '<div class="progress"><div class="progress-fill'+(pct>=100?' full':'')+'" style="width:'+pct+'%"></div></div></div>';
+  } else { topo=''; }
   abrir(head('Editar meta')+'<div class="modal-body">'+
-    '<div class="detail-block"><div class="detail-label">Progresso atual</div>'+
-      '<div class="meta-row"><div class="meta-val">'+fmtNum(m.atual)+u+' <small>/ '+fmtNum(m.alvo)+u+'</small></div><div class="meta-pct" style="color:'+(pct>=100?'var(--green)':'var(--gold)')+'">'+pct+'%</div></div>'+
-      '<div class="progress"><div class="progress-fill'+(pct>=100?' full':'')+'" style="width:'+pct+'%"></div></div></div>'+
+    topo+
     '<div class="field" style="margin-top:16px;"><label>Nome da meta</label><input id="e-mnome" value="'+escAttr(m.nome)+'"></div>'+
-    '<div class="field-row"><div class="field"><label>Valor atual</label><input type="number" id="e-matual" step="any" value="'+m.atual+'"></div>'+
-      '<div class="field"><label>Meta (alvo)</label><input type="number" id="e-malvo" step="any" value="'+m.alvo+'"></div></div>'+
     '<div class="field-row"><div class="field"><label>Unidade</label><input id="e-munid" value="'+escAttr(m.unidade||'')+'"></div>'+
-      '<div class="field"><label>Período</label><input id="e-mper" value="'+escAttr(m.periodo||'')+'"></div></div>'+
+      '<div class="field"><label>Meta / alvo (opcional)</label><input type="number" id="e-malvo" step="any" value="'+(m.alvo||'')+'"></div></div>'+
+    '<div class="field"><label>Evolução mensal</label><div id="serie-rows"></div>'+
+      '<button type="button" class="btn-add-mes" onclick="addMesRow()">+ Adicionar mês</button></div>'+
     '<button class="btn btn-primary" onclick="salvarEdicaoMeta(\''+id+'\')">Salvar alterações</button>'+
     '<button class="btn btn-danger" style="margin-top:10px;" onclick="removerMeta(\''+id+'\')">Remover meta</button></div>');
+  if(s.length){ s.forEach(function(p){ addMesRow(p.mes, p.valor); }); } else { addMesRow(); }
 }
 function salvarEdicaoMeta(id){
-  var nome=document.getElementById('e-mnome').value.trim(), alvo=parseFloat(document.getElementById('e-malvo').value);
+  var nome=document.getElementById('e-mnome').value.trim();
   if(!nome){ toast('Dá um nome pra meta.','err'); return; }
-  if(isNaN(alvo)||alvo<=0){ toast('Informe um alvo válido.','err'); return; }
+  var serie=coletarSerie();
+  var alvoRaw=document.getElementById('e-malvo').value;
+  var alvo=alvoRaw!==''?(parseFloat(alvoRaw)||0):0;
+  var atual=serie.length? serie[serie.length-1].valor : 0;
   db.collection('gestao_metas').doc(id).update({
-    nome:nome, alvo:alvo, atual:parseFloat(document.getElementById('e-matual').value)||0,
-    unidade:document.getElementById('e-munid').value.trim(), periodo:document.getElementById('e-mper').value.trim()
+    nome:nome, alvo:alvo, atual:atual,
+    unidade:document.getElementById('e-munid').value.trim(), serie:serie
   }).then(function(){ fechar(); toast('Meta atualizada!','ok'); })
     .catch(function(e){ toast('Erro: '+e.message,'err'); });
 }
