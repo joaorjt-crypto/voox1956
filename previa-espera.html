@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#E6DCCF">
+<title>Voox 1956 — Lista de espera</title>
+<meta name="description" content="Cabelo, unhas, estética, depilação e podologia. Veja serviços e preços, entre na lista de espera ou agende pelo WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&amp;family=Jost:wght@300;400;500&amp;family=Great+Vibes&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<style>
+/* =====================================================
+   TOKENS
+   ===================================================== */
+:root{
+  --page:#E6DCCF; --panel:#F1ECE3; --card-solid:#FBF7F1;
+  --ink:#2A2420; --ink-soft:#4B4139; --muted:#7D7064;
+  --gold:#B07D4C; --gold-soft:rgba(176,125,76,.12); --gold-line:rgba(176,125,76,.28);
+  --glass:rgba(255,251,245,.58); --glass-strong:rgba(255,251,245,.78); --glass-line:rgba(255,255,255,.78);
+  --hair:rgba(42,36,32,.12);
+  --dark2:#FBF7F1;
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --sans:'Jost',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --script:'Great Vibes','Snell Roundhand','Apple Chancery',cursive;
+  --hdr-h:64px;
+  --hdr-total:calc(var(--hdr-h) + env(safe-area-inset-top,0px));
+  --shadow:0 30px 60px -28px rgba(92,62,34,.38);
+  color-scheme:light; box-sizing:border-box;
+}
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+html{background:var(--page);-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);font-weight:300;color:var(--ink);min-height:100vh;
+  background:
+    radial-gradient(70% 55% at 85% 0%,#F3E6D6 0%,transparent 70%),
+    radial-gradient(60% 50% at 0% 100%,#DCCDBB 0%,transparent 70%),
+    var(--page);
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(112px + env(safe-area-inset-bottom,0px));
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:12px}
+
+/* =====================================================
+   MOLDURA (celular / tablet = padrão)
+   ===================================================== */
+.panel{padding:0 16px}
+.top{
+  position:sticky;top:0;z-index:40;margin:0 -16px;
+  padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;min-height:var(--hdr-total);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  background:rgba(241,236,227,.86);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--hair);
+}
+.brand{display:flex;flex-direction:column;line-height:1}
+.brand-script{font-family:var(--script);font-size:19px;color:var(--ink-soft);margin-left:2px}
+.brand-name{font-family:var(--serif);font-weight:400;font-size:28px;letter-spacing:-.01em;margin-top:-4px}
+.brand-name span{font-weight:300;color:var(--ink-soft);margin-left:4px}
+
+.pillnav,.top-actions{display:none}
+.top-mobile{display:flex;gap:8px}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink);transition:background .2s}
+.icon-btn:hover{background:#fff}
+
+.pillnav{gap:4px;padding:6px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.pillnav a{font-size:14px;font-weight:400;color:var(--ink-soft);padding:10px 20px;border-radius:999px;transition:background .2s,color .2s;white-space:nowrap}
+.pillnav a:hover{background:rgba(42,36,32,.06)}
+.pillnav a[aria-current="page"]{background:var(--ink);color:var(--panel)}
+.top-actions{align-items:center;gap:10px}
+.cta{display:inline-flex;align-items:center;gap:14px;background:var(--ink);color:var(--panel);border-radius:999px;padding:6px 6px 6px 22px;font-size:14px;font-weight:400;white-space:nowrap}
+.cta-go{width:40px;height:40px;border-radius:50%;background:var(--panel);color:var(--ink);display:grid;place-items:center;transition:transform .25s}
+.cta:hover .cta-go{transform:translateX(3px)}
+
+.stage{display:block;padding-top:8px}
+.rail,.specialties{display:none}
+.center{container-type:inline-size;container-name:center}
+
+/* barra inferior (celular) */
+.tabbar{position:fixed;z-index:30;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-radius:999px;background:rgba(255,251,245,.82);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);box-shadow:0 14px 34px -14px rgba(60,40,22,.4)}
+.tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:999px;font-size:11px;font-weight:400;color:var(--ink-soft)}
+.tabbar a[aria-current="page"]{background:var(--ink);color:var(--panel)}
+
+.foot{font-size:13px;color:var(--muted);line-height:1.8;border-top:1px solid var(--hair);margin-top:40px;padding:24px 0 8px}
+.foot a{color:var(--ink);font-weight:400}
+
+/* =====================================================
+   VIEWS — só o centro troca
+   ===================================================== */
+.view{display:none;animation:viewin .45s cubic-bezier(.2,.7,.2,1) both}
+body[data-view="inicio"] #v-inicio{display:flex;flex-direction:column}
+body[data-view="servicos"] #v-servicos,
+body[data-view="espera"] #v-espera,
+body[data-view="bebidas"] #v-bebidas{display:block}
+@keyframes viewin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px 32px;padding:26px 0 22px}
+.eyebrow{font-family:var(--script);font-size:24px;color:var(--gold);line-height:1}
+.pagehead h1{font-family:var(--serif);font-weight:300;font-size:clamp(2.8rem,10cqw,4.6rem);line-height:.98;letter-spacing:-.02em;margin-top:2px}
+.pagehead p{font-size:15.5px;line-height:1.6;color:var(--ink-soft);max-width:52ch;margin-top:14px}
+
+/* =====================================================
+   INÍCIO
+   ===================================================== */
+#v-inicio .hero-copy h1{font-family:var(--serif);font-weight:300;font-size:clamp(3.2rem,15cqw,5.2rem);line-height:.94;letter-spacing:-.02em;padding-top:30px}
+.lede{font-size:15.5px;line-height:1.6;color:var(--ink-soft);max-width:36ch;margin-top:18px}
+.hero-actions{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:26px}
+.btn-dark{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ink);color:var(--panel);padding:17px 22px 17px 26px;border-radius:999px;font-size:15px;font-weight:400;border:0;cursor:pointer}
+.btn-dark svg{transition:transform .25s}
+.btn-dark:hover svg{transform:translateX(3px)}
+.btn-ghost{display:inline-flex;align-items:center;gap:12px;font-size:15px;font-weight:400;color:var(--ink);padding:2px 0}
+.ring{width:46px;height:46px;border-radius:50%;border:1px solid var(--ink);display:grid;place-items:center;transition:background .2s,color .2s}
+.btn-ghost:hover .ring{background:var(--ink);color:var(--panel)}
+
+.arch{
+  position:relative;width:100%;max-width:520px;aspect-ratio:4/5;align-self:center;margin-top:40px;
+  border-radius:999px 999px 30px 30px;overflow:hidden;box-shadow:var(--shadow);
+  container-type:inline-size;
+  background:
+    linear-gradient(118deg,transparent 30%,rgba(255,244,228,.38) 44%,transparent 58%),
+    radial-gradient(42% 28% at 50% 22%,rgba(255,245,232,.9) 0%,rgba(255,245,232,0) 100%),
+    linear-gradient(180deg,#E8D1B8 0%,#DDB690 36%,#C18F64 68%,#93623E 100%);
+}
+.arch::before{content:"";position:absolute;inset:0;opacity:.22;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .32 0 0 0 0 .2 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.arch-year{position:absolute;left:0;right:0;bottom:calc(18% + 10px);text-align:center;font-family:var(--serif);font-weight:300;font-size:clamp(4rem,7vw,8rem);font-size:clamp(3.4rem,36cqw,9rem);letter-spacing:.02em;line-height:1;color:rgba(255,250,243,.62)}
+.arch-photo{position:absolute;inset:0;background:url("voox-salao.jpg") center/cover no-repeat}
+.arch-frame{position:absolute;inset:12px;border-radius:999px 999px 20px 20px;border:1px solid rgba(255,255,255,.62);pointer-events:none}
+
+.cards{position:relative;z-index:2;display:flex;flex-direction:column;gap:14px;margin-top:-64px;padding:0 8px}
+.card{position:relative;border-radius:28px;padding:20px;background:var(--glass);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15);box-shadow:0 20px 40px -26px rgba(92,62,34,.35)}
+.card h2{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.1;letter-spacing:-.005em}
+.card p{font-size:13.5px;line-height:1.55;color:var(--muted)}
+.card-drinks{display:grid;grid-template-columns:96px 1fr;gap:16px;align-items:stretch}
+.drinks-thumb{border-radius:48px 48px 16px 16px;display:grid;place-items:center;color:#FFF8EF;min-height:124px;background:radial-gradient(60% 45% at 50% 30%,rgba(255,244,230,.7) 0%,transparent 100%),linear-gradient(160deg,#D6AE86 0%,#9C6B45 100%)}
+.drinks-thumb svg{width:44px;height:44px;stroke-width:1.2}
+.drinks-body{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+.free{display:inline-block;align-self:flex-start;font-size:12px;font-weight:400;color:var(--gold);border:1px solid rgba(176,125,76,.4);border-radius:999px;padding:2px 10px}
+.text-link{display:inline-flex;align-items:center;gap:8px;margin-top:auto;font-size:13.5px;font-weight:400;color:var(--ink)}
+.text-link svg{width:16px;height:16px}
+.card-steps{display:flex;flex-direction:column;gap:16px}
+.steps-head{display:flex;flex-direction:column;gap:2px}
+.steps-head p{font-size:13.5px}
+.steps{list-style:none;display:grid;grid-template-columns:repeat(3,1fr)}
+.steps li{display:flex;flex-direction:column;gap:6px;padding:0 12px;border-left:1px solid var(--hair)}
+.steps li:first-child{border-left:0;padding-left:0}
+.steps svg{width:24px;height:24px;stroke-width:1.3;margin-bottom:6px;color:var(--ink)}
+.steps b{font-family:var(--serif);font-weight:500;font-size:18px;line-height:1.15}
+.steps span{font-size:12.5px;line-height:1.45;color:var(--muted)}
+.card-dark{background:linear-gradient(170deg,#3A322B 0%,#26201C 100%);border-color:rgba(255,255,255,.08);color:#F4EEE6;display:flex;flex-direction:column;gap:8px}
+.card-dark .dark-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:auto;padding-bottom:18px}
+.dark-icon{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.dark-go{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#F4EEE6;color:var(--ink);transition:transform .25s}
+.card-dark:hover .dark-go{transform:rotate(45deg)}
+.card-dark h2{font-size:26px}
+.card-dark p{color:rgba(244,238,230,.62)}
+
+.spec-mobile{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;margin-top:34px}
+.spec-mobile a{border-top:1px solid var(--hair);padding:10px 0;font-size:15px;line-height:1.4;color:var(--ink-soft)}
+
+/* =====================================================
+   SERVIÇOS E PREÇOS
+   ===================================================== */
+.search-box{position:relative;flex:1 1 320px;max-width:440px}
+.search-box input{width:100%;background:var(--card-solid);border:1px solid var(--hair);border-radius:14px;padding:15px 16px 15px 46px;font-family:var(--sans);font-size:15px;font-weight:300;color:var(--ink);outline:none;transition:border-color .2s}
+.search-box input::placeholder{color:var(--muted)}
+.search-box input:focus{border-color:var(--gold)}
+.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);display:grid}
+#search-results{display:none;padding-bottom:6px}
+
+.nav-cats{position:sticky;top:var(--hdr-total);z-index:20;margin:0 -16px;padding:10px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(241,236,227,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--hair)}
+.nav-cats::-webkit-scrollbar{display:none}
+.nav-inner{display:flex;gap:6px;min-width:max-content}
+.nav-btn{background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink-soft);font-size:13px;font-weight:400;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s,border-color .2s}
+.nav-btn:hover{border-color:var(--gold-line)}
+.nav-btn.active{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+
+.cat-section{padding:36px 0 4px;scroll-margin-top:calc(var(--hdr-total) + 64px)}
+.cat-header{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.cat-icon{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line)}
+.cat-title{font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1;letter-spacing:-.01em}
+.cat-count{font-size:12px;color:var(--muted);letter-spacing:.02em;margin-top:5px}
+.services-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:10px}
+.service-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;background:var(--card-solid);border:1px solid var(--hair);border-radius:14px}
+.service-name{font-size:14px;font-weight:300;color:var(--ink-soft);line-height:1.4}
+.service-price{font-family:var(--serif);font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap;flex-shrink:0;background:var(--gold-soft);border:1px solid var(--gold-line);padding:3px 13px;border-radius:999px}
+.service-price.free{color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:400;letter-spacing:.04em;background:transparent;border-color:var(--hair);text-transform:uppercase}
+
+/* =====================================================
+   BEBIDAS
+   ===================================================== */
+.note{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;color:var(--gold);border:1px solid var(--gold-line);background:var(--gold-soft);padding:7px 14px;border-radius:999px}
+.note svg{width:15px;height:15px}
+.bev-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:28px;align-items:start;padding-top:4px}
+.d-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.d-icon{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line)}
+.d-head h2{font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1;letter-spacing:-.01em}
+.d-grid{background:var(--card-solid);border:1px solid var(--hair);border-radius:20px;overflow:hidden}
+.d-item{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;border-top:1px solid var(--hair)}
+.d-item:first-child{border-top:0}
+.d-name{font-size:14.5px;font-weight:400;color:var(--ink);display:flex;flex-direction:column;gap:2px}
+.d-sub{font-size:12px;font-weight:300;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.d-price{font-family:var(--serif);font-size:17px;font-weight:500;color:var(--ink);white-space:nowrap;flex-shrink:0}
+.d-price.free{font-family:var(--sans);font-size:12px;font-weight:400;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line);padding:4px 12px;border-radius:999px}
+
+/* =====================================================
+   LISTA DE ESPERA
+   ===================================================== */
+.login-btn,.logout-btn{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:400;cursor:pointer;border-radius:999px;padding:10px 16px;transition:background .2s,border-color .2s}
+.login-btn{background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink)}
+.login-btn:hover{border-color:var(--gold-line)}
+.logout-btn{background:var(--ink);border:1px solid var(--ink);color:var(--panel)}
+#header-auth{display:flex;align-items:center;gap:8px}
+.fila-layout{display:grid;grid-template-columns:1fr;gap:24px}
+.form-card{background:var(--card-solid);border:1px solid var(--hair);border-radius:24px;padding:26px 22px;box-shadow:0 24px 50px -32px rgba(92,62,34,.4)}
+.form-card-title{font-family:var(--serif);font-weight:400;font-size:1.9rem;line-height:1.05;letter-spacing:-.01em}
+.form-card-title em{font-style:italic;color:var(--gold)}
+.form-card-sub{font-size:14px;color:var(--muted);line-height:1.55;margin:8px 0 20px;max-width:46ch}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:7px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;font-weight:400;color:var(--ink-soft);letter-spacing:.03em;text-transform:uppercase}
+.form-group input,.form-group select{width:100%;background:#fff;border:1px solid var(--hair);border-radius:12px;padding:13px 14px;font-family:var(--sans);font-size:15px;font-weight:300;color:var(--ink);outline:none;transition:border-color .2s}
+.form-group input::placeholder{color:var(--muted)}
+.form-group input:focus,.form-group select:focus{border-color:var(--gold)}
+.hint{font-size:11.5px;color:var(--muted)}
+.lgpd{display:flex;align-items:flex-start;gap:10px;background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.lgpd input{margin-top:3px;flex-shrink:0;accent-color:var(--gold);width:15px;height:15px}
+.lgpd label{font-size:12px;color:var(--ink-soft);line-height:1.7;cursor:pointer}
+.lgpd label b{color:var(--ink);font-weight:500}
+.lgpd label .g{color:var(--gold);font-weight:500}
+.btn-block{width:100%;justify-content:center}
+.btn-block:disabled{opacity:.5;cursor:wait}
+.alert{display:none;border-radius:10px;padding:11px 14px;font-size:13px;margin-bottom:14px}
+.alert-err{background:rgba(155,58,58,.08);border:1px solid rgba(155,58,58,.3);color:#8c2f2f}
+.alert-ok{background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold)}
+.confirmacao{display:none;text-align:center;background:var(--card-solid);border:1px solid var(--hair);border-radius:24px;padding:48px 24px;box-shadow:0 24px 50px -32px rgba(92,62,34,.4)}
+.conf-mark{width:66px;height:66px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line)}
+.conf-mark svg{width:30px;height:30px}
+.confirmacao-title{font-family:var(--serif);font-weight:400;font-size:2rem;letter-spacing:-.01em}
+.confirmacao-title em{font-style:italic;color:var(--gold)}
+.confirmacao-text{font-size:14.5px;color:var(--ink-soft);line-height:1.7;margin-top:10px}
+.confirmacao-text strong{color:var(--ink)}
+.how{background:var(--glass);border:1px solid var(--glass-line);border-radius:24px;padding:22px;box-shadow:0 20px 40px -28px rgba(92,62,34,.35)}
+.how h2{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.1}
+.how ol{list-style:none;display:flex;flex-direction:column;gap:16px;margin-top:18px}
+.how li{display:flex;gap:14px;align-items:flex-start}
+.how .ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line)}
+.how b{display:block;font-family:var(--serif);font-weight:500;font-size:19px;line-height:1.15}
+.how span.t{font-size:13px;color:var(--muted);line-height:1.45}
+#admin-fila-panel{margin-bottom:24px}
+.fila-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px}
+.fila-title{font-family:var(--serif);font-weight:400;font-size:2rem;letter-spacing:-.01em}
+.fila-title em{font-style:italic;color:var(--gold)}
+.fila-count{font-size:13px;color:var(--muted)}
+.filter-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:16px}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-btn{background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink-soft);font-size:12.5px;font-weight:400;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s,border-color .2s}
+.filter-btn:hover{border-color:var(--gold-line)}
+.filter-btn.active{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.fila-list{display:flex;flex-direction:column;gap:12px}
+.empty{text-align:center;color:var(--muted);font-size:14px;padding:36px 16px;background:var(--card-solid);border:1px dashed var(--hair);border-radius:16px}
+.fila-item{display:flex;gap:14px;background:var(--card-solid);border:1px solid var(--hair);border-radius:16px;padding:16px}
+.fila-num{width:30px;height:30px;flex-shrink:0;border-radius:50%;background:var(--ink);color:var(--panel);display:grid;place-items:center;font-family:var(--serif);font-size:15px;font-weight:500}
+.fila-info{flex:1;min-width:0}
+.fila-nome{font-size:15.5px;font-weight:500;color:var(--ink)}
+.fila-servico{font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.4}
+.fila-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.badge{font-size:11px;font-weight:400;padding:3px 10px;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+.badge-aguardando{background:rgba(176,125,76,.14);color:var(--gold);border:1px solid var(--gold-line)}
+.badge-contatada{background:rgba(90,120,160,.14);color:#4d6a90;border:1px solid rgba(90,120,160,.3)}
+.badge-confirmada{background:rgba(90,140,90,.14);color:#4a7a4a;border:1px solid rgba(90,140,90,.3)}
+.badge-removido{background:rgba(120,110,100,.12);color:var(--muted);border:1px solid var(--hair)}
+.badge-data{background:var(--panel);color:var(--ink-soft);border:1px solid var(--hair)}
+.badge-horario,.badge-tempo{background:var(--panel);color:var(--muted);border:1px solid var(--hair)}
+.fila-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.action-btn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;cursor:pointer;border-radius:999px;padding:8px 14px;background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink);transition:background .2s,border-color .2s}
+.action-btn:hover{border-color:var(--gold-line)}
+.action-btn.wpp{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.action-btn.danger{color:#8c2f2f;border-color:rgba(155,58,58,.3)}
+.action-btn.danger:hover{background:rgba(155,58,58,.08)}
+.flatpickr-day.selected,.flatpickr-day.selected:hover{background:var(--gold);border-color:var(--gold)}
+.flatpickr-day.today{border-color:var(--gold-line)}
+
+/* =====================================================
+   LARGURAS DO CENTRO (container query)
+   ===================================================== */
+@container center (min-width:640px){
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card-dark{grid-column:1/-1}
+  .hero-actions{flex-direction:row;flex-wrap:wrap;align-items:center;gap:14px 22px}
+  .btn-dark{justify-content:center;padding:16px 26px}
+}
+@container center (max-width:1099px){
+  .form-grid{grid-template-columns:1fr}
+}
+@container center (min-width:820px){
+  body[data-view="inicio"] #v-inicio{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,32%);
+    grid-template-rows:minmax(0,1fr) auto;column-gap:clamp(24px,3vw,56px);min-height:100%;
+  }
+  #v-inicio .hero-copy{grid-column:1;grid-row:1;align-self:center;padding:10px 0 104px 8px}
+  #v-inicio .hero-copy h1{font-size:clamp(3.4rem,7.4cqw,7rem);padding-top:0}
+  #v-inicio .lede{font-size:clamp(15.5px,1.15cqw + 6px,19px);max-width:38ch}
+  #v-inicio .arch{grid-column:2;grid-row:1;aspect-ratio:auto;min-height:300px;max-width:none;margin-top:0;align-self:stretch}
+  #v-inicio .cards{grid-column:1/-1;grid-row:2;margin-top:-84px;padding:0;grid-template-columns:1.2fr 1.25fr .8fr}
+  #v-inicio .card-dark{grid-column:auto}
+  .card-drinks{grid-template-columns:132px 1fr;gap:20px}
+  .drinks-thumb{min-height:150px;border-radius:66px 66px 18px 18px}
+  .steps li{padding:0 16px}
+  .steps b{font-size:19px}
+  .card-dark .dark-top{padding-bottom:22px}
+  .fila-layout{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}
+}
+@container center (min-width:1250px){
+  .card{padding:24px}
+  .card h2{font-size:27px}
+  .card p{font-size:14.5px}
+  .card-dark h2{font-size:30px}
+}
+
+/* =====================================================
+   DESKTOP — moldura quase da tela toda
+   ===================================================== */
+@media (min-width:1100px){
+  html,body{height:100%}
+  body{padding:16px;overflow:hidden}
+  .panel{
+    height:100%;max-width:2400px;margin:0 auto;padding:20px 28px 26px;
+    display:grid;grid-template-rows:auto minmax(0,1fr);
+    border-radius:36px;border:1px solid rgba(255,255,255,.6);
+    box-shadow:0 50px 100px -40px rgba(80,52,28,.45);
+    background:
+      radial-gradient(55% 60% at 72% 30%,#F8E6D1 0%,transparent 70%),
+      radial-gradient(40% 45% at 18% 85%,#EADAC7 0%,transparent 72%),
+      var(--panel);
+  }
+  .top{position:static;margin:0;padding:0;min-height:0;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .brand-script{font-size:19px}
+  .brand-name{font-size:30px}
+  .pillnav{display:flex}
+  .top-actions{display:flex}
+  .top-mobile{display:none}
+  .tabbar{display:none}
+  .stage{display:grid;grid-template-columns:78px minmax(0,1fr);column-gap:32px;margin-top:22px;padding-top:0;min-height:0}
+  .rail{display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;border-radius:999px;align-self:stretch;min-height:0;overflow:hidden;background:var(--glass-strong);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  .rail .mono{width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--panel);display:grid;place-items:center;font-family:var(--serif);font-size:26px;font-weight:400;line-height:1;padding-bottom:3px}
+  .rail .icon-btn{width:52px;height:52px;background:transparent;border-color:transparent}
+  .rail .icon-btn:hover{background:rgba(255,255,255,.8)}
+  .rail-note{margin-top:auto;writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;letter-spacing:.04em;color:var(--muted);padding:14px 0 8px}
+  .center{
+    min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 12px 0 4px;margin:0 -4px 0 -4px;
+    scrollbar-width:thin;scrollbar-color:rgba(42,36,32,.22) transparent;
+  }
+  .nav-cats{top:0;margin:0 -4px;padding:10px 4px}
+  .cat-section{scroll-margin-top:72px}
+  .foot{display:none}
+}
+@media (min-width:1100px) and (max-width:1399px){
+  .spec-mobile{display:grid}
+}
+@media (min-width:1400px){
+  .stage{grid-template-columns:78px minmax(0,1fr) 150px}
+  .specialties{display:flex;flex-direction:column;border-left:1px solid var(--hair);padding-left:18px;align-self:start;margin-top:8px}
+  .specialties a{font-size:14px;line-height:2.15;color:var(--ink-soft);transition:color .2s}
+  .specialties a:hover{color:var(--gold)}
+  .spec-mobile{display:none}
+}
+@media (min-width:1100px) and (max-height:640px){
+  html,body{height:auto}
+  body{overflow:auto}
+  .panel{height:auto;min-height:640px}
+  .center{overflow:visible}
+}
+
+/* =====================================================
+   MOVIMENTO — uma entrada só, na primeira abertura
+   ===================================================== */
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes open{from{clip-path:inset(100% 0 0 0 round 999px 999px 30px 30px)}to{clip-path:inset(0 0 0 0 round 999px 999px 30px 30px)}}
+.intro #v-inicio .hero-copy h1{animation:rise .9s .1s cubic-bezier(.2,.7,.2,1) both}
+.intro #v-inicio .lede,.intro #v-inicio .hero-actions{animation:rise .9s .3s cubic-bezier(.2,.7,.2,1) both}
+.intro #v-inicio .arch{animation:open 1.3s .2s cubic-bezier(.65,0,.25,1) both}
+@media (prefers-reduced-motion:reduce){
+  .view,.intro #v-inicio .hero-copy h1,.intro #v-inicio .lede,.intro #v-inicio .hero-actions,.intro #v-inicio .arch{animation:none}
+}
+</style>
+</head>
+<body data-view="espera">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></symbol>
+  <symbol id="i-arrow-ne" viewBox="0 0 24 24"><path d="M7 17 17 7"></path><path d="M8 7h9v9"></path></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5"></path><path d="m11 18-6-6 6-6"></path></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M20 4 8.12 15.88"></path><path d="M14.47 14.48 20 20"></path><path d="M8.12 8.12 12 12"></path></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></symbol>
+  <symbol id="i-cup" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"></path><path d="M6 2v3"></path><path d="M10 2v3"></path><path d="M14 2v3"></path></symbol>
+  <symbol id="i-glass" viewBox="0 0 24 24"><path d="M5 3h14l-1.4 5.4a6 6 0 0 1-11.2 0z"></path><path d="M12 15v5"></path><path d="M8 20h8"></path></symbol>
+  <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><path d="M17.5 6.5h.01"></path></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"></path></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"></path></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4"></path><path d="M8 3v4"></path><path d="M3 10h18"></path></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"></path></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v6"></path><path d="M12 15v6"></path><path d="M3 12h6"></path><path d="M15 12h6"></path><path d="m6.3 6.3 3 3"></path><path d="m14.7 14.7 3 3"></path><path d="m17.7 6.3-3 3"></path><path d="m9.3 14.7-3 3"></path></symbol>
+  <symbol id="i-face" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M9 15c.8.7 1.9 1 3 1s2.2-.3 3-1"></path></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2"></path><path d="M2 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2"></path></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 4 13c0-6 7-9 15-9 0 8-3 15-9 15z"></path><path d="M4 20c3-4 6-6 10-7"></path></symbol>
+  <symbol id="i-foot" viewBox="0 0 24 24"><path d="M7 14c-1 2-2 3-2 5a2 2 0 0 0 4 0c0-2 1-3 1-5a2 2 0 0 0-3-2 2 2 0 0 0 0 2z"></path><circle cx="14" cy="5" r="1.4"></circle><circle cx="17.5" cy="6.5" r="1.1"></circle><circle cx="19.5" cy="9.5" r="1"></circle><circle cx="12" cy="6" r="1.1"></circle></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="12" rx="1"></rect><path d="M4 13h16"></path><path d="M12 9v12"></path><path d="M12 9S9 9 8 7.5 8.5 4 10 4.5 12 9 12 9z"></path><path d="M12 9s3 0 4-1.5S15.5 4 14 4.5 12 9 12 9z"></path></symbol>
+</svg>
+
+<div class="panel">
+
+  <!-- ============ TOPO (fixo) ============ -->
+  <header class="top">
+    <a class="brand" href="#/" aria-label="Voox 1956, início">
+      <span class="brand-script">Estética</span>
+      <span class="brand-name">Voox<span>1956</span></span>
+    </a>
+
+    <nav class="pillnav" aria-label="Principal">
+      <a href="#/" data-route="inicio">Início</a>
+      <a href="#/servicos" data-route="servicos">Serviços e preços</a>
+      <a href="#/espera" data-route="espera" aria-current="page">Lista de espera</a>
+      <a href="#/bebidas" data-route="bebidas">Bebidas</a>
+    </nav>
+
+    <div class="top-actions">
+      <a class="icon-btn" href="https://instagram.com/voox_1956" target="_blank" rel="noopener" aria-label="Instagram @voox_1956"><svg class="i"><use href="#i-insta"></use></svg></a>
+      <a class="cta" href="https://wa.me/5551992740380" target="_blank" rel="noopener">Agendar no WhatsApp<span class="cta-go"><svg class="i"><use href="#i-arrow"></use></svg></span></a>
+    </div>
+
+    <div class="top-mobile">
+      <a class="icon-btn" href="https://instagram.com/voox_1956" target="_blank" rel="noopener" aria-label="Instagram @voox_1956"><svg class="i"><use href="#i-insta"></use></svg></a>
+      <a class="icon-btn" href="https://wa.me/5551992740380" target="_blank" rel="noopener" aria-label="WhatsApp (51) 99274-0380"><svg class="i"><use href="#i-chat"></use></svg></a>
+    </div>
+  </header>
+
+  <div class="stage">
+
+    <!-- ============ LATERAL ESQUERDA (fixa) ============ -->
+    <aside class="rail" aria-label="Contato">
+      <a class="mono" href="#/" aria-label="Início">V</a>
+      <a class="icon-btn" href="https://instagram.com/voox_1956" target="_blank" rel="noopener" aria-label="Instagram"><svg class="i"><use href="#i-insta"></use></svg></a>
+      <a class="icon-btn" href="https://wa.me/5551992740380" target="_blank" rel="noopener" aria-label="WhatsApp"><svg class="i"><use href="#i-chat"></use></svg></a>
+      <a class="icon-btn" href="tel:+5551992740380" aria-label="Ligar (51) 99274-0380"><svg class="i"><use href="#i-phone"></use></svg></a>
+      <span class="rail-note">Fechado aos domingos</span>
+    </aside>
+
+    <!-- ============ CENTRO (é só isto que troca) ============ -->
+    <main class="center" id="center">
+
+      <!-- ---- INÍCIO ---- -->
+      <section class="view" id="v-inicio" aria-label="Início">
+        <div class="hero-copy">
+          <h1>Um tempo<br>só seu.</h1>
+          <p class="lede">Cabelo, unhas, estética, depilação e podologia no mesmo lugar, com café e chá por nossa conta.</p>
+          <div class="hero-actions">
+            <a class="btn-dark" href="#/servicos">Ver serviços e preços<svg class="i"><use href="#i-arrow"></use></svg></a>
+            <a class="btn-ghost" href="#/espera"><span class="ring"><svg class="i"><use href="#i-clock"></use></svg></span>Entrar na lista de espera</a>
+          </div>
+        </div>
+
+        <figure class="arch" aria-hidden="true">
+          <span class="arch-year">1956</span>
+          <span class="arch-photo"></span>
+          <span class="arch-frame"></span>
+        </figure>
+
+        <div class="cards">
+          <a class="card card-drinks" href="#/bebidas">
+            <span class="drinks-thumb"><svg class="i"><use href="#i-cup"></use></svg></span>
+            <div class="drinks-body">
+              <span class="free">Cortesia</span>
+              <h2>Cardápio de bebidas</h2>
+              <p>Expresso, café passado e chá são por nossa conta. Também tem cappuccino, chocolate quente e geladas.</p>
+              <span class="text-link">Ver cardápio<svg class="i"><use href="#i-arrow"></use></svg></span>
+            </div>
+          </a>
+
+          <a class="card card-steps" href="#/espera">
+            <div class="steps-head">
+              <h2>Sem horário livre?</h2>
+              <p>Entre na lista de espera</p>
+            </div>
+            <ol class="steps">
+              <li><svg class="i"><use href="#i-user"></use></svg><b>Seus dados</b><span>Nome e WhatsApp</span></li>
+              <li><svg class="i"><use href="#i-cal"></use></svg><b>O dia</b><span>Que você prefere vir</span></li>
+              <li><svg class="i"><use href="#i-chat"></use></svg><b>A gente chama</b><span>Quando abrir um horário</span></li>
+            </ol>
+          </a>
+
+          <a class="card card-dark" href="https://wa.me/5551992740380" target="_blank" rel="noopener">
+            <span class="dark-top">
+              <span class="dark-icon"><svg class="i"><use href="#i-chat"></use></svg></span>
+              <span class="dark-go"><svg class="i"><use href="#i-arrow-ne"></use></svg></span>
+            </span>
+            <h2>Agende pelo WhatsApp</h2>
+            <p>(51) 99274-0380</p>
+          </a>
+        </div>
+
+        <nav class="spec-mobile" aria-label="Especialidades">
+          <a href="#/servicos/cabelos">Cabelos</a>
+          <a href="#/servicos/manicure">Manicure e pedicure</a>
+          <a href="#/servicos/estetica-facial">Estética facial</a>
+          <a href="#/servicos/estetica-corp">Estética corporal</a>
+          <a href="#/servicos/depilacoes">Depilação</a>
+          <a href="#/servicos/podologia">Podologia</a>
+          <a href="#/servicos/combos">Pacotes</a>
+        </nav>
+      </section>
+
+      <!-- ---- SERVIÇOS E PREÇOS ---- -->
+      <section class="view" id="v-servicos" aria-label="Serviços e preços">
+        <div class="pagehead">
+          <div>
+            <div class="eyebrow">Estética</div>
+            <h1>Serviços e preços</h1>
+            <p>Todos os valores em um só lugar. Busque pelo nome ou percorra por categoria. Em alguns serviços o valor varia com o comprimento do cabelo; nesses aparece “a partir de”.</p>
+          </div>
+          <div class="search-box">
+            <span class="search-icon"><svg class="i"><use href="#i-search"></use></svg></span>
+            <input type="text" id="busca" placeholder="Buscar serviço — ex.: escova, massagem…" oninput="buscar(this.value)" autocomplete="off">
+          </div>
+        </div>
+        <div id="search-results"></div>
+        <nav class="nav-cats" aria-label="Categorias"><div class="nav-inner"><button class="nav-btn active" onclick="irParaSecao('cabelos',this)">Cabelos</button><button class="nav-btn" onclick="irParaSecao('manicure',this)">Mãos e pés</button><button class="nav-btn" onclick="irParaSecao('estetica-facial',this)">Facial</button><button class="nav-btn" onclick="irParaSecao('estetica-corp',this)">Corporal</button><button class="nav-btn" onclick="irParaSecao('depilacoes',this)">Depilação</button><button class="nav-btn" onclick="irParaSecao('podologia',this)">Podologia</button><button class="nav-btn" onclick="irParaSecao('combos',this)">Pacotes</button></div></nav>
+        <section class="cat-section" id="cabelos">
+          <div class="cat-header">
+            <span class="cat-icon"><svg class="i"><use href="#i-scissors"></use></svg></span>
+            <div><h2 class="cat-title">Cabelos</h2><div class="cat-count" id="count-cabelos">23 serviços</div></div>
+          </div>
+          <div class="services-grid" id="grid-cabelos"><div class="service-item"><span class="service-name">Aplicação de Tintura/Tonalizante (Escovado)</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;268,00</span></div><div class="service-item"><span class="service-name">Baby Liss</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;124,30</span></div><div class="service-item"><span class="service-name">Barba</span><span class="service-price">R$&nbsp;55,00</span></div><div class="service-item"><span class="service-name">Barba Coloração</span><span class="service-price">R$&nbsp;82,50</span></div><div class="service-item"><span class="service-name">Coloração Feminina (Escovado)</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;323,00</span></div><div class="service-item"><span class="service-name">Coloração Masculina</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;120,00</span></div><div class="service-item"><span class="service-name">Corte de Franja</span><span class="service-price">R$&nbsp;27,50</span></div><div class="service-item"><span class="service-name">Corte Feminino</span><span class="service-price">R$&nbsp;201,30</span></div><div class="service-item"><span class="service-name">Corte Infantil Feminino (até 12 anos)</span><span class="service-price">R$&nbsp;135,30</span></div><div class="service-item"><span class="service-name">Corte Infantil Masculino (até 12 anos)</span><span class="service-price">R$&nbsp;77,00</span></div><div class="service-item"><span class="service-name">Corte Masculino</span><span class="service-price">R$&nbsp;99,00</span></div><div class="service-item"><span class="service-name">Escova</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;95,30</span></div><div class="service-item"><span class="service-name">Hidratação Collor Brilliance / Nutri Enrich</span><span class="service-price free">Consulte</span></div><div class="service-item"><span class="service-name">Hidratação Infantil</span><span class="service-price">R$&nbsp;140,00</span></div><div class="service-item"><span class="service-name">Mechas Feminina</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;330,00</span></div><div class="service-item"><span class="service-name">Mechas Masculina</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;220,00</span></div><div class="service-item"><span class="service-name">Penteado</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;209,00</span></div><div class="service-item"><span class="service-name">Penteado Infantil</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;157,30</span></div><div class="service-item"><span class="service-name">Progressiva Feminina</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;330,00</span></div><div class="service-item"><span class="service-name">Progressiva Masculina</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;220,00</span></div><div class="service-item"><span class="service-name">Retoque de Raiz</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;306,50</span></div><div class="service-item"><span class="service-name">Selagem</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;330,00</span></div><div class="service-item"><span class="service-name">Tonalizante (Escovado)</span><span class="service-price"><span style="font-size:10px;opacity:0.65;font-family:sans-serif;margin-right:2px">a partir de</span> R$&nbsp;345,00</span></div></div>
+        </section>
+        <section class="cat-section" id="manicure">
+          <div class="cat-header">
+            <span class="cat-icon"><svg class="i"><use href="#i-sparkle"></use></svg></span>
+            <div><h2 class="cat-title">Manicure e pedicure</h2><div class="cat-count" id="count-manicure">28 serviços</div></div>
+          </div>
+          <div class="services-grid" id="grid-manicure"><div class="service-item"><span class="service-name">Alongamento em Fibra c/ Esmaltação em Gel</span><span class="service-price">R$&nbsp;346,50</span></div><div class="service-item"><span class="service-name">Alongamento em Fibra c/ Manicure Tradicional</span><span class="service-price">R$&nbsp;262,50</span></div><div class="service-item"><span class="service-name">Alongamento em Fibra s/ Esmaltação em Gel</span><span class="service-price">R$&nbsp;262,50</span></div><div class="service-item"><span class="service-name">Banho de Gel (Manutenção)</span><span class="service-price">R$&nbsp;85,00</span></div><div class="service-item"><span class="service-name">Banho de Gel c/ Esmaltação em Gel</span><span class="service-price">R$&nbsp;190,00</span></div><div class="service-item"><span class="service-name">Banho em Gel + Manicure Tradicional</span><span class="service-price">R$&nbsp;143,00</span></div><div class="service-item"><span class="service-name">Blindagem em Gel</span><span class="service-price">R$&nbsp;121,00</span></div><div class="service-item"><span class="service-name">Esmaltação em Gel + Manicure Tradicional</span><span class="service-price">R$&nbsp;126,50</span></div><div class="service-item"><span class="service-name">Esmaltação em Gel + Manicure Tradicional</span><span class="service-price">R$&nbsp;88,00</span></div><div class="service-item"><span class="service-name">Esmaltação em Gel + Pedicure Tradicional</span><span class="service-price">R$&nbsp;138,00</span></div><div class="service-item"><span class="service-name">Esmaltação em Gel + Pedicure Tradicional</span><span class="service-price">R$&nbsp;90,00</span></div><div class="service-item"><span class="service-name">Manicure</span><span class="service-price">R$&nbsp;44,00</span></div><div class="service-item"><span class="service-name">Manicure Francesinha</span><span class="service-price">R$&nbsp;49,00</span></div><div class="service-item"><span class="service-name">Manutenção Alongamento em Gel + Esmaltação em Gel</span><span class="service-price">R$&nbsp;192,50</span></div><div class="service-item"><span class="service-name">Pedicure</span><span class="service-price">R$&nbsp;48,00</span></div><div class="service-item"><span class="service-name">Pedicure Francesinha</span><span class="service-price">R$&nbsp;53,00</span></div><div class="service-item"><span class="service-name">Pintura de Mãos</span><span class="service-price">R$&nbsp;29,70</span></div><div class="service-item"><span class="service-name">Pintura de Mãos Francesinha</span><span class="service-price">R$&nbsp;35,20</span></div><div class="service-item"><span class="service-name">Pintura de Pés</span><span class="service-price">R$&nbsp;34,00</span></div><div class="service-item"><span class="service-name">Pintura de Pés Francesinha</span><span class="service-price">R$&nbsp;39,00</span></div><div class="service-item"><span class="service-name">Plástica dos Pés</span><span class="service-price">R$&nbsp;181,50</span></div><div class="service-item"><span class="service-name">Remoção em Gel ou Remoção de Blindagem</span><span class="service-price">R$&nbsp;39,00</span></div><div class="service-item"><span class="service-name">Retirada de Alongamento + Manicure Tradicional</span><span class="service-price">R$&nbsp;121,00</span></div><div class="service-item"><span class="service-name">Retirada de Alongamento em Fibra</span><span class="service-price">R$&nbsp;77,00</span></div><div class="service-item"><span class="service-name">Unha Decorada (unidade)</span><span class="service-price">R$&nbsp;13,00</span></div><div class="service-item"><span class="service-name">Unhas Postiças — Colocação de Unidade</span><span class="service-price">R$&nbsp;17,50</span></div><div class="service-item"><span class="service-name">Unhas Postiças — Somente Aplicação</span><span class="service-price">R$&nbsp;65,00</span></div><div class="service-item"><span class="service-name">Unhas Postiças Completas</span><span class="service-price">R$&nbsp;160,00</span></div></div>
+        </section>
+        <section class="cat-section" id="estetica-facial">
+          <div class="cat-header">
+            <span class="cat-icon"><svg class="i"><use href="#i-face"></use></svg></span>
+            <div><h2 class="cat-title">Estética facial</h2><div class="cat-count" id="count-estetica-facial">13 serviços</div></div>
+          </div>
+          <div class="services-grid" id="grid-estetica-facial"><div class="service-item"><span class="service-name">Aplicação de Tintura (Sobrancelha)</span><span class="service-price">R$&nbsp;71,50</span></div><div class="service-item"><span class="service-name">Colocação de Cílios c/ Cílios</span><span class="service-price">R$&nbsp;66,00</span></div><div class="service-item"><span class="service-name">Curso de Auto Make</span><span class="service-price">R$&nbsp;330,00</span></div><div class="service-item"><span class="service-name">Extensão de Cílios Volume Brasileiro</span><span class="service-price">R$&nbsp;255,00</span></div><div class="service-item"><span class="service-name">Lash Lifting</span><span class="service-price">R$&nbsp;180,00</span></div><div class="service-item"><span class="service-name">Lash Lifting + Tinta</span><span class="service-price">R$&nbsp;200,00</span></div><div class="service-item"><span class="service-name">Make Realce</span><span class="service-price">R$&nbsp;165,00</span></div><div class="service-item"><span class="service-name">Make Realce c/ Cílios</span><span class="service-price">R$&nbsp;190,00</span></div><div class="service-item"><span class="service-name">Manutenção de Cílios Volume Brasileiro</span><span class="service-price">R$&nbsp;137,50</span></div><div class="service-item"><span class="service-name">Maquiagem</span><span class="service-price">R$&nbsp;220,00</span></div><div class="service-item"><span class="service-name">Maquiagem Artística</span><span class="service-price">R$&nbsp;220,00</span></div><div class="service-item"><span class="service-name">Maquiagem Infantil (até 10 anos)</span><span class="service-price">R$&nbsp;120,00</span></div><div class="service-item"><span class="service-name">Micro Blading</span><span class="service-price">R$&nbsp;550,00</span></div></div>
+        </section>
+        <section class="cat-section" id="estetica-corp">
+          <div class="cat-header">
+            <span class="cat-icon"><svg class="i"><use href="#i-wave"></use></svg></span>
+            <div><h2 class="cat-title">Estética corporal</h2><div class="cat-count" id="count-estetica-corp">25 serviços</div></div>
+          </div>
+          <div class="services-grid" id="grid-estetica-corp"><div class="service-item"><span class="service-name">Analgesia</span><span class="service-price">R$&nbsp;150,00</span></div><div class="service-item"><span class="service-name">Corrente Russa</span><span class="service-price">R$&nbsp;143,00</span></div><div class="service-item"><span class="service-name">Drenagem Linfática Feminina</span><span class="service-price">R$&nbsp;143,00</span></div><div class="service-item"><span class="service-name">Eletrolipolise</span><span class="service-price">R$&nbsp;300,00</span></div><div class="service-item"><span class="service-name">Esfoliação e Hidratação</span><span class="service-price">R$&nbsp;140,00</span></div><div class="service-item"><span class="service-name">Jet Bronze</span><span class="service-price">R$&nbsp;264,00</span></div><div class="service-item"><span class="service-name">Limpeza de Pele (Costas)</span><span class="service-price">R$&nbsp;300,00</span></div><div class="service-item"><span class="service-name">Limpeza de Pele Facial</span><span class="service-price">R$&nbsp;300,00</span></div><div class="service-item"><span class="service-name">Massagem Bronzeadora Feminina</span><span class="service-price">R$&nbsp;165,00</span></div><div class="service-item"><span class="service-name">Massagem de Mãos Masc/Fem</span><span class="service-price">R$&nbsp;99,00</span></div><div class="service-item"><span class="service-name">Massagem Drenagem Facial Feminina</span><span class="service-price">R$&nbsp;90,00</span></div><div class="service-item"><span class="service-name">Massagem Eletrônica</span><span class="service-price">R$&nbsp;150,00</span></div><div class="service-item"><span class="service-name">Massagem Express Masc/Fem</span><span class="service-price">R$&nbsp;99,00</span></div><div class="service-item"><span class="service-name">Massagem Facial Masc/Fem</span><span class="service-price">R$&nbsp;90,00</span></div><div class="service-item"><span class="service-name">Massagem Modeladora Feminina</span><span class="service-price">R$&nbsp;165,00</span></div><div class="service-item"><span class="service-name">Massagem Podal Masc/Fem</span><span class="service-price">R$&nbsp;130,00</span></div><div class="service-item"><span class="service-name">Massagem Relaxante Feminina</span><span class="service-price">R$&nbsp;143,00</span></div><div class="service-item"><span class="service-name">Massagem Relaxante Masculina</span><span class="service-price">R$&nbsp;176,00</span></div><div class="service-item"><span class="service-name">Massagem Terapêutica Feminina</span><span class="service-price">R$&nbsp;154,00</span></div><div class="service-item"><span class="service-name">Massagem Terapêutica Masculina</span><span class="service-price">R$&nbsp;176,00</span></div><div class="service-item"><span class="service-name">Pedras Quentes</span><span class="service-price">R$&nbsp;180,00</span></div><div class="service-item"><span class="service-name">Peeling de Diamante</span><span class="service-price">R$&nbsp;280,00</span></div><div class="service-item"><span class="service-name">Peeling Estrias</span><span class="service-price">R$&nbsp;300,00</span></div><div class="service-item"><span class="service-name">Radiofrequência</span><span class="service-price">R$&nbsp;300,00</span></div><div class="service-item"><span class="service-name">Tratamento Dermo Celular para Celulite</span><span class="service-price">R$&nbsp;150,00</span></div></div>
+        </section>
+        <section class="cat-section" id="depilacoes">
+          <div class="cat-header">
+            <span class="cat-icon"><svg class="i"><use href="#i-leaf"></use></svg></span>
+            <div><h2 class="cat-title">Depilação</h2><div class="cat-count" id="count-depilacoes">19 serviços</div></div>
+          </div>
+          <div class="services-grid" id="grid-depilacoes"><div class="service-item"><span class="service-name">1/2 Perna</span><span class="service-price">R$&nbsp;55,00</span></div><div class="service-item"><span class="service-name">Axila</span><span class="service-price">R$&nbsp;35,00</span></div><div class="service-item"><span class="service-name">Depilação Ante Braço Masculina</span><span class="service-price">R$&nbsp;55,00</span></div><div class="service-item"><span class="service-name">Depilação Axila Masculina</span><span class="service-price">R$&nbsp;33,00</span></div><div class="service-item"><span class="service-name">Depilação Completa</span><span class="service-price">R$&nbsp;275,00</span></div><div class="service-item"><span class="service-name">Depilação Costas</span><span class="service-price">R$&nbsp;77,00</span></div><div class="service-item"><span class="service-name">Depilação Coxa</span><span class="service-price">R$&nbsp;66,00</span></div><div class="service-item"><span class="service-name">Depilação de Rosto</span><span class="service-price">R$&nbsp;88,00</span></div><div class="service-item"><span class="service-name">Depilação de Virilha</span><span class="service-price">R$&nbsp;88,00</span></div><div class="service-item"><span class="service-name">Depilação de Virilha Masculina</span><span class="service-price">R$&nbsp;132,00</span></div><div class="service-item"><span class="service-name">Depilação Dedo das Mãos Masculina</span><span class="service-price">R$&nbsp;33,00</span></div><div class="service-item"><span class="service-name">Depilação Dedo dos Pés Masculina</span><span class="service-price">R$&nbsp;33,00</span></div><div class="service-item"><span class="service-name">Depilação Nariz</span><span class="service-price">R$&nbsp;33,00</span></div><div class="service-item"><span class="service-name">Depilação Orelha</span><span class="service-price">R$&nbsp;33,00</span></div><div class="service-item"><span class="service-name">Depilação Perna Inteira</span><span class="service-price">R$&nbsp;88,00</span></div><div class="service-item"><span class="service-name">Depilação Perna Inteira Masculina</span><span class="service-price">R$&nbsp;130,00</span></div><div class="service-item"><span class="service-name">Depilação Queixo</span><span class="service-price">R$&nbsp;33,00</span></div><div class="service-item"><span class="service-name">Sobrancelha</span><span class="service-price">R$&nbsp;66,00</span></div><div class="service-item"><span class="service-name">Tintura / Refectocil</span><span class="service-price">R$&nbsp;71,50</span></div></div>
+        </section>
+        <section class="cat-section" id="podologia">
+          <div class="cat-header">
+            <span class="cat-icon"><svg class="i"><use href="#i-foot"></use></svg></span>
+            <div><h2 class="cat-title">Podologia</h2><div class="cat-count" id="count-podologia">12 serviços</div></div>
+          </div>
+          <div class="services-grid" id="grid-podologia"><div class="service-item"><span class="service-name">Aplicação de Peeling Acetil</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Espiculoectomia (Granuloma)</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Podologia — Calosidade</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Podologia — Laser (Sessão Promocional)</span><span class="service-price">R$&nbsp;150,00</span></div><div class="service-item"><span class="service-name">Podologia — Rachaduras</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Podologia — Verrugas</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Podoprofilaxia</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Reconstrução — Fungos</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Reconstrução Ungueal</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Reflexologia</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Tratamento Onicofose</span><span class="service-price">R$&nbsp;160,00</span></div><div class="service-item"><span class="service-name">Unhas Encravadas</span><span class="service-price">R$&nbsp;160,00</span></div></div>
+        </section>
+        <section class="cat-section" id="combos">
+          <div class="cat-header">
+            <span class="cat-icon"><svg class="i"><use href="#i-gift"></use></svg></span>
+            <div><h2 class="cat-title">Pacotes</h2><div class="cat-count" id="count-combos">14 pacotes</div></div>
+          </div>
+          <div class="services-grid" id="grid-combos"><div class="service-item"><span class="service-name">Pacote Escova Curta — 04 serviços (seg. a qui.)</span><span class="service-price">R$&nbsp;343,00</span></div><div class="service-item"><span class="service-name">Pacote Escova Média — 04 serviços (seg. a qui.)</span><span class="service-price">R$&nbsp;414,00</span></div><div class="service-item"><span class="service-name">Pacote Escova Longa — 04 serviços (seg. a qui.)</span><span class="service-price">R$&nbsp;463,00</span></div><div class="service-item"><span class="service-name">Pacote Escova Extra Longa — 04 serviços (seg. a qui.)</span><span class="service-price">R$&nbsp;609,00</span></div><div class="service-item"><span class="service-name">Pacote Podologia Laser Promocional — 10 serviços</span><span class="service-price">R$&nbsp;1.300,00</span></div><div class="service-item"><span class="service-name">Pacote Drenagem Feminina — 05 sessões</span><span class="service-price">R$&nbsp;600,00</span></div><div class="service-item"><span class="service-name">Pacote Relaxante Feminina — 05 sessões</span><span class="service-price">R$&nbsp;600,00</span></div><div class="service-item"><span class="service-name">Pacote Terapêutica Feminina — 05 sessões</span><span class="service-price">R$&nbsp;731,50</span></div><div class="service-item"><span class="service-name">Pacote Terapêutica Feminina — 10 sessões</span><span class="service-price">R$&nbsp;1.386,00</span></div><div class="service-item"><span class="service-name">Pacote Eletrolipolise — 10 sessões</span><span class="service-price">R$&nbsp;2.700,00</span></div><div class="service-item"><span class="service-name">Pacote Relaxante Masculina — 05 sessões</span><span class="service-price">R$&nbsp;836,00</span></div><div class="service-item"><span class="service-name">Pacote Relaxante Masculina — 10 sessões</span><span class="service-price">R$&nbsp;1.584,00</span></div><div class="service-item"><span class="service-name">Pacote Terapêutica Masculina — 05 sessões</span><span class="service-price">R$&nbsp;836,00</span></div><div class="service-item"><span class="service-name">Pacote Terapêutica Masculina — 10 sessões</span><span class="service-price">R$&nbsp;1.584,00</span></div></div>
+        </section>
+        
+      </section>
+
+      <!-- ---- LISTA DE ESPERA ---- -->
+      <section class="view" id="v-espera" aria-label="Lista de espera">
+        <div class="pagehead">
+          <div>
+            <div class="eyebrow">Atendimento</div>
+            <h1>Lista de espera</h1>
+            <p>Sem horário livre agora? Deixe seu nome e WhatsApp. Assim que abrir uma vaga no dia que você prefere, a equipe entra em contato.</p>
+          </div>
+          <div id="header-auth"><span style="font-size:12px;color:var(--muted);margin-right:6px">Admin</span><span class="logout-btn">Sair</span></div>
+        </div>
+
+        <div class="fila-layout">
+          <div class="fila-col-form">
+            <div class="form-card" id="form-card">
+              <div class="form-card-title">Entre na <em>lista de espera</em></div>
+              <div class="form-card-sub">Preencha seus dados e entraremos em contato assim que houver disponibilidade.</div>
+              <div id="alert-form" class="alert alert-err" style="display: none;">Não foi possível carregar o formulário. Verifique a conexão e recarregue a página.</div>
+              <div class="form-grid">
+                <div class="form-group"><label>Nome completo</label><input type="text" id="f-nome" placeholder="Seu nome"></div>
+                <div class="form-group"><label>WhatsApp</label><input type="tel" id="f-tel" placeholder="(51) 99999-9999"></div>
+                <div class="form-group"><label>Serviço desejado</label><input type="text" id="f-servico" placeholder="Ex.: Escova, Manicure…"></div>
+                <div class="form-group"><label>Data desejada</label><input type="text" id="f-data" placeholder="Selecione uma data" readonly=""><span class="hint">Fechado aos domingos</span></div>
+                <div class="form-group"><label>Horário preferido</label>
+                  <select id="f-horario">
+                    <option value="">Sem preferência</option>
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                  </select>
+                </div>
+                <div class="form-group full"><label>Observação (opcional)</label><input type="text" id="f-obs" placeholder="Ex.: Prefiro com a Ana, urgente…"></div>
+              </div>
+              <div class="lgpd">
+                <input type="checkbox" id="lgpd-check">
+                <label for="lgpd-check">Concordo com a coleta dos meus dados (nome e WhatsApp) pela <b>Voox 1956</b> para contato sobre disponibilidade de horários, conforme a <b>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</b>. Os dados não serão compartilhados com terceiros e podem ser removidos mediante solicitação pelo WhatsApp <span class="g">(51) 99274-0380</span>.</label>
+              </div>
+              <button class="btn-dark btn-block" id="btn-fila" onclick="entrarFila()">Entrar na lista de espera</button>
+            </div>
+
+            <div class="confirmacao" id="confirmacao">
+              <div class="conf-mark"><svg class="i"><use href="#i-check"></use></svg></div>
+              <div class="confirmacao-title">Você está na <em>lista!</em></div>
+              <div class="confirmacao-text">Seu cadastro foi recebido com sucesso.<br>Assim que houver disponibilidade, a equipe <strong>Voox 1956</strong> entra em contato pelo seu WhatsApp.</div>
+            </div>
+          </div>
+
+          <div class="fila-col-side">
+            <div id="admin-fila-panel" style="display: block;">
+              <div class="fila-header">
+                <div class="fila-title">Fila de <em>espera</em></div>
+                <div class="fila-count" id="fila-count">1 aguardando</div>
+              </div>
+              <div class="filter-row">
+                <button class="filter-btn active" onclick="filtrar('todos',this)">Todas</button>
+                <button class="filter-btn" onclick="filtrar('aguardando',this)">Aguardando</button>
+                <button class="filter-btn" onclick="filtrar('contatada',this)">Contatada</button>
+                <button class="filter-btn" onclick="filtrar('confirmada',this)">Confirmada</button>
+                <button class="filter-btn" onclick="filtrar('removido',this)">Removidos</button>
+              </div>
+              <div class="fila-list" id="fila-list"><div class="fila-item"><div class="fila-num">1</div><div class="fila-info"><div class="fila-nome">Mariana Alves</div><div class="fila-servico">Escova + Manicure — prefere de tarde</div><div class="fila-meta"><span class="badge badge-aguardando">Aguardando</span><span class="badge badge-data">📅 18/06/2026 (Quinta)</span><span class="badge badge-tempo">12min atrás</span></div><div class="fila-actions"><span class="action-btn wpp">WhatsApp</span><span class="action-btn">Contatada</span><span class="action-btn danger">Remover</span></div></div></div><div class="fila-item"><div class="fila-num">2</div><div class="fila-info"><div class="fila-nome">Patrícia Gomes</div><div class="fila-servico">Progressiva Feminina</div><div class="fila-meta"><span class="badge badge-contatada">Contatada</span><span class="badge badge-data">📅 20/06/2026 (Sábado)</span><span class="badge badge-tempo">1h atrás</span></div><div class="fila-actions"><span class="action-btn wpp">WhatsApp</span><span class="action-btn">Confirmada</span><span class="action-btn danger">Remover</span></div></div></div><div class="fila-item"><div class="fila-num">3</div><div class="fila-info"><div class="fila-nome">Juliana Rocha</div><div class="fila-servico">Design de Sobrancelha</div><div class="fila-meta"><span class="badge badge-confirmada">Confirmada</span><span class="badge badge-data">📅 19/06/2026 (Sexta)</span><span class="badge badge-tempo">3h atrás</span></div><div class="fila-actions"><span class="action-btn wpp">WhatsApp</span><span class="action-btn danger">Remover</span></div></div></div></div>
+            </div>
+
+            <div class="how">
+              <h2>Como funciona</h2>
+              <ol>
+                <li><span class="ic"><svg class="i"><use href="#i-user"></use></svg></span><div><b>Seus dados</b><span class="t">Nome, WhatsApp e o serviço que você quer.</span></div></li>
+                <li><span class="ic"><svg class="i"><use href="#i-cal"></use></svg></span><div><b>O dia</b><span class="t">Escolha a data e o período que prefere. Não atendemos aos domingos.</span></div></li>
+                <li><span class="ic"><svg class="i"><use href="#i-chat"></use></svg></span><div><b>A gente chama</b><span class="t">Quando abrir um horário, a equipe te avisa pelo WhatsApp.</span></div></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- BEBIDAS ---- -->
+      <section class="view" id="v-bebidas" aria-label="Cardápio de bebidas">
+        <div class="pagehead">
+          <div>
+            <div class="eyebrow">Enquanto você espera</div>
+            <h1>Cardápio de bebidas</h1>
+            <span class="note"><svg class="i"><use href="#i-check"></use></svg>Café, café passado e chá são por nossa conta</span>
+          </div>
+        </div>
+        <div class="bev-wrap">
+          <section class="d-section">
+            <div class="d-head"><span class="d-icon"><svg class="i"><use href="#i-cup"></use></svg></span><h2>Bebidas Quentes</h2></div>
+            <div class="d-grid">
+            <div class="d-item"><span class="d-name">Café Expresso Forte</span><span class="d-price free">Cortesia</span></div>
+            <div class="d-item"><span class="d-name">Café Passado</span><span class="d-price free">Cortesia</span></div>
+            <div class="d-item"><span class="d-name">Chá</span><span class="d-price free">Cortesia</span></div>
+            <div class="d-item"><span class="d-name">Café com Leite</span><span class="d-price">R$ 3,50</span></div>
+            <div class="d-item"><span class="d-name">Cappuccino</span><span class="d-price">R$ 3,50</span></div>
+            <div class="d-item"><span class="d-name">Mocaccino</span><span class="d-price">R$ 3,50</span></div>
+            <div class="d-item"><span class="d-name">Chocolate Quente</span><span class="d-price">R$ 3,50</span></div>
+            </div>
+          </section>
+          <section class="d-section">
+            <div class="d-head"><span class="d-icon"><svg class="i"><use href="#i-glass"></use></svg></span><h2>Bebidas Frias</h2></div>
+            <div class="d-grid">
+            <div class="d-item"><span class="d-name">Água<span class="d-sub">Com gás ou sem gás</span></span><span class="d-price">R$ 4,00</span></div>
+            <div class="d-item"><span class="d-name">Coca-Cola / Coca-Cola Zero<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Coca-Cola Zero Café<span class="d-sub">200ml</span></span><span class="d-price">R$ 4,00</span></div>
+            <div class="d-item"><span class="d-name">Fanta Laranja<span class="d-sub">220ml</span></span><span class="d-price">R$ 4,00</span></div>
+            <div class="d-item"><span class="d-name">Fanta Uva<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Fanta Guaraná<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Sprite Original<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Schweppes Citrus Original<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Schweppes Tônica<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Chá Matte Leão Limão<span class="d-sub">gelado</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Chá Matte Leão Limão Zero<span class="d-sub">gelado</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Chá Matte Leão Pêssego<span class="d-sub">gelado</span></span><span class="d-price">R$ 6,00</span></div>
+            <div class="d-item"><span class="d-name">Ice Tea Limão<span class="d-sub">450ml</span></span><span class="d-price">R$ 6,00</span></div>
+            </div>
+          </section>
+          
+        </div>
+      </section>
+
+      <p class="foot">Fechado aos domingos.<br>WhatsApp <a href="https://wa.me/5551992740380" target="_blank" rel="noopener">(51) 99274-0380</a> · Instagram <a href="https://instagram.com/voox_1956" target="_blank" rel="noopener">@voox_1956</a></p>
+    </main>
+
+    <!-- ============ LATERAL DIREITA (fixa) ============ -->
+    <nav class="specialties" aria-label="Especialidades">
+      <a href="#/servicos/cabelos">Cabelos</a>
+      <a href="#/servicos/manicure">Manicure e pedicure</a>
+      <a href="#/servicos/estetica-facial">Estética facial</a>
+      <a href="#/servicos/estetica-corp">Estética corporal</a>
+      <a href="#/servicos/depilacoes">Depilação</a>
+      <a href="#/servicos/podologia">Podologia</a>
+      <a href="#/servicos/combos">Pacotes</a>
+    </nav>
+
+  </div>
+</div>
+
+<nav class="tabbar" aria-label="Navegação">
+  <a href="#/" data-route="inicio"><svg class="i"><use href="#i-home"></use></svg>Início</a>
+  <a href="#/servicos" data-route="servicos"><svg class="i"><use href="#i-scissors"></use></svg>Serviços</a>
+  <a href="#/espera" data-route="espera" aria-current="page"><svg class="i"><use href="#i-clock"></use></svg>Espera</a>
+  <a href="#/bebidas" data-route="bebidas"><svg class="i"><use href="#i-cup"></use></svg>Bebidas</a>
+</nav>
+
+<!-- ================= SERVIÇOS: dados e busca ================= -->
+
+
+<!-- ================= LISTA DE ESPERA: Firebase (carrega só ao abrir a aba) ================= -->
+
+
+<!-- ================= ROTEADOR ================= -->
+
+
+
+</body></html>
