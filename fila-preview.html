@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light"/>
+<meta name="theme-color" content="#F1ECE3"/>
+<title>Voox 1956 — Lista de espera</title>
+<meta name="description" content="Entre na lista de espera da Voox 1956. Deixe seu nome e WhatsApp e a equipe chama quando abrir um horário."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<style>
+:root{
+  --page:#E6DCCF; --panel:#F1ECE3; --card-solid:#FBF7F1;
+  --ink:#2A2420; --ink-soft:#4B4139; --muted:#7D7064;
+  --gold:#B07D4C; --gold-soft:rgba(176,125,76,.12); --gold-line:rgba(176,125,76,.28);
+  --glass:rgba(255,251,245,.58); --glass-strong:rgba(255,251,245,.78); --glass-line:rgba(255,255,255,.78);
+  --hair:rgba(42,36,32,.12);
+  --dark2:#FBF7F1;
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --sans:'Jost',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --script:'Great Vibes','Snell Roundhand','Apple Chancery',cursive;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+}
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+html{background:var(--page);scroll-behavior:smooth;scroll-padding-top:calc(84px + env(safe-area-inset-top,0px));-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);font-weight:300;color:var(--ink);min-height:100vh;
+  background:
+    radial-gradient(60% 40% at 88% 0%,#F3E6D6 0%,transparent 72%),
+    radial-gradient(55% 45% at 0% 100%,#DCCDBB 0%,transparent 70%),
+    var(--page);
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom,0px));
+}
+a{color:inherit;text-decoration:none}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:12px}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+
+/* ---- barra superior ---- */
+.top{position:sticky;top:0;z-index:40;background:rgba(241,236,227,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--hair)}
+.top-in{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;flex-direction:column;line-height:1}
+.brand-script{font-family:var(--script);font-size:17px;color:var(--ink-soft);margin-left:2px}
+.brand-name{font-family:var(--serif);font-weight:400;font-size:25px;letter-spacing:-.01em;margin-top:-3px}
+.brand-name span{font-weight:300;color:var(--ink-soft);margin-left:4px}
+.pillnav{display:flex;gap:2px;padding:5px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-line)}
+.pillnav a{font-size:14px;font-weight:400;color:var(--ink-soft);padding:9px 18px;border-radius:999px;transition:background .2s,color .2s;white-space:nowrap}
+.pillnav a:hover{background:rgba(42,36,32,.06)}
+.pillnav a[aria-current="page"]{background:var(--ink);color:var(--panel)}
+.top-actions{display:flex;align-items:center;gap:10px}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink);transition:background .2s}
+.icon-btn:hover{background:#fff}
+.cta{display:inline-flex;align-items:center;gap:12px;background:var(--ink);color:var(--panel);border-radius:999px;padding:6px 6px 6px 20px;font-size:14px;font-weight:400;white-space:nowrap}
+.cta-go{width:36px;height:36px;border-radius:50%;background:var(--panel);color:var(--ink);display:grid;place-items:center;transition:transform .25s}
+.cta:hover .cta-go{transform:translateX(3px)}
+.top-mobile{display:none;gap:8px}
+
+/* ---- herói compacto ---- */
+.head{padding:46px 0 26px}
+.head .eyebrow{font-family:var(--script);font-size:22px;color:var(--gold);line-height:1}
+.head h1{font-family:var(--serif);font-weight:300;font-size:clamp(2.8rem,6vw,4.4rem);line-height:.98;letter-spacing:-.02em;margin-top:2px}
+.head p{font-size:15.5px;line-height:1.6;color:var(--ink-soft);max-width:48ch;margin-top:14px}
+
+/* ---- botões ---- */
+.btn-dark{display:inline-flex;align-items:center;justify-content:center;gap:12px;background:var(--ink);color:var(--panel);padding:15px 24px;border-radius:999px;font-size:15px;font-weight:400;border:none;cursor:pointer;font-family:var(--sans);width:100%}
+.btn-dark svg{transition:transform .25s}
+.btn-dark:hover svg{transform:translateX(3px)}
+
+/* ---- rodapé ---- */
+.foot{border-top:1px solid var(--hair);margin-top:48px;padding:26px 0 8px;color:var(--muted);font-size:13px;line-height:1.8}
+.foot a{color:var(--ink);font-weight:400}
+
+/* ---- FAB whatsapp ---- */
+.fab{position:fixed;z-index:35;right:18px;bottom:calc(92px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--panel);display:grid;place-items:center;box-shadow:0 14px 30px -10px rgba(60,40,22,.5);transition:transform .2s}
+.fab:hover{transform:scale(1.06)}
+.fab svg{width:24px;height:24px}
+
+/* ---- barra inferior (celular) ---- */
+.tabbar{position:fixed;z-index:30;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-radius:999px;background:rgba(255,251,245,.82);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);box-shadow:0 14px 34px -14px rgba(60,40,22,.4)}
+.tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:999px;font-size:11px;font-weight:400;color:var(--ink-soft)}
+.tabbar a[aria-current="page"]{background:var(--ink);color:var(--panel)}
+
+@media (min-width:1001px){ .tabbar,.fab{display:none} }
+@media (max-width:1000px){
+  .pillnav{display:none}
+  .top-actions{display:none}
+  .top-mobile{display:flex}
+  .top-mobile .icon-btn{width:42px;height:42px}
+  .top-in{padding:12px 16px}
+  .wrap{padding:0 16px}
+  .head{padding:30px 0 20px}
+}
+
+.main{max-width:720px;margin:0 auto;padding:0 20px 10px}
+/* login / logout */
+.login-btn,.logout-btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-size:13px;font-weight:400;cursor:pointer;border-radius:999px;padding:10px 16px;transition:background .2s,border-color .2s}
+.login-btn{background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink)}
+.login-btn:hover{border-color:var(--gold-line)}
+.logout-btn{background:var(--ink);border:1px solid var(--ink);color:var(--panel)}
+#header-auth{display:flex;align-items:center;gap:8px}
+/* form */
+.form-card{background:var(--card-solid);border:1px solid var(--hair);border-radius:24px;padding:26px 22px;box-shadow:0 24px 50px -32px rgba(92,62,34,.4)}
+.form-card-title{font-family:var(--serif);font-weight:400;font-size:1.9rem;line-height:1.05;letter-spacing:-.01em}
+.form-card-title em{font-style:italic;color:var(--gold)}
+.form-card-sub{font-size:14px;color:var(--muted);line-height:1.55;margin:8px 0 20px;max-width:46ch}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:7px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;font-weight:400;color:var(--ink-soft);letter-spacing:.03em;text-transform:uppercase}
+.form-group input,.form-group select{width:100%;background:#fff;border:1px solid var(--hair);border-radius:12px;padding:13px 14px;font-family:var(--sans);font-size:15px;font-weight:300;color:var(--ink);outline:none;transition:border-color .2s}
+.form-group input::placeholder{color:var(--muted)}
+.form-group input:focus,.form-group select:focus{border-color:var(--gold)}
+.hint{font-size:11.5px;color:var(--muted)}
+.lgpd{display:flex;align-items:flex-start;gap:10px;background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.lgpd input{margin-top:3px;flex-shrink:0;accent-color:var(--gold);width:15px;height:15px}
+.lgpd label{font-size:12px;color:var(--ink-soft);line-height:1.7;cursor:pointer}
+.lgpd label b{color:var(--ink);font-weight:500}
+.lgpd label .g{color:var(--gold);font-weight:500}
+.alert{display:none;border-radius:10px;padding:11px 14px;font-size:13px;margin-bottom:14px}
+.alert-err{background:rgba(155,58,58,.08);border:1px solid rgba(155,58,58,.3);color:#8c2f2f}
+.alert-ok{background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold)}
+/* confirmação */
+.confirmacao{display:none;text-align:center;background:var(--card-solid);border:1px solid var(--hair);border-radius:24px;padding:48px 24px;box-shadow:0 24px 50px -32px rgba(92,62,34,.4)}
+.conf-mark{width:66px;height:66px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line)}
+.conf-mark svg{width:30px;height:30px}
+.confirmacao-title{font-family:var(--serif);font-weight:400;font-size:2rem;letter-spacing:-.01em}
+.confirmacao-title em{font-style:italic;color:var(--gold)}
+.confirmacao-text{font-size:14.5px;color:var(--ink-soft);line-height:1.7;margin-top:10px}
+.confirmacao-text strong{color:var(--ink)}
+/* painel admin */
+#admin-fila-panel{margin-top:4px}
+.fila-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px}
+.fila-title{font-family:var(--serif);font-weight:400;font-size:2rem;letter-spacing:-.01em}
+.fila-title em{font-style:italic;color:var(--gold)}
+.fila-count{font-size:13px;color:var(--muted)}
+.filter-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:16px}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-btn{background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink-soft);font-family:var(--sans);font-size:12.5px;font-weight:400;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s,border-color .2s}
+.filter-btn:hover{border-color:var(--gold-line)}
+.filter-btn.active{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.fila-list{display:flex;flex-direction:column;gap:12px}
+.empty{text-align:center;color:var(--muted);font-size:14px;padding:36px 16px;background:var(--card-solid);border:1px dashed var(--hair);border-radius:16px}
+.fila-item{display:flex;gap:14px;background:var(--card-solid);border:1px solid var(--hair);border-radius:16px;padding:16px}
+.fila-num{width:30px;height:30px;flex-shrink:0;border-radius:50%;background:var(--ink);color:var(--panel);display:grid;place-items:center;font-family:var(--serif);font-size:15px;font-weight:500}
+.fila-info{flex:1;min-width:0}
+.fila-nome{font-size:15.5px;font-weight:500;color:var(--ink)}
+.fila-servico{font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.4}
+.fila-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.badge{font-size:11px;font-weight:400;padding:3px 10px;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+.badge-aguardando{background:rgba(176,125,76,.14);color:var(--gold);border:1px solid var(--gold-line)}
+.badge-contatada{background:rgba(90,120,160,.14);color:#4d6a90;border:1px solid rgba(90,120,160,.3)}
+.badge-confirmada{background:rgba(90,140,90,.14);color:#4a7a4a;border:1px solid rgba(90,140,90,.3)}
+.badge-removido{background:rgba(120,110,100,.12);color:var(--muted);border:1px solid var(--hair)}
+.badge-data{background:var(--panel);color:var(--ink-soft);border:1px solid var(--hair)}
+.badge-horario,.badge-tempo{background:var(--panel);color:var(--muted);border:1px solid var(--hair)}
+.fila-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.action-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12.5px;font-weight:400;cursor:pointer;border-radius:999px;padding:8px 14px;background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink);transition:background .2s,border-color .2s}
+.action-btn:hover{border-color:var(--gold-line)}
+.action-btn.wpp{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.action-btn.danger{color:#8c2f2f;border-color:rgba(155,58,58,.3)}
+.action-btn.danger:hover{background:rgba(155,58,58,.08)}
+/* flatpickr no tema claro */
+.flatpickr-day.selected,.flatpickr-day.selected:hover{background:var(--gold);border-color:var(--gold)}
+.flatpickr-day.today{border-color:var(--gold-line)}
+.flatpickr-months .flatpickr-month,.flatpickr-weekdays,span.flatpickr-weekday{background:var(--panel)}
+.flatpickr-current-month .flatpickr-monthDropdown-months{background:var(--panel)}
+@media (max-width:1000px){
+  .form-grid{grid-template-columns:1fr}
+  .form-card{padding:22px 18px}
+}
+#fila-count::after{content:""} </style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-arrow-ne" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-cup" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 2v3"/><path d="M10 2v3"/><path d="M14 2v3"/></symbol>
+  <symbol id="i-glass" viewBox="0 0 24 24"><path d="M5 3h14l-1.4 5.4a6 6 0 0 1-11.2 0z"/><path d="M12 15v5"/><path d="M8 20h8"/></symbol>
+  <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v6"/><path d="M12 15v6"/><path d="M3 12h6"/><path d="M15 12h6"/><path d="m6.3 6.3 3 3"/><path d="m14.7 14.7 3 3"/><path d="m17.7 6.3-3 3"/><path d="m9.3 14.7-3 3"/></symbol>
+  <symbol id="i-face" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M9 15c.8.7 1.9 1 3 1s2.2-.3 3-1"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2"/><path d="M2 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 4 13c0-6 7-9 15-9 0 8-3 15-9 15z"/><path d="M4 20c3-4 6-6 10-7"/></symbol>
+  <symbol id="i-foot" viewBox="0 0 24 24"><path d="M7 14c-1 2-2 3-2 5a2 2 0 0 0 4 0c0-2 1-3 1-5a2 2 0 0 0-3-2 2 2 0 0 0 0 2z"/><circle cx="14" cy="5" r="1.4"/><circle cx="17.5" cy="6.5" r="1.1"/><circle cx="19.5" cy="9.5" r="1"/><circle cx="12" cy="6" r="1.1"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="12" rx="1"/><path d="M4 13h16"/><path d="M12 9v12"/><path d="M12 9S9 9 8 7.5 8.5 4 10 4.5 12 9 12 9z"/><path d="M12 9s3 0 4-1.5S15.5 4 14 4.5 12 9 12 9z"/></symbol>
+</svg>
+<header class="top"><div class="top-in">
+  <a class="brand" href="/" aria-label="Voox 1956, início">
+    <span class="brand-script">Estética</span>
+    <span class="brand-name">Voox<span>1956</span></span>
+  </a>
+  <nav class="pillnav" aria-label="Principal"><a href="/">Início</a><a href="/catalogo.html">Serviços e preços</a><a href="/fila.html" aria-current="page">Lista de espera</a><a href="/bebidas.html">Bebidas</a></nav>
+  <div class="top-actions"><a class="icon-btn" href="https://instagram.com/voox_1956" target="_blank" rel="noopener" aria-label="Instagram @voox_1956"><svg class="i"><use href="#i-insta"/></svg></a><span style="font-size:12px;color:var(--muted);margin-right:4px">Admin</span><span class="logout-btn">Sair</span></div>
+  <div class="top-mobile"><span style="font-size:12px;color:var(--muted);margin-right:4px">Admin</span><span class="logout-btn">Sair</span></div>
+</div></header>
+
+<div class="head wrap">
+  <div class="eyebrow">Atendimento</div>
+  <h1>Lista de espera</h1>
+  <p>Sem horário livre agora? Deixe seu nome e WhatsApp. Assim que abrir uma vaga no dia que você prefere, a equipe entra em contato.</p>
+</div>
+
+<main class="main">
+  <div class="form-card" id="form-card">
+    <div class="form-card-title">Entre na <em>lista de espera</em></div>
+    <div class="form-card-sub">Preencha seus dados e entraremos em contato assim que houver disponibilidade.</div>
+    <div id="alert-form" class="alert"></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Nome completo</label><input type="text" id="f-nome" placeholder="Seu nome"/></div>
+      <div class="form-group"><label>WhatsApp</label><input type="tel" id="f-tel" placeholder="(51) 99999-9999"/></div>
+      <div class="form-group"><label>Serviço desejado</label><input type="text" id="f-servico" placeholder="Ex.: Escova, Manicure…"/></div>
+      <div class="form-group"><label>Data desejada</label><input type="text" id="f-data" placeholder="Selecione uma data" readonly/><span class="hint">Fechado aos domingos</span></div>
+      <div class="form-group"><label>Horário preferido</label>
+        <select id="f-horario">
+          <option value="">Sem preferência</option>
+          <option value="Manhã">Manhã</option>
+          <option value="Tarde">Tarde</option>
+          <option value="Noite">Noite</option>
+        </select>
+      </div>
+      <div class="form-group full"><label>Observação (opcional)</label><input type="text" id="f-obs" placeholder="Ex.: Prefiro com a Ana, urgente…"/></div>
+    </div>
+    <div class="lgpd">
+      <input type="checkbox" id="lgpd-check"/>
+      <label for="lgpd-check">Concordo com a coleta dos meus dados (nome e WhatsApp) pela <b>Voox 1956</b> para contato sobre disponibilidade de horários, conforme a <b>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</b>. Os dados não serão compartilhados com terceiros e podem ser removidos mediante solicitação pelo WhatsApp <span class="g">(51) 99274-0380</span>.</label>
+    </div>
+    <button class="btn-dark" onclick="entrarFila()">Entrar na lista de espera</button>
+  </div>
+
+  <div class="confirmacao" id="confirmacao">
+    <div class="conf-mark"><svg class="i"><use href="#i-check"/></svg></div>
+    <div class="confirmacao-title">Você está na <em>lista!</em></div>
+    <div class="confirmacao-text">Seu cadastro foi recebido com sucesso.<br/>Assim que houver disponibilidade, a equipe <strong>Voox 1956</strong> entra em contato pelo seu WhatsApp.</div>
+  </div>
+
+  <div id="admin-fila-panel" style="display:block">
+    <div class="fila-header">
+      <div class="fila-title">Fila de <em>espera</em></div>
+      <div class="fila-count" id="fila-count">1 aguardando</div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="filtrar('todos',this)">Todas</button>
+      <button class="filter-btn" onclick="filtrar('aguardando',this)">Aguardando</button>
+      <button class="filter-btn" onclick="filtrar('contatada',this)">Contatada</button>
+      <button class="filter-btn" onclick="filtrar('confirmada',this)">Confirmada</button>
+      <button class="filter-btn" onclick="filtrar('removido',this)">Removidos</button>
+    </div>
+    <div class="fila-list" id="fila-list"><div class="fila-item">
+  <div class="fila-num">1</div>
+  <div class="fila-info"><div class="fila-nome">Mariana Alves</div><div class="fila-servico">Escova + Manicure — prefere de tarde</div>
+  <div class="fila-meta"><span class="badge badge-aguardando">Aguardando</span><span class="badge badge-data">📅 18/06/2026 (Quinta)</span><span class="badge badge-tempo">12min atrás</span></div>
+  <div class="fila-actions"><span class="action-btn wpp">WhatsApp</span><span class="action-btn">Contatada</span><span class="action-btn danger">Remover</span></div></div>
+</div><div class="fila-item">
+  <div class="fila-num">2</div>
+  <div class="fila-info"><div class="fila-nome">Patrícia Gomes</div><div class="fila-servico">Progressiva Feminina</div>
+  <div class="fila-meta"><span class="badge badge-contatada">Contatada</span><span class="badge badge-data">📅 20/06/2026 (Sábado)</span><span class="badge badge-tempo">1h atrás</span></div>
+  <div class="fila-actions"><span class="action-btn wpp">WhatsApp</span><span class="action-btn">Confirmada</span><span class="action-btn danger">Remover</span></div></div>
+</div><div class="fila-item">
+  <div class="fila-num">3</div>
+  <div class="fila-info"><div class="fila-nome">Juliana Rocha</div><div class="fila-servico">Design de Sobrancelha</div>
+  <div class="fila-meta"><span class="badge badge-confirmada">Confirmada</span><span class="badge badge-data">📅 19/06/2026 (Sexta)</span><span class="badge badge-tempo">3h atrás</span></div>
+  <div class="fila-actions"><span class="action-btn wpp">WhatsApp</span><span class="action-btn danger">Remover</span></div></div>
+</div></div>
+  </div>
+</main>
+
+<footer class="foot wrap">Fechado aos domingos.<br/>WhatsApp <a href="https://wa.me/5551992740380" target="_blank" rel="noopener">(51) 99274-0380</a> · Instagram <a href="https://instagram.com/voox_1956" target="_blank" rel="noopener">@voox_1956</a></footer>
+<nav class="tabbar" aria-label="Navegação"><a href="/"><svg class="i"><use href="#i-home"/></svg>Início</a><a href="/catalogo.html"><svg class="i"><use href="#i-scissors"/></svg>Serviços</a><a href="/fila.html" aria-current="page"><svg class="i"><use href="#i-clock"/></svg>Espera</a><a href="/bebidas.html"><svg class="i"><use href="#i-cup"/></svg>Bebidas</a></nav>
+
+</body>
+</html>

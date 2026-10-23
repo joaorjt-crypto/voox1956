@@ -2,228 +2,230 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Voox 1956 — Catálogo de Serviços</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light"/>
+<meta name="theme-color" content="#F1ECE3"/>
+<title>Voox 1956 — Serviços e preços</title>
+<meta name="description" content="Tabela de serviços e preços da Voox 1956: cabelo, unhas, estética facial e corporal, depilação, podologia e pacotes."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&display=swap" rel="stylesheet"/>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --gold:#C4956A;--gold-light:#F2E8DC;--gold-dark:#9A6B3E;
-  --dark:#0F0E0C;--dark2:#1C1A17;--surface:#FFFFFF;
-  --muted:#8A8478;--border:#E8E2D9;
-  --cabelos:#C4956A;--manicure:#9B6B8A;--estetica-facial:#7A9B8A;
-  --estetica-corp:#7A8A9B;--depilacoes:#9B8A7A;--combos:#8A9B7A;
+  --page:#E6DCCF; --panel:#F1ECE3; --card-solid:#FBF7F1;
+  --ink:#2A2420; --ink-soft:#4B4139; --muted:#7D7064;
+  --gold:#B07D4C; --gold-soft:rgba(176,125,76,.12); --gold-line:rgba(176,125,76,.28);
+  --glass:rgba(255,251,245,.58); --glass-strong:rgba(255,251,245,.78); --glass-line:rgba(255,255,255,.78);
+  --hair:rgba(42,36,32,.12);
+  --dark2:#FBF7F1;
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --sans:'Jost',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --script:'Great Vibes','Snell Roundhand','Apple Chancery',cursive;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
 }
-html{scroll-behavior:smooth}
-body{font-family:'Jost',sans-serif;background:var(--dark);color:var(--surface);min-height:100vh;overflow-x:hidden}
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+html{background:var(--page);scroll-behavior:smooth;scroll-padding-top:calc(84px + env(safe-area-inset-top,0px));-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);font-weight:300;color:var(--ink);min-height:100vh;
+  background:
+    radial-gradient(60% 40% at 88% 0%,#F3E6D6 0%,transparent 72%),
+    radial-gradient(55% 45% at 0% 100%,#DCCDBB 0%,transparent 70%),
+    var(--page);
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom,0px));
+}
+a{color:inherit;text-decoration:none}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:12px}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
 
-/* HERO */
-.hero{
-  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  position:relative;padding:2rem;text-align:center;
-  background:radial-gradient(ellipse at 30% 20%, #2A1F14 0%, #0F0E0C 60%);
-  overflow:hidden;
-}
-.hero::before{
-  content:'';position:absolute;inset:0;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C4956A' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}
-.hero-eyebrow{font-size:11px;letter-spacing:0.3em;color:var(--gold);text-transform:uppercase;margin-bottom:1.5rem;opacity:0;animation:fadeUp 0.8s 0.2s forwards}
-.hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(3.5rem,10vw,7rem);font-weight:300;line-height:0.9;letter-spacing:-0.02em;margin-bottom:1.5rem;opacity:0;animation:fadeUp 0.8s 0.4s forwards}
-.hero h1 em{font-style:italic;color:var(--gold)}
-.hero-sub{font-size:13px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:3rem;opacity:0;animation:fadeUp 0.8s 0.6s forwards}
-.hero-line{width:1px;height:60px;background:linear-gradient(to bottom,var(--gold),transparent);margin:0 auto;opacity:0;animation:fadeUp 0.8s 0.8s forwards}
-.hero-logo{width:180px;max-width:60%;opacity:0;animation:fadeUp 0.8s 0.3s forwards;margin-bottom:1.5rem;filter:drop-shadow(0 0 40px rgba(196,149,106,0.2))}
+/* ---- barra superior ---- */
+.top{position:sticky;top:0;z-index:40;background:rgba(241,236,227,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--hair)}
+.top-in{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;flex-direction:column;line-height:1}
+.brand-script{font-family:var(--script);font-size:17px;color:var(--ink-soft);margin-left:2px}
+.brand-name{font-family:var(--serif);font-weight:400;font-size:25px;letter-spacing:-.01em;margin-top:-3px}
+.brand-name span{font-weight:300;color:var(--ink-soft);margin-left:4px}
+.pillnav{display:flex;gap:2px;padding:5px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-line)}
+.pillnav a{font-size:14px;font-weight:400;color:var(--ink-soft);padding:9px 18px;border-radius:999px;transition:background .2s,color .2s;white-space:nowrap}
+.pillnav a:hover{background:rgba(42,36,32,.06)}
+.pillnav a[aria-current="page"]{background:var(--ink);color:var(--panel)}
+.top-actions{display:flex;align-items:center;gap:10px}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink);transition:background .2s}
+.icon-btn:hover{background:#fff}
+.cta{display:inline-flex;align-items:center;gap:12px;background:var(--ink);color:var(--panel);border-radius:999px;padding:6px 6px 6px 20px;font-size:14px;font-weight:400;white-space:nowrap}
+.cta-go{width:36px;height:36px;border-radius:50%;background:var(--panel);color:var(--ink);display:grid;place-items:center;transition:transform .25s}
+.cta:hover .cta-go{transform:translateX(3px)}
+.top-mobile{display:none;gap:8px}
 
-/* NAV CATEGORIAS */
-.nav-cats{position:sticky;top:0;z-index:50;background:rgba(15,14,12,0.95);backdrop-filter:blur(10px);border-bottom:1px solid rgba(196,149,106,0.15);padding:0 1rem;overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* ---- herói compacto ---- */
+.head{padding:46px 0 26px}
+.head .eyebrow{font-family:var(--script);font-size:22px;color:var(--gold);line-height:1}
+.head h1{font-family:var(--serif);font-weight:300;font-size:clamp(2.8rem,6vw,4.4rem);line-height:.98;letter-spacing:-.02em;margin-top:2px}
+.head p{font-size:15.5px;line-height:1.6;color:var(--ink-soft);max-width:48ch;margin-top:14px}
+
+/* ---- botões ---- */
+.btn-dark{display:inline-flex;align-items:center;justify-content:center;gap:12px;background:var(--ink);color:var(--panel);padding:15px 24px;border-radius:999px;font-size:15px;font-weight:400;border:none;cursor:pointer;font-family:var(--sans);width:100%}
+.btn-dark svg{transition:transform .25s}
+.btn-dark:hover svg{transform:translateX(3px)}
+
+/* ---- rodapé ---- */
+.foot{border-top:1px solid var(--hair);margin-top:48px;padding:26px 0 8px;color:var(--muted);font-size:13px;line-height:1.8}
+.foot a{color:var(--ink);font-weight:400}
+
+/* ---- FAB whatsapp ---- */
+.fab{position:fixed;z-index:35;right:18px;bottom:calc(92px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--panel);display:grid;place-items:center;box-shadow:0 14px 30px -10px rgba(60,40,22,.5);transition:transform .2s}
+.fab:hover{transform:scale(1.06)}
+.fab svg{width:24px;height:24px}
+
+/* ---- barra inferior (celular) ---- */
+.tabbar{position:fixed;z-index:30;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-radius:999px;background:rgba(255,251,245,.82);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);box-shadow:0 14px 34px -14px rgba(60,40,22,.4)}
+.tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:999px;font-size:11px;font-weight:400;color:var(--ink-soft)}
+.tabbar a[aria-current="page"]{background:var(--ink);color:var(--panel)}
+
+@media (min-width:1001px){ .tabbar,.fab{display:none} }
+@media (max-width:1000px){
+  .pillnav{display:none}
+  .top-actions{display:none}
+  .top-mobile{display:flex}
+  .top-mobile .icon-btn{width:42px;height:42px}
+  .top-in{padding:12px 16px}
+  .wrap{padding:0 16px}
+  .head{padding:30px 0 20px}
+}
+
+.nav-cats{position:sticky;top:73px;z-index:35;background:rgba(241,236,227,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--hair);overflow-x:auto;-webkit-overflow-scrolling:touch}
 .nav-cats::-webkit-scrollbar{display:none}
-.nav-inner{display:flex;gap:0;max-width:900px;margin:0 auto;min-width:max-content}
-.nav-btn{background:none;border:none;color:var(--muted);font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;padding:1.1rem 1.2rem;cursor:pointer;transition:color 0.2s;white-space:nowrap;position:relative}
-.nav-btn::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:1px;background:var(--gold);transition:width 0.3s}
-.nav-btn:hover,.nav-btn.active{color:var(--gold)}
-.nav-btn.active::after{width:60%}
-
-/* MAIN */
-.main{max-width:900px;margin:0 auto;padding:0 1rem 6rem}
-
-/* SECTION */
-.cat-section{padding:5rem 0 2rem;scroll-margin-top:60px}
-.cat-header{display:flex;align-items:center;gap:1.5rem;margin-bottom:3rem}
-.cat-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.cat-title{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:300;letter-spacing:-0.01em;color:white}
-.cat-title em{font-style:italic;color:white}
-.cat-count{font-size:11px;color:var(--muted);letter-spacing:0.1em;margin-top:2px}
-
-/* GRID SERVIÇOS */
-.services-grid{display:grid;grid-template-columns:1fr;gap:1px;background:rgba(255,255,255,0.05);border-radius:16px;overflow:hidden}
-.service-item{background:var(--dark2);padding:1.1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;transition:background 0.2s}
-.service-item:hover{background:#23201C}
-.service-name{font-size:13px;font-weight:400;color:rgba(255,255,255,1);line-height:1.4;text-transform:capitalize}
-.service-price{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:400;color:var(--gold);white-space:nowrap;flex-shrink:0;background:rgba(196,149,106,0.12);border:1px solid rgba(196,149,106,0.2);padding:3px 12px;border-radius:99px}
-.service-price.free{color:var(--muted);font-size:0.85rem;font-family:'Jost',sans-serif;letter-spacing:0.05em}
-
-/* BUSCA */
-.search-wrap{padding:3rem 0 0;max-width:900px;margin:0 auto;padding-left:1rem;padding-right:1rem}
+.nav-inner{display:flex;gap:6px;max-width:980px;margin:0 auto;padding:10px 20px;min-width:max-content}
+.nav-btn{background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink-soft);font-family:var(--sans);font-size:13px;font-weight:400;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s,border-color .2s}
+.nav-btn:hover{border-color:var(--gold-line)}
+.nav-btn.active{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.search-wrap{max-width:980px;margin:0 auto;padding:18px 20px 0}
 .search-box{position:relative}
-.search-box input{width:100%;background:var(--dark2);border:1px solid rgba(196,149,106,0.2);border-radius:12px;padding:1rem 1rem 1rem 3rem;font-family:'Jost',sans-serif;font-size:14px;color:var(--surface);outline:none;transition:border-color 0.2s}
+.search-box input{width:100%;background:var(--card-solid);border:1px solid var(--hair);border-radius:14px;padding:15px 16px 15px 46px;font-family:var(--sans);font-size:15px;font-weight:300;color:var(--ink);outline:none;transition:border-color .2s}
 .search-box input::placeholder{color:var(--muted)}
 .search-box input:focus{border-color:var(--gold)}
-.search-icon{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px}
-#search-results{margin-top:1rem;display:none}
-
-/* WHATSAPP BTN */
-.wpp-fab{position:fixed;bottom:2rem;right:2rem;background:#25D366;color:#fff;border:none;border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(37,211,102,0.4);font-size:24px;text-decoration:none;transition:transform 0.2s}
-.wpp-fab:hover{transform:scale(1.1)}
-
-/* FOOTER */
-footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:12px;letter-spacing:0.1em;border-top:1px solid rgba(255,255,255,0.05)}
-footer span{color:var(--gold)}
-
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
-@media(max-width:600px){
-  .hero h1{font-size:3rem}
-  .service-item{padding:1rem}
-  .service-name{font-size:12px}
-}
+.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);display:grid}
+#search-results{margin-top:10px;display:none}
+.main{max-width:980px;margin:0 auto;padding:0 20px 10px}
+.cat-section{padding:40px 0 4px;scroll-margin-top:132px}
+.cat-header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.cat-icon{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line)}
+.cat-title{font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1;letter-spacing:-.01em}
+.cat-count{font-size:12px;color:var(--muted);letter-spacing:.02em;margin-top:5px}
+.services-grid{background:var(--card-solid);border:1px solid var(--hair);border-radius:20px;overflow:hidden}
+.service-item{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 18px;border-top:1px solid var(--hair)}
+.service-item:first-child{border-top:0}
+.service-name{font-size:14px;font-weight:300;color:var(--ink-soft);line-height:1.4;text-transform:capitalize}
+.service-price{font-family:var(--serif);font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap;flex-shrink:0;background:var(--gold-soft);border:1px solid var(--gold-line);padding:3px 13px;border-radius:999px}
+.service-price.free{color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:400;letter-spacing:.04em;background:transparent;border-color:var(--hair);text-transform:uppercase}
+@media (max-width:1000px){ .nav-cats{top:67px} .cat-section{scroll-margin-top:126px} }
 </style>
 </head>
 <body>
-
-<section class="hero">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 190" style="width:220px;max-width:65%;display:block;margin:0 auto 1.5rem">
-  <defs><style>@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');</style></defs>
-  <text x="150" y="34" font-family="'Great Vibes',cursive" font-size="32" font-weight="400" fill="white" text-anchor="middle">Estética</text>
-  <text x="150" y="112" font-family="Georgia,'Times New Roman',serif" font-size="82" font-weight="400" fill="white" text-anchor="middle" letter-spacing="-2">Voox</text>
-  <text x="150" y="177" font-family="Georgia,'Times New Roman',serif" font-size="58" font-weight="400" fill="white" text-anchor="middle" letter-spacing="2">1956</text>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-arrow-ne" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-cup" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 2v3"/><path d="M10 2v3"/><path d="M14 2v3"/></symbol>
+  <symbol id="i-glass" viewBox="0 0 24 24"><path d="M5 3h14l-1.4 5.4a6 6 0 0 1-11.2 0z"/><path d="M12 15v5"/><path d="M8 20h8"/></symbol>
+  <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v6"/><path d="M12 15v6"/><path d="M3 12h6"/><path d="M15 12h6"/><path d="m6.3 6.3 3 3"/><path d="m14.7 14.7 3 3"/><path d="m17.7 6.3-3 3"/><path d="m9.3 14.7-3 3"/></symbol>
+  <symbol id="i-face" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M9 15c.8.7 1.9 1 3 1s2.2-.3 3-1"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2"/><path d="M2 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 4 13c0-6 7-9 15-9 0 8-3 15-9 15z"/><path d="M4 20c3-4 6-6 10-7"/></symbol>
+  <symbol id="i-foot" viewBox="0 0 24 24"><path d="M7 14c-1 2-2 3-2 5a2 2 0 0 0 4 0c0-2 1-3 1-5a2 2 0 0 0-3-2 2 2 0 0 0 0 2z"/><circle cx="14" cy="5" r="1.4"/><circle cx="17.5" cy="6.5" r="1.1"/><circle cx="19.5" cy="9.5" r="1"/><circle cx="12" cy="6" r="1.1"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="12" rx="1"/><path d="M4 13h16"/><path d="M12 9v12"/><path d="M12 9S9 9 8 7.5 8.5 4 10 4.5 12 9 12 9z"/><path d="M12 9s3 0 4-1.5S15.5 4 14 4.5 12 9 12 9z"/></symbol>
 </svg>
-  <p class="hero-sub">Descubra nossos serviços</p>
-  <div class="hero-line"></div>
-</section>
+<header class="top"><div class="top-in">
+  <a class="brand" href="/" aria-label="Voox 1956, início">
+    <span class="brand-script">Estética</span>
+    <span class="brand-name">Voox<span>1956</span></span>
+  </a>
+  <nav class="pillnav" aria-label="Principal"><a href="/">Início</a><a href="/catalogo.html" aria-current="page">Serviços e preços</a><a href="/fila.html">Lista de espera</a><a href="/bebidas.html">Bebidas</a></nav>
+  <div class="top-actions"><a class="icon-btn" href="https://instagram.com/voox_1956" target="_blank" rel="noopener" aria-label="Instagram @voox_1956"><svg class="i"><use href="#i-insta"/></svg></a><a class="cta" href="https://wa.me/5551992740380" target="_blank" rel="noopener">Agendar no WhatsApp<span class="cta-go"><svg class="i"><use href="#i-arrow"/></svg></span></a></div>
+  <div class="top-mobile"><a class="icon-btn" href="https://instagram.com/voox_1956" target="_blank" rel="noopener" aria-label="Instagram @voox_1956"><svg class="i"><use href="#i-insta"/></svg></a></div>
+</div></header>
+
+<div class="head wrap">
+  <div class="eyebrow">Estética</div>
+  <h1>Serviços e preços</h1>
+  <p>Todos os valores em um só lugar. Busque pelo nome ou percorra por categoria. Alguns serviços variam conforme o comprimento do cabelo — nesses, o valor é “a partir de”.</p>
+</div>
 
 <div class="search-wrap">
   <div class="search-box">
-    <span class="search-icon">🔍</span>
-    <input type="text" id="busca" placeholder="Buscar serviço..." oninput="buscar(this.value)" />
+    <span class="search-icon"><svg class="i"><use href="#i-search"/></svg></span>
+    <input type="text" id="busca" placeholder="Buscar serviço — ex.: escova, manicure, massagem…" oninput="buscar(this.value)" autocomplete="off"/>
   </div>
   <div id="search-results"></div>
 </div>
 
-<nav class="nav-cats">
-  <div class="nav-inner">
-    <button class="nav-btn active" onclick="irParaSecao('cabelos',this)">Cabelos</button>
-    <button class="nav-btn" onclick="irParaSecao('manicure',this)">Manicure & Pedicure</button>
-    <button class="nav-btn" onclick="irParaSecao('estetica-facial',this)">Estética Facial</button>
-    <button class="nav-btn" onclick="irParaSecao('estetica-corp',this)">Estética Corporal</button>
-    <button class="nav-btn" onclick="irParaSecao('depilacoes',this)">Depilações</button>
-    <button class="nav-btn" onclick="irParaSecao('podologia',this)">Podologia</button>
-    <button class="nav-btn" onclick="irParaSecao('combos',this)">Pacotes</button>
-  </div>
-</nav>
+<nav class="nav-cats"><div class="nav-inner"><button class="nav-btn active" onclick="irParaSecao('cabelos',this)">Cabelos</button><button class="nav-btn" onclick="irParaSecao('manicure',this)">Mãos e pés</button><button class="nav-btn" onclick="irParaSecao('estetica-facial',this)">Facial</button><button class="nav-btn" onclick="irParaSecao('estetica-corp',this)">Corporal</button><button class="nav-btn" onclick="irParaSecao('depilacoes',this)">Depilação</button><button class="nav-btn" onclick="irParaSecao('podologia',this)">Podologia</button><button class="nav-btn" onclick="irParaSecao('combos',this)">Pacotes</button></div></nav>
 
 <main class="main" id="main">
-
 <section class="cat-section" id="cabelos">
   <div class="cat-header">
-    <div class="cat-icon" style="background:rgba(196,149,106,0.15)">
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C4956A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
-    <line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>
-    <line x1="8.12" y1="8.12" x2="12" y2="12"/>
-  </svg>
-</div>
-    <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Ca<em>belos</em></div><div class="cat-count">27 serviços</div></div>
+    <span class="cat-icon"><svg class="i"><use href="#i-scissors"/></svg></span>
+    <div><h2 class="cat-title">Cabelos</h2><div class="cat-count" id="count-cabelos"></div></div>
   </div>
   <div class="services-grid" id="grid-cabelos"></div>
 </section>
-
 <section class="cat-section" id="manicure">
   <div class="cat-header">
-    <div class="cat-icon" style="background:rgba(155,107,138,0.15)">
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9B6B8A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
-  </svg>
-</div>
-    <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Manicure & <em>Pedicure</em></div><div class="cat-count">30 serviços</div></div>
+    <span class="cat-icon"><svg class="i"><use href="#i-sparkle"/></svg></span>
+    <div><h2 class="cat-title">Manicure e pedicure</h2><div class="cat-count" id="count-manicure"></div></div>
   </div>
   <div class="services-grid" id="grid-manicure"></div>
 </section>
-
 <section class="cat-section" id="estetica-facial">
   <div class="cat-header">
-    <div class="cat-icon" style="background:rgba(122,155,138,0.15)">
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2v4"/><path d="M20 4h-4"/>
-  </svg>
-</div>
-    <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Estética <em>Facial</em></div><div class="cat-count">25 serviços</div></div>
+    <span class="cat-icon"><svg class="i"><use href="#i-face"/></svg></span>
+    <div><h2 class="cat-title">Estética facial</h2><div class="cat-count" id="count-estetica-facial"></div></div>
   </div>
   <div class="services-grid" id="grid-estetica-facial"></div>
 </section>
-
 <section class="cat-section" id="estetica-corp">
   <div class="cat-header">
-    <div class="cat-icon" style="background:rgba(122,138,155,0.15)">
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7A8A9B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 22c-4.97 0-9-4.03-9-9 0-3.87 2.44-7.17 5.88-8.48"/><path d="M15.03 4.22C18.1 5.76 20 8.93 20 12.5c0 .17 0 .33-.01.5"/><path d="M12 8v8"/><path d="M8 12h8"/>
-  </svg>
-</div>
-    <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Estética <em>Corporal</em></div><div class="cat-count">16 serviços</div></div>
+    <span class="cat-icon"><svg class="i"><use href="#i-wave"/></svg></span>
+    <div><h2 class="cat-title">Estética corporal</h2><div class="cat-count" id="count-estetica-corp"></div></div>
   </div>
   <div class="services-grid" id="grid-estetica-corp"></div>
 </section>
-
 <section class="cat-section" id="depilacoes">
   <div class="cat-header">
-    <div class="cat-icon" style="background:rgba(155,138,122,0.15)">
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9B8A7A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 22V12"/><path d="M12 12C12 12 7 10 5 6c3 0 5.5 1.5 7 6z"/><path d="M12 12C12 12 17 10 19 6c-3 0-5.5 1.5-7 6z"/><path d="M12 12C12 12 10 7 12 2c2 5 0 10 0 10z"/>
-  </svg>
-</div>
-    <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Depi<em>lações</em></div><div class="cat-count">20 serviços</div></div>
+    <span class="cat-icon"><svg class="i"><use href="#i-leaf"/></svg></span>
+    <div><h2 class="cat-title">Depilação</h2><div class="cat-count" id="count-depilacoes"></div></div>
   </div>
   <div class="services-grid" id="grid-depilacoes"></div>
 </section>
-
 <section class="cat-section" id="podologia">
   <div class="cat-header">
-    <div class="cat-icon" style="background:rgba(122,155,155,0.15)">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C4956A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
-    </div>
-    <div>
-      <div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Podo<em>logia</em></div>
-      <div class="cat-count">11 serviços</div>
-    </div>
+    <span class="cat-icon"><svg class="i"><use href="#i-foot"/></svg></span>
+    <div><h2 class="cat-title">Podologia</h2><div class="cat-count" id="count-podologia"></div></div>
   </div>
   <div class="services-grid" id="grid-podologia"></div>
 </section>
-
 <section class="cat-section" id="combos">
   <div class="cat-header">
-    <div class="cat-icon" style="background:rgba(138,155,122,0.15)">
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9B7A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-  </svg>
-</div>
-    <div><div class="cat-title" style="border-bottom:1.5px solid rgba(196,149,106,0.5);padding-bottom:5px;display:table">Paco<em>tes</em></div><div class="cat-count">Pacotes & sessões</div></div>
+    <span class="cat-icon"><svg class="i"><use href="#i-gift"/></svg></span>
+    <div><h2 class="cat-title">Pacotes</h2><div class="cat-count" id="count-combos"></div></div>
   </div>
   <div class="services-grid" id="grid-combos"></div>
 </section>
-
 </main>
 
-<a class="wpp-fab" href="https://wa.me/5551992740380" target="_blank" title="Agendar pelo WhatsApp">
-  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.528 5.845L.057 23.571a.75.75 0 00.914.914l5.726-1.471A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.699-.512-5.244-1.403l-.374-.216-3.878.997.996-3.878-.217-.374A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-  </svg>
-</a>
-
-<footer>
-  <p><span>Voox 1956</span> — Salão de Beleza & Estética</p>
-  <p style="margin-top:6px">Preços sujeitos a alteração sem aviso prévio</p>
-</footer>
+<footer class="foot wrap">Fechado aos domingos.<br/>WhatsApp <a href="https://wa.me/5551992740380" target="_blank" rel="noopener">(51) 99274-0380</a> · Instagram <a href="https://instagram.com/voox_1956" target="_blank" rel="noopener">@voox_1956</a></footer>
+<a class="fab" href="https://wa.me/5551992740380" target="_blank" rel="noopener" aria-label="Agendar no WhatsApp"><svg class="i"><use href="#i-chat"/></svg></a>
+<nav class="tabbar" aria-label="Navegação"><a href="/"><svg class="i"><use href="#i-home"/></svg>Início</a><a href="/catalogo.html" aria-current="page"><svg class="i"><use href="#i-scissors"/></svg>Serviços</a><a href="/fila.html"><svg class="i"><use href="#i-clock"/></svg>Espera</a><a href="/bebidas.html"><svg class="i"><use href="#i-cup"/></svg>Bebidas</a></nav>
 
 <script>
 var servicos = {
@@ -434,6 +436,8 @@ window.addEventListener('scroll',function(){
     }
   });
 });
+
+Object.keys(servicos).forEach(function(k){var c=document.getElementById('count-'+k);if(c)c.textContent=servicos[k].length+' servi\u00e7os';});
 </script>
 </body>
 </html>

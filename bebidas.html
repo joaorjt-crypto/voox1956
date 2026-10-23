@@ -2,194 +2,188 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Voox 1956 — Cardápio de Bebidas</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&family=Great+Vibes&display=swap" rel="stylesheet"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light"/>
+<meta name="theme-color" content="#F1ECE3"/>
+<title>Voox 1956 — Cardápio de bebidas</title>
+<meta name="description" content="Cardápio de bebidas da Voox 1956. Café, café passado e chá são cortesia."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&family=Great+Vibes&display=swap" rel="stylesheet"/>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --gold:#C4956A;--dark:#0A0908;--dark2:#131110;--dark3:#1C1A17;
-  --muted:#8A8478;--radius:14px;--radius-sm:8px;
+  --page:#E6DCCF; --panel:#F1ECE3; --card-solid:#FBF7F1;
+  --ink:#2A2420; --ink-soft:#4B4139; --muted:#7D7064;
+  --gold:#B07D4C; --gold-soft:rgba(176,125,76,.12); --gold-line:rgba(176,125,76,.28);
+  --glass:rgba(255,251,245,.58); --glass-strong:rgba(255,251,245,.78); --glass-line:rgba(255,255,255,.78);
+  --hair:rgba(42,36,32,.12);
+  --dark2:#FBF7F1;
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --sans:'Jost',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --script:'Great Vibes','Snell Roundhand','Apple Chancery',cursive;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
 }
-body{font-family:'Jost',sans-serif;background:var(--dark);color:white;min-height:100vh}
-
-/* HERO */
-.hero{
-  background:var(--dark2);
-  padding:2.5rem 1.5rem 2rem;
-  text-align:center;
-  position:relative;
-  overflow:hidden;
-  border-bottom:1px solid rgba(196,149,106,0.15);
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+html{background:var(--page);scroll-behavior:smooth;scroll-padding-top:calc(84px + env(safe-area-inset-top,0px));-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);font-weight:300;color:var(--ink);min-height:100vh;
+  background:
+    radial-gradient(60% 40% at 88% 0%,#F3E6D6 0%,transparent 72%),
+    radial-gradient(55% 45% at 0% 100%,#DCCDBB 0%,transparent 70%),
+    var(--page);
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom,0px));
 }
-.hero::before{
-  content:'';position:absolute;inset:0;
-  background-image:linear-gradient(rgba(196,149,106,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(196,149,106,0.03) 1px,transparent 1px);
-  background-size:40px 40px;
+a{color:inherit;text-decoration:none}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:12px}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+
+/* ---- barra superior ---- */
+.top{position:sticky;top:0;z-index:40;background:rgba(241,236,227,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--hair)}
+.top-in{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;flex-direction:column;line-height:1}
+.brand-script{font-family:var(--script);font-size:17px;color:var(--ink-soft);margin-left:2px}
+.brand-name{font-family:var(--serif);font-weight:400;font-size:25px;letter-spacing:-.01em;margin-top:-3px}
+.brand-name span{font-weight:300;color:var(--ink-soft);margin-left:4px}
+.pillnav{display:flex;gap:2px;padding:5px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-line)}
+.pillnav a{font-size:14px;font-weight:400;color:var(--ink-soft);padding:9px 18px;border-radius:999px;transition:background .2s,color .2s;white-space:nowrap}
+.pillnav a:hover{background:rgba(42,36,32,.06)}
+.pillnav a[aria-current="page"]{background:var(--ink);color:var(--panel)}
+.top-actions{display:flex;align-items:center;gap:10px}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-line);color:var(--ink);transition:background .2s}
+.icon-btn:hover{background:#fff}
+.cta{display:inline-flex;align-items:center;gap:12px;background:var(--ink);color:var(--panel);border-radius:999px;padding:6px 6px 6px 20px;font-size:14px;font-weight:400;white-space:nowrap}
+.cta-go{width:36px;height:36px;border-radius:50%;background:var(--panel);color:var(--ink);display:grid;place-items:center;transition:transform .25s}
+.cta:hover .cta-go{transform:translateX(3px)}
+.top-mobile{display:none;gap:8px}
+
+/* ---- herói compacto ---- */
+.head{padding:46px 0 26px}
+.head .eyebrow{font-family:var(--script);font-size:22px;color:var(--gold);line-height:1}
+.head h1{font-family:var(--serif);font-weight:300;font-size:clamp(2.8rem,6vw,4.4rem);line-height:.98;letter-spacing:-.02em;margin-top:2px}
+.head p{font-size:15.5px;line-height:1.6;color:var(--ink-soft);max-width:48ch;margin-top:14px}
+
+/* ---- botões ---- */
+.btn-dark{display:inline-flex;align-items:center;justify-content:center;gap:12px;background:var(--ink);color:var(--panel);padding:15px 24px;border-radius:999px;font-size:15px;font-weight:400;border:none;cursor:pointer;font-family:var(--sans);width:100%}
+.btn-dark svg{transition:transform .25s}
+.btn-dark:hover svg{transform:translateX(3px)}
+
+/* ---- rodapé ---- */
+.foot{border-top:1px solid var(--hair);margin-top:48px;padding:26px 0 8px;color:var(--muted);font-size:13px;line-height:1.8}
+.foot a{color:var(--ink);font-weight:400}
+
+/* ---- FAB whatsapp ---- */
+.fab{position:fixed;z-index:35;right:18px;bottom:calc(92px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--panel);display:grid;place-items:center;box-shadow:0 14px 30px -10px rgba(60,40,22,.5);transition:transform .2s}
+.fab:hover{transform:scale(1.06)}
+.fab svg{width:24px;height:24px}
+
+/* ---- barra inferior (celular) ---- */
+.tabbar{position:fixed;z-index:30;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-radius:999px;background:rgba(255,251,245,.82);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);box-shadow:0 14px 34px -14px rgba(60,40,22,.4)}
+.tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:999px;font-size:11px;font-weight:400;color:var(--ink-soft)}
+.tabbar a[aria-current="page"]{background:var(--ink);color:var(--panel)}
+
+@media (min-width:1001px){ .tabbar,.fab{display:none} }
+@media (max-width:1000px){
+  .pillnav{display:none}
+  .top-actions{display:none}
+  .top-mobile{display:flex}
+  .top-mobile .icon-btn{width:42px;height:42px}
+  .top-in{padding:12px 16px}
+  .wrap{padding:0 16px}
+  .head{padding:30px 0 20px}
 }
-.hero::after{
-  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:400px;height:400px;border-radius:50%;
-  background:radial-gradient(ellipse,rgba(196,149,106,0.07) 0%,transparent 70%);
-  pointer-events:none;
-}
-.hero-inner{position:relative;z-index:1}
-.logo-estetica{font-family:'Great Vibes',cursive;font-size:1.6rem;color:rgba(255,255,255,0.6);display:block;margin-bottom:2px}
-.logo-voox{font-family:'Cormorant Garamond',serif;font-size:3.5rem;font-weight:400;line-height:0.9;letter-spacing:-1px;color:white;display:block}
-.logo-ano{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;letter-spacing:4px;color:rgba(255,255,255,0.8);display:block;margin-top:2px}
-.hero-divider{width:40px;height:1px;background:rgba(196,149,106,0.4);margin:1rem auto}
-.hero-sub{font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.3)}
 
-/* MAIN */
-.main{max-width:520px;margin:0 auto;padding:2rem 1rem 5rem}
-
-/* SECTION */
-.section{margin-bottom:2.5rem}
-.section-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem}
-.section-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.section-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:300;color:white;border-bottom:1px solid rgba(196,149,106,0.4);padding-bottom:4px;display:table}
-.section-title em{font-style:italic;color:white}
-
-/* ITEMS */
-.items{display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,0.03);border-radius:var(--radius);overflow:hidden;border:1px solid rgba(196,149,106,0.08)}
-.item{background:var(--dark2);padding:0.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;transition:background 0.2s;border-bottom:1px solid rgba(255,255,255,0.04)}
-.item:last-child{border-bottom:none}
-.item:hover{background:var(--dark3)}
-.item-name{font-size:13px;color:rgba(255,255,255,0.9);font-weight:400;line-height:1.4}
-.item-name small{display:block;font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:0.03em}
-.item-price{font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--gold);white-space:nowrap;flex-shrink:0;background:rgba(196,149,106,0.1);border:1px solid rgba(196,149,106,0.2);padding:2px 10px;border-radius:99px}
-.item-price.cortesia{font-family:'Great Vibes',cursive;font-size:1.1rem;background:rgba(196,149,106,0.06);border-color:rgba(196,149,106,0.15);color:rgba(196,149,106,0.8)}
-
-/* FOOTER */
-.footer{text-align:center;padding:2rem 1rem;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.2);border-top:1px solid rgba(255,255,255,0.05)}
-
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.section{animation:fadeUp 0.5s ease both}
-.section:nth-child(1){animation-delay:0.1s}
-.section:nth-child(2){animation-delay:0.2s}
+.main{max-width:760px;margin:0 auto;padding:0 20px 10px}
+.note{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;color:var(--gold);border:1px solid var(--gold-line);background:var(--gold-soft);padding:7px 14px;border-radius:999px}
+.note svg{width:15px;height:15px}
+.d-section{padding:34px 0 4px}
+.d-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.d-icon{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line)}
+.d-head h2{font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1;letter-spacing:-.01em}
+.d-grid{background:var(--card-solid);border:1px solid var(--hair);border-radius:20px;overflow:hidden}
+.d-item{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;border-top:1px solid var(--hair)}
+.d-item:first-child{border-top:0}
+.d-name{font-size:14.5px;font-weight:400;color:var(--ink);display:flex;flex-direction:column;gap:2px}
+.d-sub{font-size:12px;font-weight:300;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.d-price{font-family:var(--serif);font-size:17px;font-weight:500;color:var(--ink);white-space:nowrap;flex-shrink:0}
+.d-price.free{font-family:var(--sans);font-size:12px;font-weight:400;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line);padding:4px 12px;border-radius:999px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-arrow-ne" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-cup" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 2v3"/><path d="M10 2v3"/><path d="M14 2v3"/></symbol>
+  <symbol id="i-glass" viewBox="0 0 24 24"><path d="M5 3h14l-1.4 5.4a6 6 0 0 1-11.2 0z"/><path d="M12 15v5"/><path d="M8 20h8"/></symbol>
+  <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v6"/><path d="M12 15v6"/><path d="M3 12h6"/><path d="M15 12h6"/><path d="m6.3 6.3 3 3"/><path d="m14.7 14.7 3 3"/><path d="m17.7 6.3-3 3"/><path d="m9.3 14.7-3 3"/></symbol>
+  <symbol id="i-face" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M9 15c.8.7 1.9 1 3 1s2.2-.3 3-1"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2"/><path d="M2 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 4 13c0-6 7-9 15-9 0 8-3 15-9 15z"/><path d="M4 20c3-4 6-6 10-7"/></symbol>
+  <symbol id="i-foot" viewBox="0 0 24 24"><path d="M7 14c-1 2-2 3-2 5a2 2 0 0 0 4 0c0-2 1-3 1-5a2 2 0 0 0-3-2 2 2 0 0 0 0 2z"/><circle cx="14" cy="5" r="1.4"/><circle cx="17.5" cy="6.5" r="1.1"/><circle cx="19.5" cy="9.5" r="1"/><circle cx="12" cy="6" r="1.1"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="12" rx="1"/><path d="M4 13h16"/><path d="M12 9v12"/><path d="M12 9S9 9 8 7.5 8.5 4 10 4.5 12 9 12 9z"/><path d="M12 9s3 0 4-1.5S15.5 4 14 4.5 12 9 12 9z"/></symbol>
+</svg>
+<header class="top"><div class="top-in">
+  <a class="brand" href="/" aria-label="Voox 1956, início">
+    <span class="brand-script">Estética</span>
+    <span class="brand-name">Voox<span>1956</span></span>
+  </a>
+  <nav class="pillnav" aria-label="Principal"><a href="/">Início</a><a href="/catalogo.html">Serviços e preços</a><a href="/fila.html">Lista de espera</a><a href="/bebidas.html" aria-current="page">Bebidas</a></nav>
+  <div class="top-actions"><a class="icon-btn" href="https://instagram.com/voox_1956" target="_blank" rel="noopener" aria-label="Instagram @voox_1956"><svg class="i"><use href="#i-insta"/></svg></a><a class="cta" href="https://wa.me/5551992740380" target="_blank" rel="noopener">Agendar no WhatsApp<span class="cta-go"><svg class="i"><use href="#i-arrow"/></svg></span></a></div>
+  <div class="top-mobile"><a class="icon-btn" href="https://instagram.com/voox_1956" target="_blank" rel="noopener" aria-label="Instagram @voox_1956"><svg class="i"><use href="#i-insta"/></svg></a></div>
+</div></header>
 
-<div class="hero">
-  <div class="hero-inner">
-    <span class="logo-estetica">Estética</span>
-    <span class="logo-voox">Voox</span>
-    <span class="logo-ano">1956</span>
-    <div class="hero-divider"></div>
-    <div class="hero-sub">Cardápio de Bebidas</div>
-  </div>
+<div class="head wrap">
+  <div class="eyebrow">Enquanto você espera</div>
+  <h1>Cardápio de bebidas</h1>
+  <div class="note"><svg class="i"><use href="#i-check"/></svg>Café, café passado e chá são por nossa conta</div>
 </div>
 
-<div class="main">
-
-  <!-- QUENTES -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-icon" style="background:rgba(196,149,106,0.12)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C4956A" stroke-width="1.5" stroke-linecap="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-      </div>
-      <div class="section-title">Bebidas <em>Quentes</em></div>
-    </div>
-    <div class="items">
-      <div class="item">
-        <div class="item-name">Café Expresso Forte</div>
-        <div class="item-price cortesia">cortesia</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Café Passado</div>
-        <div class="item-price cortesia">cortesia</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Chá</div>
-        <div class="item-price cortesia">cortesia</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Café com Leite</div>
-        <div class="item-price">R$ 3,50</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Cappuccino</div>
-        <div class="item-price">R$ 3,50</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Mocaccino</div>
-        <div class="item-price">R$ 3,50</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Chocolate Quente</div>
-        <div class="item-price">R$ 3,50</div>
-      </div>
-    </div>
+<main class="main">
+<section class="d-section">
+  <div class="d-head"><span class="d-icon"><svg class="i"><use href="#i-cup"/></svg></span><h2>Bebidas Quentes</h2></div>
+  <div class="d-grid">
+<div class="d-item"><span class="d-name">Café Expresso Forte</span><span class="d-price free">Cortesia</span></div>
+<div class="d-item"><span class="d-name">Café Passado</span><span class="d-price free">Cortesia</span></div>
+<div class="d-item"><span class="d-name">Chá</span><span class="d-price free">Cortesia</span></div>
+<div class="d-item"><span class="d-name">Café com Leite</span><span class="d-price">R$ 3,50</span></div>
+<div class="d-item"><span class="d-name">Cappuccino</span><span class="d-price">R$ 3,50</span></div>
+<div class="d-item"><span class="d-name">Mocaccino</span><span class="d-price">R$ 3,50</span></div>
+<div class="d-item"><span class="d-name">Chocolate Quente</span><span class="d-price">R$ 3,50</span></div>
   </div>
-
-  <!-- FRIAS -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-icon" style="background:rgba(122,171,224,0.1)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7AABE0" stroke-width="1.5" stroke-linecap="round"><path d="M8 2h8l1 6H7L8 2z"/><path d="M7 8c0 5 1 9 5 10 4-1 5-5 5-10"/><line x1="12" y1="2" x2="12" y2="4"/></svg>
-      </div>
-      <div class="section-title" style="border-color:rgba(122,171,224,0.3)">Bebidas <em>Frias</em></div>
-    </div>
-    <div class="items">
-      <div class="item">
-        <div class="item-name">Água<small>Com gás ou sem gás</small></div>
-        <div class="item-price">R$ 4,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Coca-Cola / Coca-Cola Zero<small>350ml</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Coca-Cola Zero Café<small>200ml</small></div>
-        <div class="item-price">R$ 4,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Fanta Laranja<small>220ml</small></div>
-        <div class="item-price">R$ 4,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Fanta Uva<small>350ml</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Fanta Guaraná<small>350ml</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Sprite Original<small>350ml</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Schweppes Citrus Original<small>350ml</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Schweppes Tônica<small>350ml</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Chá Matte Leão Limão<small>gelado</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Chá Matte Leão Limão Zero<small>gelado</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Chá Matte Leão Pêssego<small>gelado</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-      <div class="item">
-        <div class="item-name">Ice Tea Limão<small>450ml</small></div>
-        <div class="item-price">R$ 6,00</div>
-      </div>
-    </div>
+</section>
+<section class="d-section">
+  <div class="d-head"><span class="d-icon"><svg class="i"><use href="#i-glass"/></svg></span><h2>Bebidas Frias</h2></div>
+  <div class="d-grid">
+<div class="d-item"><span class="d-name">Água<span class="d-sub">Com gás ou sem gás</span></span><span class="d-price">R$ 4,00</span></div>
+<div class="d-item"><span class="d-name">Coca-Cola / Coca-Cola Zero<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Coca-Cola Zero Café<span class="d-sub">200ml</span></span><span class="d-price">R$ 4,00</span></div>
+<div class="d-item"><span class="d-name">Fanta Laranja<span class="d-sub">220ml</span></span><span class="d-price">R$ 4,00</span></div>
+<div class="d-item"><span class="d-name">Fanta Uva<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Fanta Guaraná<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Sprite Original<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Schweppes Citrus Original<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Schweppes Tônica<span class="d-sub">350ml</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Chá Matte Leão Limão<span class="d-sub">gelado</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Chá Matte Leão Limão Zero<span class="d-sub">gelado</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Chá Matte Leão Pêssego<span class="d-sub">gelado</span></span><span class="d-price">R$ 6,00</span></div>
+<div class="d-item"><span class="d-name">Ice Tea Limão<span class="d-sub">450ml</span></span><span class="d-price">R$ 6,00</span></div>
   </div>
+</section>
+</main>
 
-</div>
-
-<div class="footer">Voox 1956 · (51) 99274-0380 · @voox_1956</div>
-
+<footer class="foot wrap">Fechado aos domingos.<br/>WhatsApp <a href="https://wa.me/5551992740380" target="_blank" rel="noopener">(51) 99274-0380</a> · Instagram <a href="https://instagram.com/voox_1956" target="_blank" rel="noopener">@voox_1956</a></footer>
+<a class="fab" href="https://wa.me/5551992740380" target="_blank" rel="noopener" aria-label="Agendar no WhatsApp"><svg class="i"><use href="#i-chat"/></svg></a>
+<nav class="tabbar" aria-label="Navegação"><a href="/"><svg class="i"><use href="#i-home"/></svg>Início</a><a href="/catalogo.html"><svg class="i"><use href="#i-scissors"/></svg>Serviços</a><a href="/fila.html"><svg class="i"><use href="#i-clock"/></svg>Espera</a><a href="/bebidas.html" aria-current="page"><svg class="i"><use href="#i-cup"/></svg>Bebidas</a></nav>
 </body>
 </html>
