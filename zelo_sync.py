@@ -660,65 +660,94 @@ def gravar_oportunidades(db, oport, fones):
 
 # ---------------------------------------------------------------- clientes (12 meses)
 
-POR_PARTE = 700   # clientes por documento (cada um fica bem abaixo do limite de 1 MB)
+POR_PARTE = 400   # clientes por documento (cada um fica bem abaixo do limite de 1 MB, mesmo com 24 meses de visitas)
+DIAS_CLI = 730    # histórico de visitas por cliente (24 meses) — o painel filtra por data em cima disso
+VERSAO_CLI = 3    # sobe quando o formato muda; força refazer no mesmo dia
 
 
 def gravar_clientes(z, db, d, resumo, celulares):
     hoje = d["hoje"]
     meta_ref = db.collection("voox_clientes").document("meta")
     meta = meta_ref.get()
-    if meta.exists and (meta.to_dict() or {}).get("data") == hoje.isoformat() and "--clientes" not in sys.argv:
+    md = (meta.to_dict() or {}) if meta.exists else {}
+    if md.get("data") == hoje.isoformat() and md.get("v") == VERSAO_CLI and "--clientes" not in sys.argv:
         log("Clientes: já atualizado hoje")
         return
-    ags = z.agendamentos(hoje - dt.timedelta(days=365), hoje, STATUS_PAGO,
+    desde = hoje - dt.timedelta(days=DIAS_CLI)
+    ags = z.agendamentos(desde, hoje, STATUS_PAGO,
                          "dataHora,cliente(id,nome),servico(id,nome),profissional(nomeAgenda)")
     precos = d["precos"]
-    por = defaultdict(lambda: {"nome": "", "datas": set(), "v": 0.0, "s": Counter(), "p": Counter()})
-    tabela = 0.0
+    # por cliente e por dia: valor de tabela, serviço principal (o mais caro) e profissional dele
+    por = defaultdict(lambda: {"nome": "", "dias": defaultdict(lambda: {"v": 0.0, "top": -1.0, "s": "", "p": ""})})
+    tabela_mes = defaultdict(float)
     for a in ags:
         c = a.get("cliente")
         if not c or not a.get("dataHora"):
             continue
         x = por[str(c["id"])]
         x["nome"] = c.get("nome") or x["nome"]
-        x["datas"].add(a["dataHora"][:10])
+        dia = a["dataHora"][:10]
         preco = precos.get(str((a.get("servico") or {}).get("id")), 0.0)
-        x["v"] += preco
-        tabela += preco
-        x["s"][limpa_serv((a.get("servico") or {}).get("nome"))] += 1
-        x["p"][((a.get("profissional") or {}).get("nomeAgenda") or "").strip()] += 1
-    # ajusta o preço de tabela para somar o faturamento real de serviços dos últimos 12 meses
-    real = sum((resumo["meses"].get(date_add_months(hoje.replace(day=1), -i).strftime("%Y-%m")) or {}).get("servicos", 0)
-               for i in range(12))
-    fator = real / tabela if tabela > 0 else 1.0
+        v = x["dias"][dia]
+        v["v"] += preco
+        tabela_mes[dia[:7]] += preco
+        if preco > v["top"]:
+            v["top"] = preco
+            v["s"] = limpa_serv((a.get("servico") or {}).get("nome")) or ""
+            v["p"] = ((a.get("profissional") or {}).get("nomeAgenda") or "").strip()
+    # ajuste mês a mês: o preço de tabela vira o faturamento real de serviços daquele mês
+    fator_mes = {}
+    for m, tab in tabela_mes.items():
+        real = (resumo["meses"].get(m) or {}).get("servicos", 0)
+        fator_mes[m] = (real / tab) if tab > 0 and real > 0 else 1.0
+    serv_ix, prof_ix = {}, {}
+
+    def ix(tab, nome):
+        if nome not in tab:
+            tab[nome] = len(tab)
+        return tab[nome]
+
+    corte12 = (hoje - dt.timedelta(days=365)).isoformat()
     lista = []
     for cid, x in por.items():
         if EXCLUIR_NOMES.search(x["nome"]):
             continue
-        ds = sorted(x["datas"])
-        q = len(ds)
-        iv = round((dt.date.fromisoformat(ds[-1]) - dt.date.fromisoformat(ds[0])).days / (q - 1)) if q > 1 else None
-        nome = limpa_nome(x["nome"])
-        item = {"i": cid, "n": nome, "pr": ds[0], "u": ds[-1], "q": q, "v": round(x["v"] * fator, 2),
-                "s": x["s"].most_common(1)[0][0] if x["s"] else "", "r": x["p"].most_common(1)[0][0] if x["p"] else ""}
-        if iv:
-            item["iv"] = iv
+        ds = sorted(x["dias"])
+        vs, v12, q12, s12, p12, d12 = [], 0.0, 0, Counter(), Counter(), []
+        for dia in ds:
+            o = x["dias"][dia]
+            val = o["v"] * fator_mes.get(dia[:7], 1.0)
+            # visita compacta: AAMMDD,valor,serviço,profissional (índices nas listas do documento meta)
+            vs.append(f"{dia[2:4]}{dia[5:7]}{dia[8:10]},{round(val)},{ix(serv_ix, o['s'])},{ix(prof_ix, o['p'])}")
+            if dia >= corte12:
+                v12 += val; q12 += 1; d12.append(dia)
+                if o["s"]: s12[o["s"]] += 1
+                if o["p"]: p12[o["p"]] += 1
+        item = {"i": cid, "n": limpa_nome(x["nome"]), "u": ds[-1], "vs": vs,
+                # resumo dos últimos 12 meses (compatível com a versão anterior do painel)
+                "q": q12, "v": round(v12, 2), "s": s12.most_common(1)[0][0] if s12 else "",
+                "r": p12.most_common(1)[0][0] if p12 else ""}
+        if d12:
+            item["pr"] = d12[0]
+            if q12 > 1:
+                item["iv"] = round((dt.date.fromisoformat(d12[-1]) - dt.date.fromisoformat(d12[0])).days / (q12 - 1))
         if celulares.get(cid):
             item["c"] = celulares[cid]
         lista.append(item)
-    lista.sort(key=lambda o: -o["v"])
+    lista.sort(key=lambda o: (-o["v"], -len(o["vs"])))
     partes = [lista[i:i + POR_PARTE] for i in range(0, len(lista), POR_PARTE)] or [[]]
     batch = db.batch()
     for i, parte in enumerate(partes):
         batch.set(db.collection("voox_clientes").document(f"p{i:02d}"), {"itens": parte})
-    antigas = (meta.to_dict() or {}).get("partes", 0) if meta.exists else 0
-    for i in range(len(partes), antigas):
+    for i in range(len(partes), md.get("partes", 0)):
         batch.delete(db.collection("voox_clientes").document(f"p{i:02d}"))
     batch.set(meta_ref, {"data": hoje.isoformat(), "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes"),
-                         "partes": len(partes), "total": len(lista), "fator": round(fator, 4),
-                         "desde": (hoje - dt.timedelta(days=365)).isoformat()})
+                         "partes": len(partes), "total": len(lista), "v": VERSAO_CLI,
+                         "sd": [n for n, _ in sorted(serv_ix.items(), key=lambda t: t[1])],
+                         "pd": [n for n, _ in sorted(prof_ix.items(), key=lambda t: t[1])],
+                         "desde": desde.isoformat()})
     batch.commit()
-    log(f"Clientes: {len(lista)} clientes em 12 meses ({len(partes)} partes) · ajuste de preço {fator:.2f}")
+    log(f"Clientes: {len(lista)} clientes em 24 meses ({len(partes)} partes), {len(ags)} atendimentos")
 
 
 # ---------------------------------------------------------------- histórico dia a dia
