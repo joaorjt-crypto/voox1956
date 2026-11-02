@@ -138,6 +138,12 @@ h1{font-size:21px;font-weight:700;letter-spacing:-.4px}
 .seg button,.seg span{background:none;border:none;color:var(--muted);font-size:12.5px;font-weight:500;padding:5px 10px;border-radius:8px;white-space:nowrap}
 .seg span{padding-right:2px;font-size:11.5px}
 .seg button:hover{color:var(--text)}
+.seg select{width:auto;background:none;border:none;color:var(--muted);font-size:12.5px;font-weight:500;padding:5px 8px;border-radius:8px;height:auto;cursor:pointer;-webkit-appearance:none;appearance:none}
+html[data-theme="dark"] .seg select{background:none}
+.seg select:hover{color:var(--text)}
+html[data-theme] .seg select.on{background:var(--primary-strong);color:#fff;font-weight:600}
+.seg select option{background:var(--card-2);color:var(--text);font-weight:400}
+html[data-theme="dark"] .seg select option{background:#1c1c1f}
 .seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
 .seg button b{font-weight:600;opacity:.75;margin-left:3px}
 .seg-pg{margin:12px 0 6px}
@@ -899,7 +905,11 @@ var rsT; window.addEventListener('resize', function(){ clearTimeout(rsT); rsT=se
 var dias = {};   // 'AAAA-MM' -> doc do voox_dias
 var PER = { preset:'mes', de:'', ate:'', comp:'ano' };
 try{ var _p=JSON.parse(localStorage.getItem('voox_painel_periodo')||'null'); if(_p && _p.preset) PER=Object.assign(PER,_p); }catch(e){}
-var PRESETS = [['7','7 dias'],['30','30 dias'],['mes','Este mês'],['mespass','Mês passado'],['90','90 dias'],['ano','Este ano'],['12m','12 meses']];
+var PRESETS = [['mes','Este mês'],['mespass','Mês anterior'],['90','90 dias']];
+// atalhos antigos que saíram da barra: converte para o equivalente novo
+if(PER.preset==='ano') PER.preset='a:'+hojeISO().slice(0,4);
+else if(['7','30','12m'].indexOf(PER.preset)>=0) PER.preset='mes';
+var MESES_NOME=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 function d2s(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function s2d(s){ var p=s.split('-'); return new Date(+p[0], +p[1]-1, +p[2], 12); }
@@ -916,6 +926,8 @@ function intervaloDoPreset(p){
   if(p==='mes') return [m+'-01', hoje];
   if(p==='mespass'){ var mp=addMes(m,-1); return [mp+'-01', mp+'-'+String(diasNoMes(mp)).padStart(2,'0')]; }
   if(p==='7'||p==='30'||p==='90') return [addDias(hoje, -(+p-1)), hoje];
+  if(p.indexOf('m:')===0){ var mm=p.slice(2), fm=mm+'-'+String(diasNoMes(mm)).padStart(2,'0'); return [mm+'-01', fm<hoje?fm:hoje]; }
+  if(p.indexOf('a:')===0){ var aa=p.slice(2), fa=aa+'-12-31'; return [aa+'-01-01', fa<hoje?fa:hoje]; }
   if(p==='ano') return [y+'-01-01', hoje];
   if(p==='12m') return [addDias(addAnos(hoje,-1),1), hoje];
   return [PER.de||m+'-01', PER.ate||hoje];
@@ -923,7 +935,8 @@ function intervaloDoPreset(p){
 function periodoAtual(){
   var r=intervaloDoPreset(PER.preset); if(r[0]>r[1]) r=[r[1],r[0]];
   // ano passado = 52 semanas antes (364 dias): compara segunda com segunda, sábado com sábado
-  var c = PER.comp==='ano' ? [addDias(r[0],-364), addDias(r[1],-364)] : [addDias(r[0], -nDias(r[0],r[1])), addDias(r[0],-1)];
+  var cal = /^(m:|a:|mes$|mespass$)/.test(PER.preset);   // mês/ano fechado: compara com o mesmo mês/ano do calendário
+  var c = PER.comp==='ano' ? (cal ? [addAnos(r[0],-1), addAnos(r[1],-1)] : [addDias(r[0],-364), addDias(r[1],-364)]) : [addDias(r[0], -nDias(r[0],r[1])), addDias(r[0],-1)];
   return { de:r[0], ate:r[1], cde:c[0], cate:c[1] };
 }
 function setPreset(v){ PER.preset=v; if(v!=='custom'){ var r=intervaloDoPreset(v); PER.de=r[0]; PER.ate=r[1]; } salvarPer(); renderAtual(); }
@@ -958,10 +971,16 @@ function agregar(de, ate){
 
 function barraFiltro(P){
   var cust=PER.preset==='custom';
-  var h='<div class="fbar"><div class="seg">'+PRESETS.map(function(x){ return '<button class="'+(PER.preset===x[0]?'on':'')+'" onclick="setPreset(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div>';
+  var h='<div class="fbar"><div class="seg">'+PRESETS.map(function(x){ return '<button class="'+(PER.preset===x[0]?'on':'')+'" onclick="setPreset(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('');
+  var cur=hojeISO().slice(0,7), selM=PER.preset.indexOf('m:')===0, selA=PER.preset.indexOf('a:')===0, y0=+cur.slice(0,4);
+  h+='<select class="'+(selM?'on':'')+'" onchange="if(this.value) setPreset(\'m:\'+this.value)" title="Escolher um mês"><option value="">Mês ▾</option>';
+  for(var i=0;i<25;i++){ var mm=addMes(cur,-i); h+='<option value="'+mm+'"'+(selM&&PER.preset==='m:'+mm?' selected':'')+'>'+MESES_NOME[+mm.slice(5)-1]+' '+mm.slice(0,4)+'</option>'; }
+  h+='</select><select class="'+(selA?'on':'')+'" onchange="if(this.value) setPreset(\'a:\'+this.value)" title="Escolher um ano"><option value="">Ano ▾</option>';
+  for(var a=y0;a>=y0-2;a--) h+='<option value="'+a+'"'+(selA&&PER.preset==='a:'+a?' selected':'')+'>'+a+'</option>';
+  h+='</select></div>';
   h+='<button class="fdate'+(cust?' on':'')+'" onclick="toggleDatas(event)" title="Escolher datas"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3"/></svg>'+dataBRc(P.de)+' – '+dataBRc(P.ate)+'</button>';
   h+='<div class="fpop" id="fpop" onclick="event.stopPropagation()"><label>De<input type="date" id="f-de" value="'+P.de+'" max="'+hojeISO()+'"></label><label>Até<input type="date" id="f-ate" value="'+P.ate+'" max="'+hojeISO()+'"></label><button class="btn btn-sm" onclick="setDatas()">Aplicar</button></div>';
-  h+='<div class="seg"><span>vs</span><button class="'+(PER.comp==='ano'?'on':'')+'" onclick="setComp(\'ano\')" title="Mesmas semanas do ano passado (segunda com segunda)">Ano passado</button><button class="'+(PER.comp==='ant'?'on':'')+'" onclick="setComp(\'ant\')" title="Mesmo número de dias logo antes">Período anterior</button></div>';
+  h+='<div class="seg"><span>vs</span><button class="'+(PER.comp==='ano'?'on':'')+'" onclick="setComp(\'ano\')" title="Mês/ano escolhido: o mesmo mês/ano do calendário no ano passado. 90 dias ou datas: as mesmas semanas do ano passado (segunda com segunda)">Ano passado</button><button class="'+(PER.comp==='ant'?'on':'')+'" onclick="setComp(\'ant\')" title="Mesmo número de dias logo antes">Período anterior</button></div>';
   h+='<span class="fcomp">comparando com '+dataBRc(P.cde)+' – '+dataBRc(P.cate)+'</span></div>';
   return h;
 }
