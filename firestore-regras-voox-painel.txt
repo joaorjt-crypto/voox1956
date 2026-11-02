@@ -1,0 +1,41 @@
+// ===== Voox · Painel e Reativação =====
+// Cole DENTRO do bloco  match /databases/{database}/documents { ... }
+// como blocos irmãos (não dentro de um match /{document=**}).
+// NÃO substitua o arquivo inteiro: junte com as regras que já existem.
+// Ao liberar alguém novo no painel.html (USUARIOS), inclua o e-mail aqui também.
+
+    function vooxGestao() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in [
+          'joaorjt@gmail.com', 'jonathanthome123@gmail.com', 'admvoox1@gmail.com'
+        ];
+    }
+    function vooxEquipe() {
+      return vooxGestao() || (request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in [
+          // 'email-da-recepcao@gmail.com'
+        ]);
+    }
+
+    // Indicadores: só o robô grava (conta de serviço ignora as regras)
+    match /voox_painel/{doc} {
+      allow read: if vooxGestao();
+      allow write: if false;
+    }
+
+    // Texto da mensagem do WhatsApp
+    match /voox_config/{doc} {
+      allow read: if vooxEquipe();
+      allow write: if vooxGestao();
+    }
+
+    // Lista de clientes: o robô cria; o app só altera o status de envio
+    match /voox_reativacao/{id} {
+      allow read: if vooxEquipe();
+      allow update: if vooxEquipe()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'enviado', 'enviadoEm', 'enviadoPor', 'voltou', 'voltouEm', 'voltouTipo',
+          'descartado', 'descartadoEm'
+        ]);
+      allow create, delete: if false;
+    }

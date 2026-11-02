@@ -1,0 +1,40 @@
+name: Robô Zelo → Firebase (Voox)
+
+on:
+  schedule:
+    # 06:17, 12:17 e 18:17 em Brasília (UTC-3)
+    - cron: "17 9,15,21 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Só testar (não grava no Firebase)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: zelo-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: robo/requirements.txt
+      - run: pip install -r robo/requirements.txt
+      - name: Sincronizar
+        env:
+          ZELO_USER: ${{ secrets.ZELO_USER }}
+          ZELO_PASS: ${{ secrets.ZELO_PASS }}
+          FIREBASE_SA_VOOX: ${{ secrets.FIREBASE_SA_VOOX }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python robo/zelo_sync.py --dry-run
+          else
+            python robo/zelo_sync.py
+          fi
