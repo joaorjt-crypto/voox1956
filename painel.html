@@ -124,6 +124,7 @@ h1{font-size:21px;font-weight:700;letter-spacing:-.4px}
 .grid{display:grid;gap:13px}
 .kpis{grid-template-columns:repeat(auto-fit,minmax(176px,1fr))}
 .kpis.k6{grid-template-columns:repeat(3,1fr)}
+#r-stats{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .kpis.k4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:1100px){.kpis.k4{grid-template-columns:repeat(2,1fr)}}
 .card.agora{border-style:dashed}
@@ -135,6 +136,26 @@ h1{font-size:21px;font-weight:700;letter-spacing:-.4px}
 .f-row input[type=date]{min-width:140px;color-scheme:dark}
 html[data-theme="light"] .f-row input[type=date]{color-scheme:light}
 .f-info{font-size:11.5px;color:var(--muted);margin-top:9px}
+.meta-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.meta-nums{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-top:6px}
+.meta-dir{text-align:right}
+.kval small{font-size:12px;font-weight:500;color:var(--muted)}
+.meta-bar{position:relative;height:10px;border-radius:6px;background:var(--card-2);margin-top:12px;overflow:visible}
+html[data-theme="light"] .meta-bar{background:rgba(120,90,60,.10)}
+.meta-bar>div{height:100%;border-radius:6px}
+.meta-bar>i{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--text);opacity:.55}
+.tbar{height:8px;border-radius:5px;background:var(--card-2);min-width:60px}
+html[data-theme="light"] .tbar{background:rgba(120,90,60,.10)}
+.tbar>div{height:100%;border-radius:5px;background:var(--s1)}
+td small{font-size:11px}
+.nota{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6}
+.heat{display:grid;gap:3px;margin-top:4px;overflow-x:auto}
+.heat .hh{font-size:10.5px;color:var(--muted);text-align:center}
+.heat .hd{font-size:11.5px;color:var(--muted);display:flex;align-items:center}
+.heat .hc{height:30px;border-radius:5px;background:color-mix(in srgb, var(--s1) calc(var(--a) * 100%), var(--card-2));font-size:10.5px;display:flex;align-items:center;justify-content:center;color:var(--text);min-width:22px}
+html[data-theme="light"] .heat .hc{background:color-mix(in srgb, var(--s1) calc(var(--a) * 100%), rgba(255,255,255,.55))}
+.heat-leg{display:flex;align-items:center;gap:8px;justify-content:flex-end;font-size:11px;color:var(--muted);margin-top:10px}
+.heat-leg i{width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--card-2),var(--s1))}
 .a-info{background:rgba(90,169,255,.10);border:1px solid rgba(90,169,255,.35);color:var(--blue)}
 @media(max-width:600px){.kpis.k6,.kpis.k4,.kpis{grid-template-columns:repeat(2,1fr)} .f-row label{flex:1 1 140px} .f-row select,.f-row input{min-width:0;width:100%} .kpis>.card:last-child:nth-child(odd){grid-column:span 2}}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:15px;box-shadow:var(--shadow);min-width:0}
@@ -269,9 +290,12 @@ html[data-theme="light"] .hbar .tr{background:rgba(120,90,60,.08)}
     </div>
     <div class="side-sec lbl gestao-only">Gestão</div>
     <button class="navbtn gestao-only" data-p="painel" onclick="nav('painel')"><span class="side-ico">◷</span><span class="lbl">Painel</span></button>
+    <button class="navbtn gestao-only" data-p="prof" onclick="nav('prof')"><span class="side-ico">☺</span><span class="lbl">Profissionais</span></button>
+    <button class="navbtn gestao-only" data-p="agenda" onclick="nav('agenda')"><span class="side-ico">▦</span><span class="lbl">Agenda</span></button>
     <button class="navbtn gestao-only" data-p="vendas" onclick="nav('vendas')"><span class="side-ico">▤</span><span class="lbl">Mês a mês</span></button>
     <div class="side-sec lbl">Clientes</div>
     <button class="navbtn" data-p="reativ" onclick="nav('reativ')"><span class="side-ico">↺</span><span class="lbl">Reativação</span><span class="cnt" id="cntReativ" style="display:none">0</span></button>
+    <button class="navbtn" data-p="aniv" onclick="nav('aniv')"><span class="side-ico">✿</span><span class="lbl">Aniversariantes</span><span class="cnt" id="cntAniv" style="display:none">0</span></button>
     <div class="side-foot">
       <div class="uline">
         <div class="uav" id="uavatar">?</div>
@@ -295,6 +319,15 @@ html[data-theme="light"] .hbar .tr{background:rgba(120,90,60,.08)}
 
     <!-- PAINEL -->
     <div class="page" id="page-painel"><div class="empty">Carregando indicadores…</div></div>
+
+    <!-- PROFISSIONAIS -->
+    <div class="page" id="page-prof"><div class="empty">Carregando…</div></div>
+
+    <!-- AGENDA -->
+    <div class="page" id="page-agenda"><div class="empty">Carregando…</div></div>
+
+    <!-- ANIVERSARIANTES -->
+    <div class="page" id="page-aniv"><div class="empty">Carregando…</div></div>
 
     <!-- MÊS A MÊS -->
     <div class="page" id="page-vendas"><div class="empty">Carregando…</div></div>
@@ -418,11 +451,19 @@ function assinar(){
   if(nivel==='admin'||nivel==='gerente'){
     unsubs.push(db.collection('voox_dias').orderBy(firebase.firestore.FieldPath.documentId(),'desc').limit(26).onSnapshot(function(snap){
       dias={}; snap.forEach(function(d){ dias[d.id]=d.data(); });
-      renderPainel();
+      renderAtual();
     }, function(err){
       toast('Histórico dia a dia: '+(err.code||err.message),'err');
     }));
   }
+  if(nivel==='admin'||nivel==='gerente'){
+    unsubs.push(db.collection('voox_config').doc('metas').onSnapshot(function(snap){
+      metas = snap.exists ? snap.data() : {}; renderAtual();
+    }, function(err){ toast('Metas: '+(err.code||err.message),'err'); }));
+  }
+  unsubs.push(db.collection('voox_aniversarios').where('ativo','==',true).limit(200).onSnapshot(function(snap){
+    aniversarios={}; snap.forEach(function(d){ aniversarios[d.id]=d.data(); }); renderAniv();
+  }, function(err){ document.getElementById('page-aniv').innerHTML='<div class="card empty">Sem permissão para ler os aniversariantes ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
   unsubs.push(db.collection('voox_reativacao').onSnapshot(function(snap){
     clientes={};
     snap.forEach(function(d){ clientes[d.id]=d.data(); });
@@ -433,6 +474,7 @@ function assinar(){
   }));
   unsubs.push(db.collection('voox_config').doc('mensagem').onSnapshot(function(snap){
     if(snap.exists && snap.data().texto) mensagem = snap.data().texto;
+    if(snap.exists && snap.data().textoAniv) mensagemAniv = snap.data().textoAniv;
     mensagemCarregada = true;
     var ta=document.getElementById('msg-txt');
     if(document.activeElement!==ta) ta.value=mensagem;
@@ -522,8 +564,13 @@ function podePainel(){ return nivel==='admin' || nivel==='gerente'; }
 var TITULOS = {
   painel: ['Painel', 'Vendas e movimento da casa'],
   vendas: ['Mês a mês', 'Resumo de vendas do Zelo, últimos 13 meses'],
-  reativ: ['Reativação', 'Clientes frequentes que pararam de vir']
+  reativ: ['Reativação', 'Clientes frequentes que pararam de vir'],
+  prof:   ['Profissionais', 'Atendimentos, faturamento, ocupação e faltas por profissional'],
+  agenda: ['Agenda', 'Horários de pico e faltas por dia da semana'],
+  aniv:   ['Aniversariantes', 'Clientes que fazem aniversário esta semana']
 };
+var SO_GESTAO = {painel:1, vendas:1, prof:1, agenda:1};
+function renderAtual(){ if(viewAtual==='painel') renderPainel(); if(viewAtual==='prof') renderProf(); if(viewAtual==='agenda') renderAgenda(); }
 
 function aplicarUI(){
   var ov=document.getElementById('authOverlay'), app=document.getElementById('app');
@@ -541,7 +588,7 @@ function aplicarUI(){
 }
 
 function nav(v){
-  if((v==='painel'||v==='vendas') && !podePainel()) v='reativ';
+  if(SO_GESTAO[v] && !podePainel()) v='reativ';
   viewAtual=v;
   Array.prototype.forEach.call(document.querySelectorAll('.page'), function(p){ p.classList.toggle('on', p.id==='page-'+v); });
   Array.prototype.forEach.call(document.querySelectorAll('.navbtn[data-p]'), function(b){ b.classList.toggle('on', b.getAttribute('data-p')===v); });
@@ -552,6 +599,9 @@ function nav(v){
   if(v==='painel') renderPainel();
   if(v==='vendas') renderVendas();
   if(v==='reativ') renderReativ();
+  if(v==='prof') renderProf();
+  if(v==='agenda') renderAgenda();
+  if(v==='aniv') renderAniv();
   window.scrollTo(0,0);
 }
 
@@ -717,13 +767,13 @@ function periodoAtual(){
   var c = PER.comp==='ano' ? [addDias(r[0],-364), addDias(r[1],-364)] : [addDias(r[0], -nDias(r[0],r[1])), addDias(r[0],-1)];
   return { de:r[0], ate:r[1], cde:c[0], cate:c[1] };
 }
-function setPreset(v){ PER.preset=v; if(v!=='custom'){ var r=intervaloDoPreset(v); PER.de=r[0]; PER.ate=r[1]; } salvarPer(); renderPainel(); }
+function setPreset(v){ PER.preset=v; if(v!=='custom'){ var r=intervaloDoPreset(v); PER.de=r[0]; PER.ate=r[1]; } salvarPer(); renderAtual(); }
 function setDatas(){
   var de=document.getElementById('f-de').value, ate=document.getElementById('f-ate').value;
   if(!de||!ate) return;
-  PER.preset='custom'; PER.de=de; PER.ate=ate; salvarPer(); renderPainel();
+  PER.preset='custom'; PER.de=de; PER.ate=ate; salvarPer(); renderAtual();
 }
-function setComp(v){ PER.comp=v; salvarPer(); renderPainel(); }
+function setComp(v){ PER.comp=v; salvarPer(); renderAtual(); }
 function salvarPer(){ try{ localStorage.setItem('voox_painel_periodo', JSON.stringify(PER)); }catch(e){} }
 
 function agregar(de, ate){
@@ -783,6 +833,14 @@ function renderPainel(){
   h+='<div class="card agora"><div class="klabel">Projeção de '+MESES[+kAtual.slice(5)-1]+' <span class="pill p-mut">agora</span></div><div class="kval">'+brl(proj)+'</div><div class="khint">'+delta(proj, antMes.fat)+'vs. '+mesLabel(addMes(kAtual,-12))+(dia<7?' · ainda instável':'')+'</div></div>';
   h+='<div class="card agora"><div class="klabel">Agenda · próximos 7 dias <span class="pill p-mut">agora</span></div><div class="kval">'+n0(resumo&&resumo.kpis30?resumo.kpis30.agendados7d:0)+'</div><div class="khint">'+n0(A.on)+' agendamentos online no período</div></div>';
   h+='</div>';
+
+  var N=clientesNovas(P.de,P.ate), NC=clientesNovas(P.cde,P.cate);
+  h+='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:13px">';
+  h+=cardMeta();
+  h+='<div class="card"><div class="klabel">Clientes novas no período</div><div class="meta-nums"><div><div class="kval">'+n0(N.novas)+'</div><div class="khint">'+delta(N.novas,NC.novas)+compTxt+' · '+(A.nCli?pct(N.novas/A.nCli):'—')+' das atendidas</div></div>';
+  h+='<div class="meta-dir"><div class="kval" style="font-size:19px">'+(N.base60?pct(N.volt60/N.base60):'—')+'</div><div class="khint">'+(N.base60?'voltaram em até 60 dias ('+N.volt60+' de '+N.base60+')':'retorno em 60 dias: ainda cedo para medir')+'</div></div></div>';
+  if(N.histDias<365) h+='<div class="khint" style="margin-top:8px">◇ Histórico de '+Math.max(0,N.histDias)+' dias antes do período: quem não vinha há mais tempo que isso conta como nova.</div>';
+  h+='</div></div>';
 
   var gran = A.total<=45 ? 'dia' : A.total<=200 ? 'semana' : 'mês';
   h+='<div class="sect">Faturamento no período <small>por '+gran+' · linha = '+(PER.comp==='ano'?'mesmo período do ano passado':'período anterior')+'</small></div>';
@@ -897,15 +955,224 @@ function dadosDemoDias(){
   }
 }
 
+
+// ---------------------------------------------------------------- extras: meta, clientes novas, profissionais, agenda, aniversários
+var metas = {}, aniversarios = {}, mensagemAniv = '';
+var MSG_ANIV_PADRAO = 'Feliz aniversário, {nome}! A Voox 1956 preparou um presente pra você: 15% em qualquer serviço este mês. Agende pelo link: https://app.zelo.tec.br/agendamentodireto/MTcyMDUyODMzMzcxMDsxNjM4';
+var _visitas = null, _visitasKey = '';
+
+function horarioDia(dow){ var h=(resumo&&resumo.horario)||[]; return h[dow] || {aberto: dow!==6, min: dow===6?0:720}; }
+function diasAbertos(de, ate){ var n=0; for(var d=de; d<=ate; d=addDias(d,1)){ if(horarioDia((s2d(d).getDay()+6)%7).aberto) n++; } return n; }
+
+// -- meta do mês
+function cardMeta(){
+  var hoje=hojeISO(), k=hoje.slice(0,7), meta=+metas[k]||0;
+  var A=agregar(k+'-01', hoje), real=A.comDado ? A.fat : (((resumo&&resumo.meses)||{})[k]||{}).fat||0;
+  var fimMes=k+'-'+String(diasNoMes(k)).padStart(2,'0');
+  var restam=diasAbertos(hoje, fimMes), passados=diasAbertos(k+'-01', addDias(hoje,-1))||1;
+  var nomeMes=MESES[+k.slice(5)-1];
+  var h='<div class="card meta-card"><div class="meta-top"><div class="klabel">Meta de '+nomeMes+' <span class="pill p-mut">agora</span></div>';
+  if(podePainel()) h+='<button class="btn btn-sm btn-ghost" onclick="editarMeta()">'+(meta?'Alterar meta':'Definir meta')+'</button>';
+  h+='</div>';
+  if(!meta){ h+='<div class="khint" style="margin-top:8px">Sem meta definida para '+nomeMes+'. Com a meta, o painel mostra quanto falta e quanto precisa vender por dia aberto.</div></div>'; return h; }
+  var p=real/meta, falta=Math.max(0, meta-real), porDia=restam?falta/restam:0, ritmo=real/passados;
+  var cor = p>=1 ? 'var(--green)' : (ritmo*restam+real)>=meta ? 'var(--green)' : 'var(--amber)';
+  h+='<div class="meta-nums"><div><div class="kval">'+brl(real)+'</div><div class="khint">de '+brl(meta)+' · '+pct(p)+'</div></div>';
+  h+='<div class="meta-dir"><div class="kval" style="font-size:19px">'+(p>=1?'Meta batida':brl(porDia)+' <small>por dia</small>')+'</div><div class="khint">'+(p>=1?'+'+brl(real-meta)+' acima':'faltam '+brl(falta)+' em '+restam+' dia(s) aberto(s) · ritmo atual '+brl(ritmo)+'/dia')+'</div></div></div>';
+  h+='<div class="meta-bar"><div style="width:'+Math.min(100,p*100).toFixed(1)+'%;background:'+cor+'"></div><i style="left:'+Math.min(100, (passados/(passados+restam))*100).toFixed(1)+'%" title="onde deveria estar hoje"></i></div>';
+  h+='<div class="khint" style="margin-top:6px">A marca na barra mostra onde a meta deveria estar hoje, pelos dias abertos que já passaram.</div></div>';
+  return h;
+}
+function editarMeta(){
+  var k=hojeISO().slice(0,7), atual=metas[k]||'';
+  var v=prompt('Meta de faturamento de '+mesLabel(k)+' (só números, em reais):', atual);
+  if(v===null) return;
+  v=+String(v).replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.');
+  if(!(v>0)){ toast('Meta inválida.','err'); return; }
+  var upd={}; upd[k]=v;
+  if(DEMO){ metas[k]=v; renderPainel(); toast('Meta salva (demonstração).'); return; }
+  db.collection('voox_config').doc('metas').set(upd, {merge:true})
+    .then(function(){ toast('Meta de '+mesLabel(k)+' salva.'); })
+    .catch(function(e){ toast('Não salvou a meta: '+(e.code||e.message),'err'); });
+}
+
+// -- clientes novas (pelo histórico dia a dia)
+function indiceVisitas(){
+  var key=Object.keys(dias).sort().join(',')+'|'+Object.keys(dias).map(function(k){return dias[k].atualizadoEm||'';}).join('');
+  if(_visitas && key===_visitasKey) return _visitas;
+  var v={}, ini=null;
+  Object.keys(dias).sort().forEach(function(k){
+    Object.keys(dias[k].dias||{}).sort().forEach(function(dd){
+      var d=k+'-'+dd, x=dias[k].dias[dd];
+      if(!ini && (x.at||x.fat)) ini=d;
+      (x.cli||[]).forEach(function(c){ var a=v[c]||(v[c]=[]); if(a[a.length-1]!==d) a.push(d); });
+    });
+  });
+  _visitas={v:v, ini:ini}; _visitasKey=key; return _visitas;
+}
+function clientesNovas(de, ate){
+  var I=indiceVisitas(), hoje=hojeISO(), lim=addDias(hoje,-60), novas=0, base60=0, volt60=0;
+  Object.keys(I.v).forEach(function(c){
+    var a=I.v[c], f=a[0];
+    if(f<de || f>ate) return;
+    novas++;
+    if(f<=lim){ base60++; if(a[1] && a[1]<=addDias(f,60)) volt60++; }
+  });
+  var hist = I.ini ? nDias(I.ini, de)-1 : 0;
+  return {novas:novas, base60:base60, volt60:volt60, histDias:hist};
+}
+
+// -- profissionais
+function agregarProf(de, ate){
+  var P={};
+  for(var d=de; d<=ate; d=addDias(d,1)){
+    var mes=dias[d.slice(0,7)], x=mes&&mes.dias?mes.dias[d.slice(8,10)]:null; if(!x) continue;
+    var abre=horarioDia((s2d(d).getDay()+6)%7).min||0;
+    (x.p||[]).forEach(function(o){
+      var r=P[o.n]||(P[o.n]={nome:o.n,q:0,m:0,disp:0,v:0,c:0,f:0,temV:false});
+      r.q+=o.q||0; r.m+=o.m||0; r.c+=o.c||0; r.f+=o.f||0;
+      if(o.v!=null){ r.v+=o.v; r.temV=true; }
+      if((o.q||0)>0 && abre) r.disp+=Math.max(30, abre-(o.b||0));
+    });
+  }
+  return Object.keys(P).map(function(k){ return P[k]; }).filter(function(r){ return r.nome!=='—' && (r.q||r.c||r.f); }).sort(function(a,b){ return (b.v-a.v)||(b.q-a.q); });
+}
+function renderProf(){
+  if(viewAtual!=='prof') return;
+  frescor();
+  var el=document.getElementById('page-prof');
+  if(!Object.keys(dias).length){ semDados('page-prof'); return; }
+  var P=periodoAtual(), L=agregarProf(P.de,P.ate), C={}; agregarProf(P.cde,P.cate).forEach(function(r){ C[r.nome]=r; });
+  var temV=L.some(function(r){ return r.temV; }), mxV=Math.max.apply(null, L.map(function(r){return r.v;}).concat([1]));
+  var h=barraFiltro(P);
+  if(!temV) h+='<div class="alert a-info">◇ Faturamento e ocupação por profissional aparecem nos dias que o robô já gravou no formato novo.</div>';
+  h+='<div class="tw"><div class="tscroll"><table><thead><tr><th>Profissional</th><th class="r">Atend.</th><th class="r">Faturamento (est.)</th><th style="width:22%"></th><th class="r">vs. comparação</th><th class="r">Por atend.</th><th class="r" title="Minutos atendidos ÷ horário de funcionamento menos bloqueios, nos dias em que atendeu">Ocupação</th><th class="r">Faltas</th><th class="r">Cancel.</th></tr></thead><tbody>';
+  if(!L.length) h+='<tr><td colspan="9" class="empty">Sem atendimentos no período.</td></tr>';
+  L.forEach(function(r){
+    var c=C[r.nome], dv='—';
+    if(c && c.v){ var x=(r.v-c.v)/c.v; dv='<span class="'+(x>=0?'up':'down')+'">'+(x>=0?'+':'−')+pct(Math.abs(x))+'</span>'; }
+    var oc=r.disp?Math.min(1, r.m/r.disp):null, tf=(r.q+r.f)?r.f/(r.q+r.f):0;
+    h+='<tr><td>'+esc(r.nome)+'</td><td class="r">'+n0(r.q)+'</td><td class="r">'+(r.temV?brl(r.v):'—')+'</td><td><div class="tbar"><div style="width:'+(r.v/mxV*100).toFixed(1)+'%"></div></div></td><td class="r">'+dv+'</td><td class="r">'+(r.temV&&r.q?brl2(r.v/r.q):'—')+'</td>';
+    h+='<td class="r">'+(oc==null?'—':'<span class="pill '+(oc>=0.75?'p-ok':oc>=0.5?'p-blue':'p-warn')+'">'+pct(oc)+'</span>')+'</td>';
+    h+='<td class="r">'+n0(r.f)+(r.f?' <small class="'+(tf>=0.05?'down':'p-sem')+'">('+pct(tf)+')</small>':'')+'</td><td class="r">'+n0(r.c)+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+  h+='<div class="nota"><b>Faturamento (est.)</b>: o Zelo não libera o valor por profissional para o robô; o painel distribui o faturamento real de serviços de cada dia pelo preço de tabela do que cada um atendeu. <b>Ocupação</b>: minutos atendidos ÷ (horário da casa − bloqueios), só nos dias em que a profissional atendeu. Acima de 75% em verde; abaixo de 50% em âmbar.</div>';
+  el.innerHTML=h;
+}
+
+// -- agenda: horário de pico e faltas por dia
+function renderAgenda(){
+  if(viewAtual!=='agenda') return;
+  frescor();
+  var el=document.getElementById('page-agenda');
+  if(!Object.keys(dias).length){ semDados('page-agenda'); return; }
+  var P=periodoAtual(), M=[], tem=false, perdasDia=[0,0,0,0,0,0,0], atDia=[0,0,0,0,0,0,0], nDiasSem=[0,0,0,0,0,0,0];
+  for(var i=0;i<7;i++){ M.push(new Array(24).fill(0)); }
+  for(var d=P.de; d<=P.ate; d=addDias(d,1)){
+    var mes=dias[d.slice(0,7)], x=mes&&mes.dias?mes.dias[d.slice(8,10)]:null; if(!x) continue;
+    var w=(s2d(d).getDay()+6)%7;
+    nDiasSem[w]++; atDia[w]+=x.at||0; perdasDia[w]+=(x.canc||0)+(x.falt||0);
+    if(x.h){ tem=true; x.h.forEach(function(v,hh){ M[w][hh]+=v; }); }
+  }
+  var h=barraFiltro(P);
+  h+='<div class="sect">Horário de pico <small>média de atendimentos por hora de início, em cada dia da semana</small></div>';
+  if(!tem){ h+='<div class="card empty">O mapa de horários aparece nos dias que o robô já gravou no formato novo.</div>'; }
+  else {
+    var hmin=24, hmax=0, mx=0;
+    for(var w=0;w<7;w++) for(var hh=0;hh<24;hh++){ if(M[w][hh]){ hmin=Math.min(hmin,hh); hmax=Math.max(hmax,hh); } }
+    var media=M.map(function(row,w){ return row.map(function(v){ var m=nDiasSem[w]?v/nDiasSem[w]:0; if(m>mx) mx=m; return m; }); });
+    h+='<div class="card"><div class="heat" style="grid-template-columns:44px repeat('+(hmax-hmin+1)+',1fr)"><div></div>';
+    for(var hh=hmin;hh<=hmax;hh++) h+='<div class="hh">'+hh+'h</div>';
+    for(var w=0;w<7;w++){
+      h+='<div class="hd">'+SEMANA[w]+'</div>';
+      for(var hh=hmin;hh<=hmax;hh++){
+        var v=media[w][hh], a=mx?v/mx:0;
+        h+='<div class="hc" style="--a:'+a.toFixed(3)+'" title="'+SEMANA[w]+' '+hh+'h: '+v.toLocaleString('pt-BR',{maximumFractionDigits:1})+' atendimentos em média">'+(v>=0.5?Math.round(v):'')+'</div>';
+      }
+    }
+    h+='</div><div class="heat-leg"><span>menos</span><i></i><span>mais</span></div></div>';
+  }
+  h+='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:16px">';
+  var mxp=Math.max.apply(null, perdasDia.map(function(v,i){ return (atDia[i]+v)?v/(atDia[i]+v):0; }).concat([0.0001]));
+  h+='<div class="card"><div class="klabel">Faltas e cancelamentos por dia da semana</div><div class="hbars">';
+  perdasDia.forEach(function(v,i){ var t=(atDia[i]+v)?v/(atDia[i]+v):0; h+='<div class="hbar"><div class="nm">'+SEMANA[i]+'</div><div class="tr"><div class="fl" style="width:'+(t/mxp*100).toFixed(1)+'%;background:var(--red)"></div></div><div class="v">'+(atDia[i]+v?pct(t):'—')+'</div></div>'; });
+  h+='</div><div class="khint" style="margin-top:10px">% dos horários marcados que viraram falta ou cancelamento.</div></div>';
+  var mxa=Math.max.apply(null, atDia.map(function(v,i){ return nDiasSem[i]?v/nDiasSem[i]:0; }).concat([1]));
+  h+='<div class="card"><div class="klabel">Atendimentos por dia aberto</div><div class="hbars">';
+  atDia.forEach(function(v,i){ var m=nDiasSem[i]?v/nDiasSem[i]:0; h+='<div class="hbar"><div class="nm">'+SEMANA[i]+'</div><div class="tr"><div class="fl" style="width:'+(m/mxa*100).toFixed(1)+'%"></div></div><div class="v">'+Math.round(m)+'</div></div>'; });
+  h+='</div><div class="khint" style="margin-top:10px">Média de atendimentos em cada dia da semana no período.</div></div>';
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+// -- aniversariantes
+function renderAniv(){
+  var lista=Object.keys(aniversarios).map(function(id){ return Object.assign({id:id}, aniversarios[id]); }).filter(function(a){ return a.ativo; });
+  var ano=hojeISO().slice(0,4), pend=lista.filter(function(a){ return a.enviadoAno!==ano && a.cel; }).length;
+  var cnt=document.getElementById('cntAniv'); cnt.textContent=pend; cnt.style.display=pend?'':'none';
+  if(viewAtual!=='aniv') return;
+  frescor();
+  function chave(a){ var p=(a.dia||'99/99').split('/'); return p[1]+p[0]; }
+  lista.sort(function(a,b){ return chave(a).localeCompare(chave(b)); });
+  var hojeDM=hojeISO().slice(8,10)+'/'+hojeISO().slice(5,7);
+  var h='';
+  if(podePainel()){
+    h+='<details class="card msgcard"><summary>Mensagem de aniversário</summary><textarea id="msg-aniv">'+esc(mensagemAniv||MSG_ANIV_PADRAO)+'</textarea><div class="msgrow"><span>Use <b>{nome}</b> para o primeiro nome.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarMsgAniv()">Salvar mensagem</button></div></details>';
+  }
+  h+='<div class="sect">Aniversariantes da semana <small>'+lista.length+' cliente(s) com aniversário cadastrado no Zelo</small></div>';
+  if(!lista.length) h+='<div class="card empty">Nenhuma aniversariante esta semana — ou poucas clientes com data de nascimento no cadastro. Vale pedir a data na recepção.</div>';
+  h+='<div class="rlist">';
+  lista.forEach(function(a){
+    var env=a.enviadoAno===ano, hj=a.dia===hojeDM;
+    h+='<div class="rrow" style="--c:'+(env?'var(--green)':hj?'var(--primary)':'var(--amber)')+'"><div><div class="nm">'+esc(a.nome)+'</div><div class="info">Aniversário '+esc(a.dia||'—')+(hj?' · <b>hoje</b>':'')+(a.cel?'':' · sem celular válido no Zelo')+'</div>';
+    if(env) h+='<div class="tags"><span class="pill p-ok">Mensagem enviada</span>'+(a.enviadoPor?'<span class="pill p-mut">por '+esc(a.enviadoPor.split('@')[0])+'</span>':'')+'</div>';
+    h+='</div><div class="acts">'+(a.cel?'<button class="btn btn-sm '+(env?'btn-ghost':'btn-wa')+'" onclick="enviarAniv(\''+a.id+'\')">'+(env?'Reenviar':'WhatsApp')+'</button>':'')+'</div></div>';
+  });
+  h+='</div>';
+  document.getElementById('page-aniv').innerHTML=h;
+}
+function enviarAniv(id){
+  var a=aniversarios[id]; if(!a||!a.cel) return;
+  var txt=(mensagemAniv||MSG_ANIV_PADRAO).replace(/\{nome\}/g, a.primeiro||(a.nome||'').split(' ')[0]);
+  window.open('https://wa.me/55'+a.cel+'?text='+encodeURIComponent(txt), '_blank', 'noopener');
+  var campos={enviadoAno:hojeISO().slice(0,4), enviadoEm:new Date().toISOString(), enviadoPor:email||'demo'};
+  if(DEMO){ Object.assign(aniversarios[id], campos); renderAniv(); return; }
+  db.collection('voox_aniversarios').doc(id).update(campos).catch(function(e){ toast('Não marcou como enviada: '+(e.code||e.message),'err'); });
+}
+function salvarMsgAniv(){
+  var t=document.getElementById('msg-aniv').value.trim();
+  if(t.length<20){ toast('Mensagem muito curta.','err'); return; }
+  if(DEMO){ mensagemAniv=t; toast('Mensagem salva (demonstração).'); return; }
+  db.collection('voox_config').doc('mensagem').set({textoAniv:t, atualizadoEm:new Date().toISOString(), por:email}, {merge:true})
+    .then(function(){ toast('Mensagem de aniversário salva.'); })
+    .catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
+
+function dadosDemoExtras(){
+  metas[hojeISO().slice(0,7)]=245000;
+  resumo.horario=[{aberto:true,min:720},{aberto:true,min:720},{aberto:true,min:720},{aberto:true,min:720},{aberto:true,min:720},{aberto:true,min:720},{aberto:false,min:0}];
+  var profs=['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','FLÁVIA (CAB)','GABI (SOB)','HELENA (EST)'], seed=3;
+  function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+  Object.keys(dias).forEach(function(k){ Object.keys(dias[k].dias).forEach(function(dd){
+    var x=dias[k].dias[dd]; if(!x.at) { x.h=new Array(24).fill(0); x.p=[]; return; }
+    x.h=new Array(24).fill(0); for(var i=0;i<x.at;i++){ var hr=8+Math.floor(Math.pow(rnd(),0.9)*11); if(rnd()<0.35) hr=9+Math.floor(rnd()*3); x.h[hr]++; }
+    x.p=profs.map(function(n,i){ var q=Math.round(x.at/profs.length*(1.4-i*0.1)); return {n:n,q:q,m:q*(40+i*6),b:Math.round(rnd()*180),v:x.serv*(1.4-i*0.1)/profs.length/1.05,c:Math.round(rnd()*1.2),f:rnd()<0.15?1:0}; });
+  }); });
+  aniversarios={a1:{nome:'MARINA SOUZA',primeiro:'Marina',cel:'51999990001',dia:hojeISO().slice(8,10)+'/'+hojeISO().slice(5,7),ativo:true},a2:{nome:'PAULA RIBEIRO',primeiro:'Paula',cel:'51999990002',dia:'05/11',ativo:true,enviadoAno:hojeISO().slice(0,4),enviadoPor:'vooxrecepcao@gmail.com'},a3:{nome:'TERESA LIMA',primeiro:'Teresa',cel:'',dia:'07/11',ativo:true}};
+  Object.keys(clientes).forEach(function(id){ var c=clientes[id]; if(c.voltou&&c.enviado){ c.retornoAtend=2; c.retornoValor=168; } });
+}
+
 // ---------------------------------------------------------------- reativação
 var COR_ESTADO = { enviar:'var(--amber)', aguardando:'var(--blue)', voltaram:'var(--green)', descartadas:'var(--muted)' };
 
 function renderReativ(){
-  var ids=Object.keys(clientes), cont={enviar:0,aguardando:0,voltaram:0,descartadas:0}, env30=0, volt30=0;
+  var ids=Object.keys(clientes), cont={enviar:0,aguardando:0,voltaram:0,descartadas:0}, env30=0, volt30=0, retV=0, retN=0, retC=0;
   ids.forEach(function(id){
     var c=clientes[id], e=estado(c);
     if(cont[e]!=null) cont[e]++;
     if(c.enviado && c.enviadoEm && diasDesde(c.enviadoEm)<=30){ env30++; if(c.voltou) volt30++; }
+    if(c.enviado && c.retornoAtend){ retV+=c.retornoValor||0; retN+=c.retornoAtend; retC++; }
   });
   var cnt=document.getElementById('cntReativ');
   cnt.textContent=cont.enviar; cnt.style.display=cont.enviar?'':'none';
@@ -920,6 +1187,7 @@ function renderReativ(){
     var clic=x[0]!=='taxa';
     s+='<div class="card'+(clic?' kclick':'')+(filtro===x[0]?' on':'')+'"'+(clic?' onclick="setFiltro(\''+x[0]+'\')"':'')+'><div class="klabel">'+x[1]+'</div><div class="kval">'+x[2]+'</div><div class="khint">'+x[3]+'</div></div>';
   });
+  s+='<div class="card" title="Soma dos serviços feitos depois da mensagem, pelo preço de tabela"><div class="klabel">Retorno em R$</div><div class="kval">'+brl(retV)+'</div><div class="khint">'+n0(retN)+' atendimentos de '+n0(retC)+' cliente(s) · estimado</div></div>';
   s+='<div class="card kclick'+(filtro==='descartadas'?' on':'')+'" onclick="setFiltro(\'descartadas\')"><div class="klabel">Descartadas</div><div class="kval">'+n0(cont.descartadas)+'</div><div class="khint">fora da lista</div></div>';
   document.getElementById('r-stats').innerHTML=s;
   renderLista();
@@ -951,7 +1219,7 @@ function renderLista(){
     var d=diasDesde(c.ult), tags='';
     if(c.prioridade===1) tags+='<span class="pill p-warn">Prioridade 1</span>';
     if(filtro==='aguardando'){ var de=diasDesde(c.enviadoEm); tags+='<span class="pill '+(de>=7?'p-bad':'p-blue')+'">Enviada há '+de+(de===1?' dia':' dias')+'</span>'; if(c.enviadoPor) tags+='<span class="pill p-mut">por '+esc((c.enviadoPor||'').split('@')[0])+'</span>'; }
-    if(filtro==='voltaram') tags+='<span class="pill p-ok">'+(c.voltouTipo==='agendou'?'Agendou':c.voltouTipo==='manual'?'Marcado à mão':'Voltou')+' em '+dataBR(c.voltouEm)+'</span>'+(c.enviado?'<span class="pill p-mut">após mensagem</span>':'');
+    if(filtro==='voltaram') tags+='<span class="pill p-ok">'+(c.voltouTipo==='agendou'?'Agendou':c.voltouTipo==='manual'?'Marcado à mão':'Voltou')+' em '+dataBR(c.voltouEm)+'</span>'+(c.enviado?'<span class="pill p-mut">após mensagem</span>':'')+(c.retornoAtend?'<span class="pill p-ok">'+brl(c.retornoValor||0)+' em '+c.retornoAtend+' atend.</span>':'');
     if(c.ciclos) tags+='<span class="pill p-mut">'+(c.ciclos+1)+'ª vez na lista</span>';
     h+='<div class="rrow" style="--c:'+COR_ESTADO[filtro]+'"><div><div class="nm">'+esc(c.nome)+'</div>';
     h+='<div class="info">'+esc(c.servico)+' · última visita '+dataBR(c.ult)+' ('+d+' dias) · '+n0(c.n)+' serviços em 120 dias · costuma vir a cada '+c.intervalo+' dias</div>';
@@ -1008,9 +1276,9 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras();
   document.getElementById('msg-txt').value=mensagem;
-  aplicarUI(); renderReativ();
+  aplicarUI(); renderReativ(); renderAniv();
 } else {
   firebase.initializeApp(firebaseConfig);
   auth=firebase.auth(); db=firebase.firestore();
