@@ -140,6 +140,58 @@ class Zelo:
     def cliente(self, cid):
         return (self.get(f"/api/clientes/{cid}") or {}).get("content") or {}
 
+    def catalogo(self):
+        """preço de tabela por serviço (inclui os marcados como não utilizados, para o histórico)"""
+        precos = {}
+        for nao_usado in ("N", "S"):
+            page = 1
+            while page < 30:
+                c = self.get("/api/servicos", {"page": page, "rpp": 100, "q": "", "servicoNaoUtilizado": nao_usado,
+                                               "fields": "id,valor"})["content"]
+                for x in c.get("resultList") or []:
+                    precos[str(x.get("id"))] = float(x.get("valor") or 0)
+                if not c.get("more"):
+                    break
+                page += 1
+        return precos
+
+    def horario(self):
+        """minutos de funcionamento por dia da semana (segunda=0 ... domingo=6)"""
+        c = (self.get("/api/configuracoes/0") or {}).get("content") or {}
+        nomes = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+        out = [{"aberto": False, "ini": 0, "fim": 0, "min": 0} for _ in range(7)]
+        for h in c.get("horarioFuncionamentos") or []:
+            nome = (h.get("diaSemanaStr") or "").strip()
+            if nome not in nomes:
+                continue
+            ini = h.get("abertura") or "T00:00"
+            fim = h.get("fechamento") or "T00:00"
+            a = int(ini[11:13]) * 60 + int(ini[14:16])
+            f = int(fim[11:13]) * 60 + int(fim[14:16])
+            out[nomes.index(nome)] = {"aberto": bool(h.get("aberto")), "ini": a, "fim": f,
+                                      "min": max(0, f - a) if h.get("aberto") else 0}
+        return out
+
+    def aniversariantes(self):
+        ids, page = [], 1
+        while page < 20:
+            c = self.get("/api/clientes/aniversariantessemana", {"page": page, "rpp": 50, "fields": "id"})["content"]
+            ids += [str(x.get("id")) for x in c.get("resultList") or [] if x.get("id")]
+            if not c.get("more"):
+                break
+            page += 1
+        out = []
+        for cid in ids:
+            try:
+                c = self.cliente(cid)
+            except Exception as e:
+                log(f"  aniversariante {cid} falhou: {e}")
+                continue
+            nasc = c.get("dataNascimentoFormatado") or c.get("aniversarioFormatado") or ""
+            out.append({"id": cid, "nome": limpa_nome(c.get("nome")), "cel": celular_br(c.get("celular")),
+                        "dia": nasc[:5]})
+        return out
+
 
 def money(txt):
     if txt is None:
@@ -211,6 +263,9 @@ def coletar(z):
         ini, hoje, STATUS_PAGO,
         "dataHora,agendamentoMobile,cliente(id,nome),servico(id,nome),profissional(id,nomeAgenda)")
     log(f"Atendimentos pagos ({JANELA_DIAS} dias): {len(dados['pagos'])}")
+    dados["precos"] = z.catalogo()
+    dados["horario"] = z.horario()
+    log(f"Catálogo: {len(dados['precos'])} serviços · horário de funcionamento lido")
 
     dados["perdas"] = z.agendamentos(hoje - dt.timedelta(days=30), hoje, STATUS_PERDA, "dataHora,status,cliente(id)")
     dados["futuros"] = z.agendamentos(hoje, hoje + dt.timedelta(days=150), STATUS_FUTURO,
@@ -264,6 +319,7 @@ def montar_resumo(d):
         "servicos90": [{"nome": k, "qtd": v} for k, v in serv.most_common(15)],
         "profissionais30": [{"nome": k, "qtd": v} for k, v in prof.most_common(20)],
         "diasSemana90": sem,
+        "horario": d.get("horario") or [],
     }
 
 
@@ -320,7 +376,18 @@ def firestore_client():
     return firestore.client()
 
 
-def gravar(z, db, resumo, candidatas, ultima, futuros):
+def retorno_reativacao(pagos, precos, enviado_em):
+    """atendimentos e valor (preço de tabela) da cliente a partir do dia da mensagem"""
+    ini = (enviado_em or "")[:10]
+    n, v = 0, 0.0
+    for a in pagos:
+        if (a.get("dataHora") or "")[:10] >= ini:
+            n += 1
+            v += precos.get(str((a.get("servico") or {}).get("id")), 0.0)
+    return n, round(v, 2)
+
+
+def gravar(z, db, resumo, candidatas, ultima, futuros, pagos_por_cli=None, precos=None):
     from firebase_admin import firestore
     agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
     col = db.collection("voox_reativacao")
@@ -382,10 +449,42 @@ def gravar(z, db, resumo, candidatas, ultima, futuros):
         ops += 1
         commit_if_full()
 
+    # quanto voltou em atendimentos/R$ quem recebeu mensagem
+    if pagos_por_cli is not None:
+        for cid, ex in existentes.items():
+            if not ex.get("enviado") or not ex.get("enviadoEm"):
+                continue
+            n, v = retorno_reativacao(pagos_por_cli.get(cid, []), precos or {}, ex.get("enviadoEm"))
+            if n != ex.get("retornoAtend") or v != ex.get("retornoValor"):
+                batch.set(col.document(cid), {"retornoAtend": n, "retornoValor": v}, merge=True)
+                ops += 1
+                commit_if_full()
+
     batch.set(db.collection("voox_painel").document("resumo"), resumo)
     ops += 1
     batch.commit()
     log("Firestore atualizado")
+
+
+def gravar_aniversariantes(z, db, hoje):
+    col = db.collection("voox_aniversarios")
+    lista = z.aniversariantes()
+    semana = (hoje - dt.timedelta(days=hoje.weekday())).isoformat()
+    agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
+    atuais = set()
+    batch = db.batch()
+    for a in lista:
+        if not a["nome"]:
+            continue
+        atuais.add(a["id"])
+        batch.set(col.document(a["id"]), {"nome": a["nome"], "primeiro": a["nome"].split(" ")[0].capitalize(),
+                                          "cel": a["cel"], "dia": a["dia"], "semana": semana, "ativo": True,
+                                          "atualizadoEm": agora}, merge=True)
+    for doc in col.where("ativo", "==", True).stream():
+        if doc.id not in atuais:
+            batch.set(col.document(doc.id), {"ativo": False, "atualizadoEm": agora}, merge=True)
+    batch.commit()
+    log(f"Aniversariantes da semana: {len(atuais)}")
 
 
 # ---------------------------------------------------------------- histórico dia a dia
@@ -394,7 +493,18 @@ MESES_HIST = 25          # meses guardados dia a dia (12 + mesmo período do ano
 MESES_POR_RODADA = 5     # meses antigos preenchidos por execução; o resto vem nas próximas
 
 
-def montar_mes(z, mes_ini, hoje):
+VERSAO_DIAS = 2     # sobe quando o formato muda; meses gravados em versão antiga são refeitos
+
+
+def _min(a):
+    try:
+        return int(a.get("duracao") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def montar_mes(z, mes_ini, hoje, precos=None):
+    precos = precos or {}
     fim = min(date_add_months(mes_ini, 1) - dt.timedelta(days=1), hoje)
     dias = {}
     d = mes_ini
@@ -402,15 +512,20 @@ def montar_mes(z, mes_ini, hoje):
         r = z.resumo_vendas(d, d)
         dias[d.day] = {"fat": r["fat"], "serv": r["servicos"], "prod": r["produtos"], "pac": r["pacotes"],
                        "com": r["comissao"], "res": r["resultado"], "cmd": r["comandas"],
-                       "at": 0, "on": 0, "canc": 0, "falt": 0, "cli": set(), "s": Counter(), "p": Counter()}
+                       "at": 0, "on": 0, "canc": 0, "falt": 0, "cli": set(), "s": Counter(),
+                       "h": [0] * 24, "_p": defaultdict(lambda: {"q": 0, "m": 0, "b": 0, "v": 0.0, "c": 0, "f": 0})}
         d += dt.timedelta(days=1)
-    pagos = z.agendamentos(mes_ini, fim, STATUS_PAGO,
-                           "dataHora,agendamentoMobile,cliente(id),servico(nome),profissional(nomeAgenda)")
-    for a in pagos:
-        if not a.get("dataHora"):
-            continue
-        x = dias.get(int(a["dataHora"][8:10]))
-        if not x:
+
+    def prof(a):
+        return ((a.get("profissional") or {}).get("nomeAgenda") or "—").strip()
+
+    def dia_de(a):
+        return dias.get(int((a.get("dataHora") or "0000-00-00")[8:10]))
+
+    for a in z.agendamentos(mes_ini, fim, STATUS_PAGO,
+                            "dataHora,duracao,agendamentoMobile,cliente(id),servico(id,nome),profissional(nomeAgenda)"):
+        x = dia_de(a)
+        if not x or not a.get("dataHora"):
             continue
         x["at"] += 1
         if a.get("agendamentoMobile"):
@@ -418,19 +533,36 @@ def montar_mes(z, mes_ini, hoje):
         if a.get("cliente"):
             x["cli"].add(str(a["cliente"].get("id")))
         x["s"][limpa_serv((a.get("servico") or {}).get("nome")) or "—"] += 1
-        x["p"][((a.get("profissional") or {}).get("nomeAgenda") or "—").strip()] += 1
-    for a in z.agendamentos(mes_ini, fim, STATUS_PERDA, "dataHora,status"):
-        x = dias.get(int((a.get("dataHora") or "0000-00-00")[8:10]))
+        x["h"][int(a["dataHora"][11:13])] += 1
+        p = x["_p"][prof(a)]
+        p["q"] += 1
+        p["m"] += _min(a)
+        p["v"] += precos.get(str((a.get("servico") or {}).get("id")), 0.0)
+    for a in z.agendamentos(mes_ini, fim, STATUS_PERDA, "dataHora,status,profissional(nomeAgenda)"):
+        x = dia_de(a)
+        if not x:
+            continue
+        k = "canc" if a.get("status") == "CANCELADO" else "falt"
+        x[k] += 1
+        x["_p"][prof(a)]["c" if k == "canc" else "f"] += 1
+    for a in z.agendamentos(mes_ini, fim, "BLOQUEIO_AGENDA", "dataHora,duracao,profissional(nomeAgenda)"):
+        x = dia_de(a)
         if x:
-            x["canc" if a.get("status") == "CANCELADO" else "falt"] += 1
+            x["_p"][prof(a)]["b"] += _min(a)
+
     saida = {}
     for dia, x in dias.items():
         x["cli"] = sorted(x["cli"])
-        # lista de {n, q}: nome de serviço pode ter "/" ou "." (ruim como chave) e o Firestore não aceita lista dentro de lista
+        # listas de {n, ...}: nome pode ter "/" ou "." (ruim como chave) e o Firestore não aceita lista dentro de lista
         x["s"] = [{"n": k, "q": v} for k, v in x["s"].most_common()]
-        x["p"] = [{"n": k, "q": v} for k, v in x["p"].most_common()]
+        # valor por profissional: preço de tabela, ajustado para somar o faturamento real de serviços do dia
+        tabela = sum(p["v"] for p in x["_p"].values())
+        fator = (x["serv"] / tabela) if tabela > 0 else 0
+        x["p"] = sorted([{"n": n, "q": p["q"], "m": p["m"], "b": p["b"], "v": round(p["v"] * fator, 2),
+                          "c": p["c"], "f": p["f"]} for n, p in x["_p"].items()], key=lambda o: -o["q"])
+        del x["_p"]
         saida[str(dia).zfill(2)] = x
-    return {"mes": mes_ini.strftime("%Y-%m"), "completo": fim < hoje,
+    return {"mes": mes_ini.strftime("%Y-%m"), "completo": fim < hoje, "v": VERSAO_DIAS,
             "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes"), "dias": saida}
 
 
@@ -450,12 +582,15 @@ def meses_a_atualizar(hoje, existentes):
     return alvo + faltando[:MESES_POR_RODADA]
 
 
-def atualizar_diario(z, db, hoje):
+def atualizar_diario(z, db, hoje, precos):
     col = db.collection("voox_dias")
-    existentes = {d.id: (d.to_dict() or {}).get("completo", False) for d in col.select(["completo"]).stream()}
+    existentes = {}
+    for d in col.select(["completo", "v"]).stream():
+        x = d.to_dict() or {}
+        existentes[d.id] = bool(x.get("completo")) and (x.get("v") or 1) >= VERSAO_DIAS
     meses = meses_a_atualizar(hoje, existentes)
     for m in meses:
-        doc = montar_mes(z, m, hoje)
+        doc = montar_mes(z, m, hoje, precos)
         col.document(doc["mes"]).set(doc)
         log(f"Dia a dia: {doc['mes']} gravado ({len(doc['dias'])} dias)")
     faltam = sum(1 for i in range(1, MESES_HIST)
@@ -482,14 +617,24 @@ def main():
         log("--dry-run: nada gravado no Firebase")
         print(json.dumps({"kpis30": resumo["kpis30"], "servicos90": resumo["servicos90"][:5],
                           "exemploSumida": next(iter(candidatas.values()), None)}, ensure_ascii=False, indent=2))
-        mes = montar_mes(z, d["hoje"].replace(day=1), d["hoje"])
+        mes = montar_mes(z, d["hoje"].replace(day=1), d["hoje"], d["precos"])
+        anv = z.aniversariantes()
+        log(f"Aniversariantes da semana: {len(anv)} · com celular: {sum(1 for a in anv if a['cel'])}")
         hoje_d = mes["dias"].get(str(d["hoje"].day - 1).zfill(2)) or {}
         log(f"Dia a dia (teste do mês atual): {len(mes['dias'])} dias · ontem: R$ {hoje_d.get('fat', 0):,.2f}, "
             f"{hoje_d.get('at', 0)} atendimentos")
         return
     db = firestore_client()
-    gravar(z, db, resumo, candidatas, ultima, futuros)
-    atualizar_diario(z, db, d["hoje"])
+    pagos_por_cli = defaultdict(list)
+    for a in d["pagos"]:
+        if a.get("cliente"):
+            pagos_por_cli[str(a["cliente"].get("id"))].append(a)
+    gravar(z, db, resumo, candidatas, ultima, futuros, pagos_por_cli, d["precos"])
+    try:
+        gravar_aniversariantes(z, db, d["hoje"])
+    except Exception as e:
+        log(f"Aniversariantes falharam (o resto foi gravado): {e}")
+    atualizar_diario(z, db, d["hoje"], d["precos"])
 
 
 if __name__ == "__main__":
