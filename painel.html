@@ -882,8 +882,10 @@ function renderPainel(){
   h+='</div></div>';
 
   var gran = A.total<=45 ? 'dia' : A.total<=200 ? 'semana' : 'mês';
-  h+='<div class="sect">Faturamento no período <small>por '+gran+' · linha = '+(PER.comp==='ano'?'mesmo período do ano passado':'período anterior')+'</small></div>';
-  h+='<div class="card"><div class="legend"><span><i style="background:var(--s1)"></i>Período escolhido</span><span><i class="line" style="background:var(--s2)"></i>'+(PER.comp==='ano'?'Ano passado':'Período anterior')+'</span></div><div class="chart-wrap" id="ch-per"></div></div>';
+  if(resumo && resumo.meses){
+    h+='<div class="sect">Faturamento por mês <small>últimos 12 meses, independente do filtro</small></div>';
+    h+='<div class="card"><div class="legend"><span><i style="background:var(--s1)"></i>Faturamento do mês</span><span><i class="line" style="background:var(--s2)"></i>Mesmo mês do ano anterior</span><span><i class="proj"></i>Projeção do mês atual</span></div><div class="chart-wrap" id="ch-fat"></div></div>';
+  }
 
   h+='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:16px">';
   h+='<div class="card"><div class="klabel">Serviços mais feitos</div>'+hbars(A.servicos, 12)+'</div>';
@@ -903,10 +905,8 @@ function renderPainel(){
   h+='</div><div class="khint" style="margin-top:12px">Serviços '+brl(A.serv)+' · Pacotes '+brl(A.pac)+' · Produtos '+brl(A.prod)+'</div></div>';
   h+='</div>';
 
-  if(resumo && resumo.meses){
-    h+='<div class="sect">Faturamento por mês <small>últimos 12 meses, independente do filtro</small></div>';
-    h+='<div class="card"><div class="legend"><span><i style="background:var(--s1)"></i>Faturamento do mês</span><span><i class="line" style="background:var(--s2)"></i>Mesmo mês do ano anterior</span><span><i class="proj"></i>Projeção do mês atual</span></div><div class="chart-wrap" id="ch-fat"></div></div>';
-  }
+  h+='<div class="sect">Faturamento no período <small>por '+gran+' · linha = '+(PER.comp==='ano'?'mesmo período do ano passado':'período anterior')+'</small></div>';
+  h+='<div class="card"><div class="legend"><span><i style="background:var(--s1)"></i>Período escolhido</span><span><i class="line" style="background:var(--s2)"></i>'+(PER.comp==='ano'?'Ano passado':'Período anterior')+'</span></div><div class="chart-wrap" id="ch-per"></div></div>';
 
   document.getElementById('page-painel').innerHTML=h;
   graficoPeriodo(document.getElementById('ch-per'), A.serie, C.serie, gran);
