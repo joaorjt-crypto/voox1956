@@ -7,6 +7,9 @@ usuário de leitura, puxa vendas e agendamentos, agrega e grava no Firestore:
   voox_painel/resumo        -> indicadores do painel (faturamento por mês, serviços, etc.)
   voox_reativacao/{cliente} -> lista de clientes sumidas (status de envio é do app)
   voox_dias/{AAAA-MM}       -> movimento dia a dia (filtro de datas do painel)
+  voox_confirmacoes/{...}   -> agenda dos próximos dias abertos, para confirmar por WhatsApp
+  voox_posatend/{...}       -> quem foi atendida ontem/hoje, para agradecer e pedir avaliação
+  voox_oportunidades/{cli}  -> clientes frequentes que nunca fizeram um tipo de serviço
 
 Secrets necessários no repositório:
   ZELO_USER, ZELO_PASS   -> login de um usuário do Zelo (de preferência só leitura)
@@ -487,6 +490,173 @@ def gravar_aniversariantes(z, db, hoje):
     log(f"Aniversariantes da semana: {len(atuais)}")
 
 
+# ---------------------------------------------------------------- mensagens do dia
+
+CAMPANHAS = {
+    # chave: (nome, regex do que conta como "já faz", regex de quem é público, ou None = todas)
+    "facial":    ("Estética facial", r"LIMPEZA DE PELE|PEELING|MICROAGULH|DRENAGEM FACIAL|NUTRI[ÇC][ÃA]O +FACIAL|HYDRA|RADIOFREQ|MASSAGEM +FACIAL|TRATAMENTO", None),
+    "corporal":  ("Estética corporal", r"DRENAGEM LINF|MASSAGEM|LIPO|CORRENTE RUSSA|REIKI|ESFOLIA|BRONZE", None),
+    "podologia": ("Podologia", r"PODOLOG|PODOPROF|ONICO|UNGUEAL|ESPICULO", r"PEDICURE"),
+    "cabelo":    ("Cabelo", r"CORTE|ESCOVA|MECHAS|RETOQUE|TINTURA +\(|COLORA|HIDRATA|SELAGEM|PROGRESSIVA|BABY ?LISS|LAVADO|TONALIZ", None),
+}
+EH_CRIANCA = re.compile(r"FILH[OA]|INFANTIL|SOBRINH|AFILHAD", re.I)
+
+
+def proximos_dias_abertos(hoje, horario, n=2):
+    out, d = [], hoje
+    while len(out) < n and (d - hoje).days < 10:
+        d += dt.timedelta(days=1)
+        h = horario[d.weekday()] if horario and len(horario) == 7 else {"aberto": d.weekday() != 6}
+        if h.get("aberto"):
+            out.append(d)
+    return out
+
+
+class Fones:
+    """celular por cliente, buscando no Zelo só uma vez por execução"""
+    def __init__(self, z, conhecidos=None):
+        self.z, self.c = z, dict(conhecidos or {})
+
+    def __call__(self, cid):
+        cid = str(cid)
+        if cid not in self.c:
+            try:
+                self.c[cid] = celular_br(self.z.cliente(cid).get("celular"))
+            except Exception as e:
+                log(f"  telefone da cliente {cid} falhou: {e}")
+                self.c[cid] = ""
+        return self.c[cid]
+
+
+def _agrupar_por_cliente(ags, data_iso):
+    por = {}
+    for a in sorted(ags, key=lambda x: x.get("dataHora") or ""):
+        c = a.get("cliente") or {}
+        if not c.get("id") or (a.get("dataHora") or "")[:10] != data_iso:
+            continue
+        x = por.setdefault(str(c["id"]), {"nomeZelo": c.get("nome") or "", "itens": [], "confZelo": False})
+        x["itens"].append({"hora": a["dataHora"][11:16], "servico": limpa_serv((a.get("servico") or {}).get("nome")),
+                           "prof": ((a.get("profissional") or {}).get("nomeAgenda") or "").strip()})
+        if a.get("agendamentoConfirmado"):
+            x["confZelo"] = True
+    return por
+
+
+def gravar_mensagens_do_dia(z, db, d, fones):
+    hoje = d["hoje"]
+    agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
+    limite = (hoje - dt.timedelta(days=7)).isoformat()
+
+    # 1) confirmações: próximos 2 dias abertos
+    col = db.collection("voox_confirmacoes")
+    dias_conf = proximos_dias_abertos(hoje, d.get("horario"))
+    batch, ops, total = db.batch(), 0, 0
+    for dia in dias_conf:
+        ags = z.agendamentos(dia, dia, "AGENDADO,AGUARDANDO",
+                             "dataHora,agendamentoConfirmado,cliente(id,nome),servico(nome),profissional(nomeAgenda)")
+        por = _agrupar_por_cliente(ags, dia.isoformat())
+        vivos = set()
+        for cid, x in por.items():
+            nome = limpa_nome(x["nomeZelo"])
+            doc_id = f"{dia.isoformat()}_{cid}"
+            vivos.add(doc_id)
+            batch.set(col.document(doc_id), {
+                "data": dia.isoformat(), "cliente": cid, "nome": nome,
+                "primeiro": nome.split(" ")[0].capitalize() if nome else "", "cel": fones(cid),
+                "itens": x["itens"], "confZelo": x["confZelo"], "ativo": True, "atualizadoEm": agora}, merge=True)
+            ops += 1; total += 1
+            if ops >= 400:
+                batch.commit(); batch, ops = db.batch(), 0
+        # quem desmarcou no Zelo some da lista
+        for doc in col.where("data", "==", dia.isoformat()).stream():
+            if doc.id not in vivos and (doc.to_dict() or {}).get("ativo"):
+                batch.set(doc.reference, {"ativo": False, "atualizadoEm": agora}, merge=True); ops += 1
+    batch.commit()
+    log(f"Confirmações: {total} clientes em {', '.join(x.strftime('%d/%m') for x in dias_conf)}")
+
+    # 2) pós-atendimento: atendidas hoje e no último dia aberto antes de hoje
+    col = db.collection("voox_posatend")
+    datas = sorted({(a.get("dataHora") or "")[:10] for a in d["pagos"]
+                    if (a.get("dataHora") or "")[:10] < hoje.isoformat()})[-1:] + [hoje.isoformat()]
+    batch, ops, total = db.batch(), 0, 0
+    for data_iso in datas:
+        for cid, x in _agrupar_por_cliente(d["pagos"], data_iso).items():
+            if EH_CRIANCA.search(x["nomeZelo"]):
+                continue
+            nome = limpa_nome(x["nomeZelo"])
+            batch.set(col.document(f"{data_iso}_{cid}"), {
+                "data": data_iso, "cliente": cid, "nome": nome,
+                "primeiro": nome.split(" ")[0].capitalize() if nome else "", "cel": fones(cid),
+                "itens": x["itens"], "ativo": True, "atualizadoEm": agora}, merge=True)
+            ops += 1; total += 1
+            if ops >= 400:
+                batch.commit(); batch, ops = db.batch(), 0
+    batch.commit()
+    log(f"Pós-atendimento: {total} clientes ({', '.join(datas)})")
+
+    # limpeza: listas com mais de 7 dias
+    for nome_col in ("voox_confirmacoes", "voox_posatend"):
+        velhos = list(db.collection(nome_col).where("data", "<", limite).limit(400).stream())
+        if velhos:
+            b = db.batch()
+            for doc in velhos:
+                b.delete(doc.reference)
+            b.commit()
+
+
+def montar_oportunidades(d, sumidas):
+    """clientes frequentes (3+ serviços em 120 dias, vieram nos últimos 60) que nunca fizeram cada tipo"""
+    hoje = d["hoje"]
+    por = defaultdict(lambda: {"nome": "", "datas": [], "serv": Counter()})
+    for a in d["pagos"]:
+        c = a.get("cliente")
+        if not c or not a.get("dataHora"):
+            continue
+        x = por[str(c["id"])]
+        x["nome"] = c.get("nome") or x["nome"]
+        x["datas"].append(a["dataHora"][:10])
+        x["serv"][limpa_serv((a.get("servico") or {}).get("nome"))] += 1
+    out = {}
+    for cid, x in por.items():
+        n = len(x["datas"])
+        if n < 3 or cid in sumidas or EH_CRIANCA.search(x["nome"]) or EXCLUIR_NOMES.search(x["nome"]):
+            continue
+        if (hoje - dt.date.fromisoformat(max(x["datas"]))).days > 60:
+            continue
+        servs = " | ".join(x["serv"])
+        alvo = [k for k, (_, faz, publico) in CAMPANHAS.items()
+                if not re.search(faz, servs) and (publico is None or re.search(publico, servs))]
+        if not alvo:
+            continue
+        nome = limpa_nome(x["nome"])
+        out[cid] = {"nome": nome, "primeiro": nome.split(" ")[0].capitalize() if nome else "", "n": n,
+                    "ult": max(x["datas"]), "servicos": [k for k, _ in x["serv"].most_common(3)], "campanhas": alvo}
+    return out
+
+
+def gravar_oportunidades(db, oport, fones):
+    col = db.collection("voox_oportunidades")
+    agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
+    existentes = {doc.id for doc in col.where("ativo", "==", True).select([]).stream()}
+    batch, ops, gravadas = db.batch(), 0, 0
+    for cid, o in oport.items():
+        cel = fones(cid)
+        if not cel:
+            continue
+        batch.set(col.document(cid), dict(o, cel=cel, ativo=True, atualizadoEm=agora), merge=True)
+        ops += 1; gravadas += 1
+        if ops >= 400:
+            batch.commit(); batch, ops = db.batch(), 0
+    for cid in existentes - set(oport):
+        batch.set(col.document(cid), {"ativo": False, "atualizadoEm": agora}, merge=True)
+        ops += 1
+        if ops >= 400:
+            batch.commit(); batch, ops = db.batch(), 0
+    batch.commit()
+    por_camp = Counter(c for o in oport.values() for c in o["campanhas"])
+    log(f"Oportunidades: {gravadas} clientes · " + ", ".join(f"{CAMPANHAS[k][0]} {v}" for k, v in por_camp.items()))
+
+
 # ---------------------------------------------------------------- histórico dia a dia
 
 MESES_HIST = 25          # meses guardados dia a dia (12 + mesmo período do ano anterior + atual)
@@ -618,6 +788,10 @@ def main():
         print(json.dumps({"kpis30": resumo["kpis30"], "servicos90": resumo["servicos90"][:5],
                           "exemploSumida": next(iter(candidatas.values()), None)}, ensure_ascii=False, indent=2))
         mes = montar_mes(z, d["hoje"].replace(day=1), d["hoje"], d["precos"])
+        oport = montar_oportunidades(d, set(candidatas))
+        log(f"Oportunidades (teste): {len(oport)} clientes · "
+            + ", ".join(f"{CAMPANHAS[k][0]} {v}" for k, v in Counter(c for o in oport.values() for c in o['campanhas']).items()))
+        log(f"Próximos dias abertos para confirmação: {[x.isoformat() for x in proximos_dias_abertos(d['hoje'], d['horario'])]}")
         anv = z.aniversariantes()
         log(f"Aniversariantes da semana: {len(anv)} · com celular: {sum(1 for a in anv if a['cel'])}")
         hoje_d = mes["dias"].get(str(d["hoje"].day - 1).zfill(2)) or {}
@@ -634,6 +808,14 @@ def main():
         gravar_aniversariantes(z, db, d["hoje"])
     except Exception as e:
         log(f"Aniversariantes falharam (o resto foi gravado): {e}")
+    conhecidos = {doc.id: (doc.to_dict() or {}).get("cel") for doc in db.collection("voox_reativacao").select(["cel"]).stream()}
+    fones = Fones(z, {k: v for k, v in conhecidos.items() if v})
+    for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
+                      ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas)), fones))):
+        try:
+            fn()
+        except Exception as e:
+            log(f"{etapa} falhou (o resto foi gravado): {e}")
     atualizar_diario(z, db, d["hoje"], d["precos"])
 
 
