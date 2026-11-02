@@ -87,9 +87,10 @@ html[data-theme="light"] .side:hover:not(.pin){box-shadow:14px 0 40px rgba(60,40
 .side-logo{padding:0 6px 16px;overflow:hidden;cursor:pointer}
 .side-logo .logoimg,.side-logo .brand-cap{display:none}
 .side-logo .logo-mini{display:flex;align-items:center;justify-content:center;width:auto;flex:none;padding-left:4px}
-.side:hover .side-logo .logoimg,.side.pin .side-logo .logoimg{display:block;width:150px}
+.side:hover .side-logo,.side.pin .side-logo{display:grid;grid-template-columns:max-content;justify-content:start}
+.side:hover .side-logo .logoimg,.side.pin .side-logo .logoimg{display:block;width:112px;height:44px;justify-self:center;background-position:center}
 .side:hover .side-logo .logo-mini,.side.pin .side-logo .logo-mini{display:none}
-.side:hover .side-logo .brand-cap,.side.pin .side-logo .brand-cap{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px;padding-left:2px}
+.side:hover .side-logo .brand-cap,.side.pin .side-logo .brand-cap{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px;padding-left:2px;margin-right:-.14em}
 .pinbtn{position:absolute;top:20px;right:12px;width:30px;height:30px;padding:0;font-size:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--muted);opacity:0;pointer-events:none;transition:opacity .12s}
 .side:hover .pinbtn,.side.pin .pinbtn{opacity:1;pointer-events:auto}
 .pinbtn:hover{background:var(--card-2);color:var(--text)}
