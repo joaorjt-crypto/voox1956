@@ -540,7 +540,7 @@ function assinar(){
     }));
   }
   if(nivel==='admin'||nivel==='gerente'){
-    unsubs.push(db.collection('voox_clientes').limit(20).onSnapshot(function(snap){
+    unsubs.push(db.collection('voox_clientes').limit(40).onSnapshot(function(snap){
       var partes=[]; cliMeta=null;
       snap.forEach(function(d){ if(d.id==='meta') cliMeta=d.data(); else partes.push([d.id, d.data().itens||[]]); });
       partes.sort(function(a,b){ return a[0].localeCompare(b[0]); });
@@ -682,7 +682,7 @@ var TITULOS = {
   agenda: ['Agenda', 'Horários de pico e faltas por dia da semana'],
   aniv:   ['Aniversariantes', 'Clientes que fazem aniversário esta semana'],
   conf:   ['Confirmações', 'Confirme por WhatsApp os horários dos próximos dias'],
-  cli:    ['Clientes', 'Quem mais compra e quem não vem faz tempo — últimos 12 meses'],
+  cli:    ['Clientes', 'Quem mais compra e quem não vem faz tempo'],
   pos:    ['Pós-atendimento', 'Agradeça e peça a avaliação no Google'],
   oport:  ['Oportunidades', 'Clientes frequentes que ainda não conhecem outros serviços da casa'],
   fin:    ['Financeiro', 'Receita × despesas, resultado e saldo das contas'],
@@ -1470,29 +1470,82 @@ function dadosDemoMsgs(){
 }
 
 
-// ---------------------------------------------------------------- aba Clientes (resumo de 12 meses)
-var cliMeta = null, cliLista = [], cliAba = 'top', cliOrd = null, cliLim = 100;
+// ---------------------------------------------------------------- aba Clientes (com filtro de data)
+var cliMeta = null, cliLista = [], cliPer = [], cliAba = 'top', cliOrd = null, cliLim = 100;
 var CLI_ABAS = [['top','Que mais compram'],['sumidas','Sem vir há mais tempo'],['freq','Mais frequentes']];
+var CPER = { preset:'12m', de:'', ate:'' };
+try{ var _cp=JSON.parse(localStorage.getItem('voox_cli_periodo')||'null'); if(_cp && _cp.preset) CPER=Object.assign(CPER,_cp); }catch(e){}
+var CPRESETS = [['30','30 dias'],['90','90 dias'],['mes','Este mês'],['mespass','Mês passado'],['ano','Este ano'],['12m','12 meses'],['24m','24 meses']];
+
+function cliTemVisitas(){ return !!(cliMeta && cliMeta.v>=3 && cliLista.length && cliLista[0].vs); }
+function cliIntervalo(){
+  var hoje=hojeISO(), y=hoje.slice(0,4), m=hoje.slice(0,7), p=CPER.preset;
+  if(p==='30') return [addDias(hoje,-29), hoje];
+  if(p==='90') return [addDias(hoje,-89), hoje];
+  if(p==='mes') return [m+'-01', hoje];
+  if(p==='mespass'){ var mp=addMes(m,-1); return [mp+'-01', mp+'-'+String(diasNoMes(mp)).padStart(2,'0')]; }
+  if(p==='ano') return [y+'-01-01', hoje];
+  if(p==='24m') return [addDias(hoje,-729), hoje];
+  if(p==='custom' && CPER.de && CPER.ate) return CPER.de<=CPER.ate ? [CPER.de, CPER.ate] : [CPER.ate, CPER.de];
+  return [addDias(hoje,-364), hoje];
+}
+function setCliPreset(p){ CPER.preset=p; salvarCPer(); cliLim=100; renderClientes(); }
+function setCliDatas(){ var de=document.getElementById('fc-de').value, ate=document.getElementById('fc-ate').value; if(!de||!ate) return; CPER={preset:'custom', de:de, ate:ate}; salvarCPer(); cliLim=100; renderClientes(); }
+function salvarCPer(){ try{ localStorage.setItem('voox_cli_periodo', JSON.stringify(CPER)); }catch(e){} }
+function barraCli(r){
+  var min=cliMeta&&cliMeta.desde||addDias(hojeISO(),-729);
+  var h='<div class="fbar"><div class="seg">'+CPRESETS.map(function(x){ return '<button class="'+(CPER.preset===x[0]?'on':'')+'" onclick="setCliPreset(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div>';
+  h+='<button class="fdate'+(CPER.preset==='custom'?' on':'')+'" onclick="toggleDatas(event)" title="Escolher datas"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3"/></svg>'+dataBRc(r[0])+' – '+dataBRc(r[1])+'</button>';
+  h+='<div class="fpop" id="fpop" onclick="event.stopPropagation()"><label>De<input type="date" id="fc-de" value="'+r[0]+'" min="'+min+'" max="'+hojeISO()+'"></label><label>Até<input type="date" id="fc-ate" value="'+r[1]+'" min="'+min+'" max="'+hojeISO()+'"></label><button class="btn btn-sm" onclick="setCliDatas()">Aplicar</button></div></div>';
+  return h;
+}
+// visitas compactas do robô: "AAMMDD,valor,serviço,profissional" -> {d,v,s,p}
+function prepararVisitas(){
+  if(!cliMeta) return;
+  var sd=cliMeta.sd||[], pd=cliMeta.pd||[];
+  cliLista.forEach(function(c){
+    if(!c.vs || c._v) return;
+    c._v=c.vs.map(function(t){ var a=t.split(','), d=a[0]; return {d:'20'+d.slice(0,2)+'-'+d.slice(2,4)+'-'+d.slice(4,6), v:+a[1]||0, s:sd[+a[2]]||'', p:pd[+a[3]]||''}; });
+  });
+}
+function moda(o){ var k=null, n=0; Object.keys(o).forEach(function(x){ if(x && o[x]>n){ n=o[x]; k=x; } }); return k||''; }
+function calcularCliPeriodo(de, ate){
+  if(!cliTemVisitas()) return cliLista.slice();
+  var out=[];
+  cliLista.forEach(function(c){
+    var v=0, q=0, pr=null, u=null, S={}, P={};
+    (c._v||[]).forEach(function(x){ if(x.d<de || x.d>ate) return; v+=x.v; q++; if(!pr) pr=x.d; u=x.d; S[x.s]=(S[x.s]||0)+1; P[x.p]=(P[x.p]||0)+1; });
+    if(!q) return;
+    out.push({i:c.i, n:c.n, c:c.c, nova:c._v[0].d>=de, v:v, q:q, pr:pr, up:u, u:c.u, iv:q>1?Math.round((s2d(u)-s2d(pr))/864e5/(q-1)):null, s:moda(S), r:moda(P)});
+  });
+  return out;
+}
 
 function renderClientes(){
   if(viewAtual!=='cli') return;
   frescor();
   var el=document.getElementById('page-cli');
-  if(!cliMeta){ el.innerHTML='<div class="card empty">A lista de clientes aparece depois que o robô rodar a versão nova (ele monta o resumo de 12 meses uma vez por dia).</div>'; return; }
-  var hoje=hojeISO(), L=cliLista;
+  if(!cliMeta){ el.innerHTML='<div class="card empty">A lista de clientes aparece depois que o robô rodar a versão nova (ele monta o resumo uma vez por dia).</div>'; return; }
+  var temV=cliTemVisitas(), r=temV?cliIntervalo():[cliMeta.desde||addDias(hojeISO(),-365), hojeISO()];
+  if(temV && cliMeta.desde && r[0]<cliMeta.desde) r[0]=cliMeta.desde;
+  prepararVisitas();
+  cliPer=calcularCliPeriodo(r[0], r[1]);
+  var L=cliPer, nd=nDias(r[0],r[1]);
   var tot=L.reduce(function(a,c){ return a+(c.v||0); },0), vis=L.reduce(function(a,c){ return a+(c.q||0); },0);
   var ativas=L.filter(function(c){ return diasDesde(c.u)<=90; }).length;
+  var novas=temV ? L.filter(function(c){ return c.nova; }).length : null;
   var n20=Math.max(1, Math.round(L.length*0.2)), top20=L.slice().sort(function(a,b){ return b.v-a.v; }).slice(0,n20).reduce(function(a,c){ return a+c.v; },0);
-  var h='<div class="grid kpis">';
-  h+='<div class="card"><div class="klabel">Clientes em 12 meses</div><div class="kval">'+n0(L.length)+'</div><div class="khint">desde '+dataBRc(cliMeta.desde||addDias(hoje,-365))+'</div></div>';
+  var h=temV ? barraCli(r) : '<div class="alert a-info">◇ O filtro de data aparece depois que o robô rodar a versão nova (ele guarda as visitas de cada cliente dos últimos 24 meses). Por enquanto: últimos 12 meses.</div>';
+  h+='<div class="grid kpis'+(temV?' k4':'')+'"'+(temV?' style="margin-top:2px"':'')+'>';
+  h+='<div class="card"><div class="klabel">Clientes no período</div><div class="kval">'+n0(L.length)+'</div><div class="khint">'+(novas!=null && r[0]>(cliMeta.desde||'') ? n0(novas)+' novas (1ª visita em 24 meses)' : 'desde '+dataBRc(r[0]))+'</div></div>';
   h+='<div class="card"><div class="klabel">Ativas</div><div class="kval">'+n0(ativas)+'</div><div class="khint">vieram nos últimos 90 dias · '+(L.length?pct(ativas/L.length):'—')+'</div></div>';
   h+='<div class="card"><div class="klabel">Concentração</div><div class="kval">'+(tot?pct(top20/tot):'—')+'</div><div class="khint">do faturamento vem das '+n0(n20)+' que mais compram (20%)</div></div>';
-  h+='<div class="card"><div class="klabel">Valor médio por visita</div><div class="kval">'+(vis?brl2(tot/vis):'—')+'</div><div class="khint">'+n0(vis)+' visitas em 12 meses · estimado</div></div>';
+  h+='<div class="card"><div class="klabel">Valor médio por visita</div><div class="kval">'+(vis?brl2(tot/vis):'—')+'</div><div class="khint">'+n0(vis)+' visitas em '+n0(nd)+' dias · estimado</div></div>';
   h+='</div>';
   h+='<div class="fbar" style="margin-top:16px"><div class="seg">'+CLI_ABAS.map(function(a){ return '<button class="'+(cliAba===a[0]?'on':'')+'" onclick="setCliAba(\''+a[0]+'\')">'+a[1]+'</button>'; }).join('')+'</div>';
   h+='<input id="cli-busca" type="search" placeholder="Buscar cliente, serviço ou profissional" oninput="cliLim=100;renderTabelaCli()" style="flex:1;min-width:200px;height:34px"></div>';
   h+='<div id="cli-tab"></div>';
-  h+='<div class="nota"><b>Valor (est.)</b>: o Zelo não libera o valor por cliente; o robô soma o preço de tabela do que cada cliente fez e ajusta para bater com o faturamento real de serviços dos 12 meses. Visitas contam dias diferentes. Atualizado uma vez por dia.</div>';
+  h+='<div class="nota"><b>Valor (est.)</b>: o Zelo não libera o valor por cliente; o robô soma o preço de tabela do que cada cliente fez e ajusta, mês a mês, para bater com o faturamento real de serviços. Visitas contam dias diferentes. <b>Última visita</b> é a mais recente de todas, mesmo fora do período. Atualizado uma vez por dia.</div>';
   var busca=document.getElementById('cli-busca'), q=busca?busca.value:'';
   el.innerHTML=h;
   if(q){ document.getElementById('cli-busca').value=q; }
@@ -1504,13 +1557,13 @@ function ordenarCli(k){ cliOrd = cliOrd && cliOrd.k===k ? {k:k, d:-cliOrd.d} : {
 function renderTabelaCli(){
   var box=document.getElementById('cli-tab'); if(!box) return;
   var q=((document.getElementById('cli-busca')||{}).value||'').trim().toUpperCase();
-  var L=cliLista.map(function(c){ var o=Object.assign({}, c); o.dias=diasDesde(c.u); o.pv=c.q?c.v/c.q:0; return o; });
+  var L=cliPer.map(function(c){ var o=Object.assign({}, c); o.dias=diasDesde(c.u); o.pv=c.q?c.v/c.q:0; return o; });
   if(cliAba==='sumidas') L=L.filter(function(c){ return c.q>=2 && c.dias>Math.max(45, 2*(c.iv||30)); });
   if(q) L=L.filter(function(c){ return (c.n+' '+c.s+' '+c.r).toUpperCase().indexOf(q)>=0; });
   var ord=cliOrd || (cliAba==='top' ? {k:'v',d:-1} : cliAba==='freq' ? {k:'q',d:-1} : {k:'v',d:-1});
   L.sort(function(a,b){ var x=a[ord.k], y=b[ord.k]; if(typeof x==='string') return x.localeCompare(y||'')*ord.d; return ((x||0)-(y||0))*ord.d; });
   function th(k, t, cls){ return '<th class="sortable '+(cls||'')+(ord.k===k?' ord-on':'')+'" onclick="ordenarCli(\''+k+'\')">'+t+(ord.k===k?(ord.d>0?' ▲':' ▼'):'')+'</th>'; }
-  var h='<div class="tw" style="margin-top:12px"><div class="tscroll"><table><thead><tr><th class="r">#</th>'+th('n','Cliente')+th('v','Valor 12m (est.)','r')+th('q','Visitas','r')+th('pv','Por visita','r')+th('dias','Última visita','r')+th('iv','Costuma vir','r')+th('s','Serviço principal')+th('r','Profissional')+'<th></th></tr></thead><tbody>';
+  var h='<div class="tw" style="margin-top:12px"><div class="tscroll"><table><thead><tr><th class="r">#</th>'+th('n','Cliente')+th('v','Valor no período (est.)','r')+th('q','Visitas','r')+th('pv','Por visita','r')+th('dias','Última visita','r')+th('iv','Costuma vir','r')+th('s','Serviço principal')+th('r','Profissional')+'<th></th></tr></thead><tbody>';
   if(!L.length) h+='<tr><td colspan="10" class="empty">'+(cliAba==='sumidas'?'Nenhuma cliente recorrente sumida.':'Nenhuma cliente encontrada.')+'</td></tr>';
   L.slice(0, cliLim).forEach(function(c,i){
     var atraso = c.iv && c.dias > 2*c.iv && c.q>=2;
@@ -1526,14 +1579,17 @@ function renderTabelaCli(){
 
 function dadosDemoClientes(){
   var nomes=['ANA','BEATRIZ','CAMILA','DÉBORA','ELISA','FABIANA','GIOVANA','HELENA','ISABEL','JULIANA','LARISSA','MARIANA','NATÁLIA','OLÍVIA','PAULA','RENATA','SOFIA','TATIANA','VALÉRIA','VIVIANE'];
-  var sob=['SILVA','SOUZA','COSTA','LIMA','ROCHA','MOURA','DIAS','NUNES'], servs=['MANICURE','SOBRANCELHA','ESCOVA MEDIA','RETOQUE RAIZ','PODOLOGIA','DEPILAÇÃO VIRILHA','MECHAS FEMININO'], seed=11;
+  var sob=['SILVA','SOUZA','COSTA','LIMA','ROCHA','MOURA','DIAS','NUNES'], servs=['MANICURE','SOBRANCELHA','ESCOVA MEDIA','RETOQUE RAIZ','PODOLOGIA','DEPILAÇÃO VIRILHA','MECHAS FEMININO'], profs=['ANA (MAN)','CARLA (CAB)','EVA (POD)','GABI (SOB)'], seed=11;
   function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
-  cliLista=[];
+  var hoje=hojeISO(); cliLista=[];
   for(var i=0;i<260;i++){
-    var q=1+Math.floor(Math.pow(rnd(),2.2)*45), iv=q>1?Math.round(330/q):null, u=addDias(hojeISO(), -Math.floor(Math.pow(rnd(),1.8)*300));
-    cliLista.push({i:'x'+i, n:nomes[i%nomes.length]+' '+sob[(i*7)%sob.length]+(i>=40?' '+sob[(i*3)%sob.length]:''), pr:addDias(u,-(iv||0)*(q-1)), u:u, q:q, v:Math.round(q*(55+rnd()*120)), iv:iv, s:servs[i%servs.length], r:['ANA (MAN)','CARLA (CAB)','EVA (POD)','GABI (SOB)'][i%4], c:i%3?'5199999'+String(1000+i):undefined});
+    var q=1+Math.floor(Math.pow(rnd(),2.2)*90), fim=-Math.floor(Math.pow(rnd(),1.8)*400), passo=Math.max(4, Math.round(700/q)), vs=[];
+    for(var k=0;k<q;k++){ var off=fim-k*passo; if(off<-729) break; var d=addDias(hoje,off); vs.unshift(d.slice(2,4)+d.slice(5,7)+d.slice(8,10)+','+Math.round(55+rnd()*140)+','+((i+k)%servs.length)+','+(i%4)); }
+    if(!vs.length) continue;
+    var u='20'+vs[vs.length-1].slice(0,2)+'-'+vs[vs.length-1].slice(2,4)+'-'+vs[vs.length-1].slice(4,6);
+    cliLista.push({i:'x'+i, n:nomes[i%nomes.length]+' '+sob[(i*7)%sob.length]+(i>=40?' '+sob[(i*3)%sob.length]:''), u:u, vs:vs, q:vs.length, v:0, c:i%3?'5199999'+String(1000+i):undefined});
   }
-  cliMeta={desde:addDias(hojeISO(),-365), total:cliLista.length, atualizadoEm:new Date().toISOString().slice(0,16)};
+  cliMeta={desde:addDias(hoje,-729), total:cliLista.length, v:3, sd:servs, pd:profs};
 }
 
 
