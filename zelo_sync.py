@@ -6,6 +6,7 @@ usuário de leitura, puxa vendas e agendamentos, agrega e grava no Firestore:
 
   voox_painel/resumo        -> indicadores do painel (faturamento por mês, serviços, etc.)
   voox_reativacao/{cliente} -> lista de clientes sumidas (status de envio é do app)
+  voox_dias/{AAAA-MM}       -> movimento dia a dia (filtro de datas do painel)
 
 Secrets necessários no repositório:
   ZELO_USER, ZELO_PASS   -> login de um usuário do Zelo (de preferência só leitura)
@@ -387,6 +388,82 @@ def gravar(z, db, resumo, candidatas, ultima, futuros):
     log("Firestore atualizado")
 
 
+# ---------------------------------------------------------------- histórico dia a dia
+
+MESES_HIST = 25          # meses guardados dia a dia (12 + mesmo período do ano anterior + atual)
+MESES_POR_RODADA = 5     # meses antigos preenchidos por execução; o resto vem nas próximas
+
+
+def montar_mes(z, mes_ini, hoje):
+    fim = min(date_add_months(mes_ini, 1) - dt.timedelta(days=1), hoje)
+    dias = {}
+    d = mes_ini
+    while d <= fim:
+        r = z.resumo_vendas(d, d)
+        dias[d.day] = {"fat": r["fat"], "serv": r["servicos"], "prod": r["produtos"], "pac": r["pacotes"],
+                       "com": r["comissao"], "res": r["resultado"], "cmd": r["comandas"],
+                       "at": 0, "on": 0, "canc": 0, "falt": 0, "cli": set(), "s": Counter(), "p": Counter()}
+        d += dt.timedelta(days=1)
+    pagos = z.agendamentos(mes_ini, fim, STATUS_PAGO,
+                           "dataHora,agendamentoMobile,cliente(id),servico(nome),profissional(nomeAgenda)")
+    for a in pagos:
+        if not a.get("dataHora"):
+            continue
+        x = dias.get(int(a["dataHora"][8:10]))
+        if not x:
+            continue
+        x["at"] += 1
+        if a.get("agendamentoMobile"):
+            x["on"] += 1
+        if a.get("cliente"):
+            x["cli"].add(str(a["cliente"].get("id")))
+        x["s"][limpa_serv((a.get("servico") or {}).get("nome")) or "—"] += 1
+        x["p"][((a.get("profissional") or {}).get("nomeAgenda") or "—").strip()] += 1
+    for a in z.agendamentos(mes_ini, fim, STATUS_PERDA, "dataHora,status"):
+        x = dias.get(int((a.get("dataHora") or "0000-00-00")[8:10]))
+        if x:
+            x["canc" if a.get("status") == "CANCELADO" else "falt"] += 1
+    saida = {}
+    for dia, x in dias.items():
+        x["cli"] = sorted(x["cli"])
+        # lista de {n, q}: nome de serviço pode ter "/" ou "." (ruim como chave) e o Firestore não aceita lista dentro de lista
+        x["s"] = [{"n": k, "q": v} for k, v in x["s"].most_common()]
+        x["p"] = [{"n": k, "q": v} for k, v in x["p"].most_common()]
+        saida[str(dia).zfill(2)] = x
+    return {"mes": mes_ini.strftime("%Y-%m"), "completo": fim < hoje,
+            "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes"), "dias": saida}
+
+
+def meses_a_atualizar(hoje, existentes):
+    atual = hoje.replace(day=1)
+    alvo = [atual]
+    anterior = date_add_months(atual, -1)
+    if hoje.day <= 7 or not existentes.get(anterior.strftime("%Y-%m")):
+        alvo.append(anterior)          # no começo do mês o anterior ainda recebe ajustes
+    faltando = []
+    for i in range(1, MESES_HIST):
+        m = date_add_months(atual, -i)
+        if m in alvo:
+            continue
+        if not existentes.get(m.strftime("%Y-%m")):
+            faltando.append(m)
+    return alvo + faltando[:MESES_POR_RODADA]
+
+
+def atualizar_diario(z, db, hoje):
+    col = db.collection("voox_dias")
+    existentes = {d.id: (d.to_dict() or {}).get("completo", False) for d in col.select(["completo"]).stream()}
+    meses = meses_a_atualizar(hoje, existentes)
+    for m in meses:
+        doc = montar_mes(z, m, hoje)
+        col.document(doc["mes"]).set(doc)
+        log(f"Dia a dia: {doc['mes']} gravado ({len(doc['dias'])} dias)")
+    faltam = sum(1 for i in range(1, MESES_HIST)
+                 if not existentes.get(date_add_months(hoje.replace(day=1), -i).strftime("%Y-%m"))) - (len(meses) - 1)
+    if faltam > 0:
+        log(f"Dia a dia: faltam ~{faltam} meses antigos; entram nas próximas execuções")
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -405,9 +482,14 @@ def main():
         log("--dry-run: nada gravado no Firebase")
         print(json.dumps({"kpis30": resumo["kpis30"], "servicos90": resumo["servicos90"][:5],
                           "exemploSumida": next(iter(candidatas.values()), None)}, ensure_ascii=False, indent=2))
+        mes = montar_mes(z, d["hoje"].replace(day=1), d["hoje"])
+        hoje_d = mes["dias"].get(str(d["hoje"].day - 1).zfill(2)) or {}
+        log(f"Dia a dia (teste do mês atual): {len(mes['dias'])} dias · ontem: R$ {hoje_d.get('fat', 0):,.2f}, "
+            f"{hoje_d.get('at', 0)} atendimentos")
         return
     db = firestore_client()
     gravar(z, db, resumo, candidatas, ultima, futuros)
+    atualizar_diario(z, db, d["hoje"])
 
 
 if __name__ == "__main__":
