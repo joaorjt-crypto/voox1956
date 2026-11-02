@@ -449,7 +449,7 @@ function assinar(){
     }));
   }
   if(nivel==='admin'||nivel==='gerente'){
-    unsubs.push(db.collection('voox_dias').orderBy(firebase.firestore.FieldPath.documentId(),'desc').limit(26).onSnapshot(function(snap){
+    unsubs.push(db.collection('voox_dias').where(firebase.firestore.FieldPath.documentId(),'>=',addMes(hojeISO().slice(0,7),-25)).limit(30).onSnapshot(function(snap){
       dias={}; snap.forEach(function(d){ dias[d.id]=d.data(); });
       renderAtual();
     }, function(err){
