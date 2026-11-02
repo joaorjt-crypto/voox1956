@@ -10,6 +10,7 @@ usuário de leitura, puxa vendas e agendamentos, agrega e grava no Firestore:
   voox_confirmacoes/{...}   -> agenda dos próximos dias abertos, para confirmar por WhatsApp
   voox_posatend/{...}       -> quem foi atendida ontem/hoje, para agradecer e pedir avaliação
   voox_oportunidades/{cli}  -> clientes frequentes que nunca fizeram um tipo de serviço
+  voox_clientes/{parte}     -> resumo de 12 meses por cliente (aba Clientes), uma vez por dia
 
 Secrets necessários no repositório:
   ZELO_USER, ZELO_PASS   -> login de um usuário do Zelo (de preferência só leitura)
@@ -657,6 +658,69 @@ def gravar_oportunidades(db, oport, fones):
     log(f"Oportunidades: {gravadas} clientes · " + ", ".join(f"{CAMPANHAS[k][0]} {v}" for k, v in por_camp.items()))
 
 
+# ---------------------------------------------------------------- clientes (12 meses)
+
+POR_PARTE = 700   # clientes por documento (cada um fica bem abaixo do limite de 1 MB)
+
+
+def gravar_clientes(z, db, d, resumo, celulares):
+    hoje = d["hoje"]
+    meta_ref = db.collection("voox_clientes").document("meta")
+    meta = meta_ref.get()
+    if meta.exists and (meta.to_dict() or {}).get("data") == hoje.isoformat() and "--clientes" not in sys.argv:
+        log("Clientes: já atualizado hoje")
+        return
+    ags = z.agendamentos(hoje - dt.timedelta(days=365), hoje, STATUS_PAGO,
+                         "dataHora,cliente(id,nome),servico(id,nome),profissional(nomeAgenda)")
+    precos = d["precos"]
+    por = defaultdict(lambda: {"nome": "", "datas": set(), "v": 0.0, "s": Counter(), "p": Counter()})
+    tabela = 0.0
+    for a in ags:
+        c = a.get("cliente")
+        if not c or not a.get("dataHora"):
+            continue
+        x = por[str(c["id"])]
+        x["nome"] = c.get("nome") or x["nome"]
+        x["datas"].add(a["dataHora"][:10])
+        preco = precos.get(str((a.get("servico") or {}).get("id")), 0.0)
+        x["v"] += preco
+        tabela += preco
+        x["s"][limpa_serv((a.get("servico") or {}).get("nome"))] += 1
+        x["p"][((a.get("profissional") or {}).get("nomeAgenda") or "").strip()] += 1
+    # ajusta o preço de tabela para somar o faturamento real de serviços dos últimos 12 meses
+    real = sum((resumo["meses"].get(date_add_months(hoje.replace(day=1), -i).strftime("%Y-%m")) or {}).get("servicos", 0)
+               for i in range(12))
+    fator = real / tabela if tabela > 0 else 1.0
+    lista = []
+    for cid, x in por.items():
+        if EXCLUIR_NOMES.search(x["nome"]):
+            continue
+        ds = sorted(x["datas"])
+        q = len(ds)
+        iv = round((dt.date.fromisoformat(ds[-1]) - dt.date.fromisoformat(ds[0])).days / (q - 1)) if q > 1 else None
+        nome = limpa_nome(x["nome"])
+        item = {"i": cid, "n": nome, "pr": ds[0], "u": ds[-1], "q": q, "v": round(x["v"] * fator, 2),
+                "s": x["s"].most_common(1)[0][0] if x["s"] else "", "r": x["p"].most_common(1)[0][0] if x["p"] else ""}
+        if iv:
+            item["iv"] = iv
+        if celulares.get(cid):
+            item["c"] = celulares[cid]
+        lista.append(item)
+    lista.sort(key=lambda o: -o["v"])
+    partes = [lista[i:i + POR_PARTE] for i in range(0, len(lista), POR_PARTE)] or [[]]
+    batch = db.batch()
+    for i, parte in enumerate(partes):
+        batch.set(db.collection("voox_clientes").document(f"p{i:02d}"), {"itens": parte})
+    antigas = (meta.to_dict() or {}).get("partes", 0) if meta.exists else 0
+    for i in range(len(partes), antigas):
+        batch.delete(db.collection("voox_clientes").document(f"p{i:02d}"))
+    batch.set(meta_ref, {"data": hoje.isoformat(), "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes"),
+                         "partes": len(partes), "total": len(lista), "fator": round(fator, 4),
+                         "desde": (hoje - dt.timedelta(days=365)).isoformat()})
+    batch.commit()
+    log(f"Clientes: {len(lista)} clientes em 12 meses ({len(partes)} partes) · ajuste de preço {fator:.2f}")
+
+
 # ---------------------------------------------------------------- histórico dia a dia
 
 MESES_HIST = 25          # meses guardados dia a dia (12 + mesmo período do ano anterior + atual)
@@ -811,7 +875,8 @@ def main():
     conhecidos = {doc.id: (doc.to_dict() or {}).get("cel") for doc in db.collection("voox_reativacao").select(["cel"]).stream()}
     fones = Fones(z, {k: v for k, v in conhecidos.items() if v})
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
-                      ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas)), fones))):
+                      ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas)), fones)),
+                      ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v}))):
         try:
             fn()
         except Exception as e:
