@@ -110,7 +110,7 @@ html[data-theme="light"] .side-foot{border-top-color:rgba(120,90,60,.15)}
 .urole{font-size:10.5px;color:var(--muted)}
 .side:not(.pin):not(:hover) .side-foot .btn{display:none}
 
-main{flex:1;min-width:0;padding:22px 26px 60px;max-width:1240px}
+main{flex:1;min-width:0;padding:22px 26px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
 h1{font-size:21px;font-weight:700;letter-spacing:-.4px}
 .h1sub{font-size:12px;color:var(--muted);margin-top:2px}
@@ -129,13 +129,26 @@ h1{font-size:21px;font-weight:700;letter-spacing:-.4px}
 @media(max-width:1100px){.kpis.k4{grid-template-columns:repeat(2,1fr)}}
 .card.agora{border-style:dashed}
 .p-sem{color:var(--muted)}
-.filtro{margin-bottom:14px;padding:12px 15px}
-.f-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
-.f-row label{display:flex;flex-direction:column;gap:5px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
-.f-row select,.f-row input{width:auto;min-width:150px;text-transform:none;letter-spacing:0;font-weight:500;font-size:13px}
-.f-row input[type=date]{min-width:140px;color-scheme:dark}
-html[data-theme="light"] .f-row input[type=date]{color-scheme:light}
-.f-info{font-size:11.5px;color:var(--muted);margin-top:9px}
+.fbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;position:relative}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button,.seg span{background:none;border:none;color:var(--muted);font-size:12.5px;font-weight:500;padding:5px 10px;border-radius:8px;white-space:nowrap}
+.seg span{padding-right:2px;font-size:11.5px}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
+.seg button b{font-weight:600;opacity:.75;margin-left:3px}
+.seg-pg{margin:12px 0 6px}
+.fdate{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:11px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:12.5px;font-weight:500;box-shadow:var(--shadow);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);white-space:nowrap}
+.fdate.on{border-color:var(--primary);color:var(--primary)}
+.fdate svg{width:14px;height:14px;opacity:.7}
+.fpop{display:none;position:absolute;top:42px;z-index:20;padding:12px;gap:10px;align-items:flex-end;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.35);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+html[data-theme="light"] .fpop{background:rgba(255,255,255,.92);box-shadow:0 14px 40px rgba(60,40,20,.18)}
+.fpop.show{display:flex}
+.fpop label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+.fpop input{width:150px;color-scheme:dark}
+html[data-theme="light"] .fpop input{color-scheme:light}
+.fcomp{font-size:11.5px;color:var(--muted);margin-left:2px}
+.lab-link{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);margin-top:10px}
 .meta-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .meta-nums{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-top:6px}
 .meta-dir{text-align:right}
@@ -157,7 +170,7 @@ html[data-theme="light"] .heat .hc{background:color-mix(in srgb, var(--s1) calc(
 .heat-leg{display:flex;align-items:center;gap:8px;justify-content:flex-end;font-size:11px;color:var(--muted);margin-top:10px}
 .heat-leg i{width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--card-2),var(--s1))}
 .a-info{background:rgba(90,169,255,.10);border:1px solid rgba(90,169,255,.35);color:var(--blue)}
-@media(max-width:600px){.kpis.k6,.kpis.k4,.kpis{grid-template-columns:repeat(2,1fr)} .f-row label{flex:1 1 140px} .f-row select,.f-row input{min-width:0;width:100%} .kpis>.card:last-child:nth-child(odd){grid-column:span 2}}
+@media(max-width:600px){.kpis.k6,.kpis.k4,.kpis{grid-template-columns:repeat(2,1fr)} .fcomp{display:none} .kpis>.card:last-child:nth-child(odd){grid-column:span 2}}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:15px;box-shadow:var(--shadow);min-width:0}
 .klabel{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
 .kval{font-size:23px;font-weight:700;margin-top:7px;letter-spacing:-.6px;white-space:nowrap}
@@ -294,7 +307,10 @@ html[data-theme="light"] .hbar .tr{background:rgba(120,90,60,.08)}
     <button class="navbtn gestao-only" data-p="agenda" onclick="nav('agenda')"><span class="side-ico">▦</span><span class="lbl">Agenda</span></button>
     <button class="navbtn gestao-only" data-p="vendas" onclick="nav('vendas')"><span class="side-ico">▤</span><span class="lbl">Mês a mês</span></button>
     <div class="side-sec lbl">Clientes</div>
+    <button class="navbtn" data-p="conf" onclick="nav('conf')"><span class="side-ico">☎</span><span class="lbl">Confirmações</span><span class="cnt" id="cntConf" style="display:none">0</span></button>
+    <button class="navbtn" data-p="pos" onclick="nav('pos')"><span class="side-ico">♡</span><span class="lbl">Pós-atendimento</span><span class="cnt" id="cntPos" style="display:none">0</span></button>
     <button class="navbtn" data-p="reativ" onclick="nav('reativ')"><span class="side-ico">↺</span><span class="lbl">Reativação</span><span class="cnt" id="cntReativ" style="display:none">0</span></button>
+    <button class="navbtn" data-p="oport" onclick="nav('oport')"><span class="side-ico">✦</span><span class="lbl">Oportunidades</span></button>
     <button class="navbtn" data-p="aniv" onclick="nav('aniv')"><span class="side-ico">✿</span><span class="lbl">Aniversariantes</span><span class="cnt" id="cntAniv" style="display:none">0</span></button>
     <div class="side-foot">
       <div class="uline">
@@ -325,6 +341,11 @@ html[data-theme="light"] .hbar .tr{background:rgba(120,90,60,.08)}
 
     <!-- AGENDA -->
     <div class="page" id="page-agenda"><div class="empty">Carregando…</div></div>
+
+    <!-- CONFIRMAÇÕES / PÓS / OPORTUNIDADES -->
+    <div class="page" id="page-conf"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-pos"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-oport"><div class="empty">Carregando…</div></div>
 
     <!-- ANIVERSARIANTES -->
     <div class="page" id="page-aniv"><div class="empty">Carregando…</div></div>
@@ -464,6 +485,15 @@ function assinar(){
   unsubs.push(db.collection('voox_aniversarios').where('ativo','==',true).limit(200).onSnapshot(function(snap){
     aniversarios={}; snap.forEach(function(d){ aniversarios[d.id]=d.data(); }); renderAniv();
   }, function(err){ document.getElementById('page-aniv').innerHTML='<div class="card empty">Sem permissão para ler os aniversariantes ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
+  unsubs.push(db.collection('voox_confirmacoes').where('data','>=',hojeISO()).limit(600).onSnapshot(function(snap){
+    confirm_={}; snap.forEach(function(d){ confirm_[d.id]=d.data(); }); renderConfirm();
+  }, function(err){ document.getElementById('page-conf').innerHTML='<div class="card empty">Sem permissão para ler as confirmações ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
+  unsubs.push(db.collection('voox_posatend').where('data','>=',addDias(hojeISO(),-4)).limit(800).onSnapshot(function(snap){
+    posat={}; snap.forEach(function(d){ posat[d.id]=d.data(); }); renderPos();
+  }, function(err){ document.getElementById('page-pos').innerHTML='<div class="card empty">Sem permissão para ler o pós-atendimento ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
+  unsubs.push(db.collection('voox_oportunidades').where('ativo','==',true).limit(1500).onSnapshot(function(snap){
+    oport={}; snap.forEach(function(d){ oport[d.id]=d.data(); }); renderOport();
+  }, function(err){ document.getElementById('page-oport').innerHTML='<div class="card empty">Sem permissão para ler as oportunidades ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
   unsubs.push(db.collection('voox_reativacao').onSnapshot(function(snap){
     clientes={};
     snap.forEach(function(d){ clientes[d.id]=d.data(); });
@@ -475,6 +505,7 @@ function assinar(){
   unsubs.push(db.collection('voox_config').doc('mensagem').onSnapshot(function(snap){
     if(snap.exists && snap.data().texto) mensagem = snap.data().texto;
     if(snap.exists && snap.data().textoAniv) mensagemAniv = snap.data().textoAniv;
+    MSG = snap.exists ? snap.data() : {}; renderMsgs();
     mensagemCarregada = true;
     var ta=document.getElementById('msg-txt');
     if(document.activeElement!==ta) ta.value=mensagem;
@@ -567,7 +598,10 @@ var TITULOS = {
   reativ: ['Reativação', 'Clientes frequentes que pararam de vir'],
   prof:   ['Profissionais', 'Atendimentos, faturamento, ocupação e faltas por profissional'],
   agenda: ['Agenda', 'Horários de pico e faltas por dia da semana'],
-  aniv:   ['Aniversariantes', 'Clientes que fazem aniversário esta semana']
+  aniv:   ['Aniversariantes', 'Clientes que fazem aniversário esta semana'],
+  conf:   ['Confirmações', 'Confirme por WhatsApp os horários dos próximos dias'],
+  pos:    ['Pós-atendimento', 'Agradeça e peça a avaliação no Google'],
+  oport:  ['Oportunidades', 'Clientes frequentes que ainda não conhecem outros serviços da casa']
 };
 var SO_GESTAO = {painel:1, vendas:1, prof:1, agenda:1};
 function renderAtual(){ if(viewAtual==='painel') renderPainel(); if(viewAtual==='prof') renderProf(); if(viewAtual==='agenda') renderAgenda(); }
@@ -602,6 +636,9 @@ function nav(v){
   if(v==='prof') renderProf();
   if(v==='agenda') renderAgenda();
   if(v==='aniv') renderAniv();
+  if(v==='conf') renderConfirm();
+  if(v==='pos') renderPos();
+  if(v==='oport'){ limite=60; renderOport(); }
   window.scrollTo(0,0);
 }
 
@@ -740,7 +777,7 @@ var rsT; window.addEventListener('resize', function(){ clearTimeout(rsT); rsT=se
 var dias = {};   // 'AAAA-MM' -> doc do voox_dias
 var PER = { preset:'mes', de:'', ate:'', comp:'ano' };
 try{ var _p=JSON.parse(localStorage.getItem('voox_painel_periodo')||'null'); if(_p && _p.preset) PER=Object.assign(PER,_p); }catch(e){}
-var PRESETS = [['mes','Este mês'],['mespass','Mês passado'],['7','Últimos 7 dias'],['30','Últimos 30 dias'],['90','Últimos 90 dias'],['ano','Este ano'],['12m','Últimos 12 meses'],['custom','Personalizado']];
+var PRESETS = [['7','7 dias'],['30','30 dias'],['mes','Este mês'],['mespass','Mês passado'],['90','90 dias'],['ano','Este ano'],['12m','12 meses']];
 
 function d2s(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function s2d(s){ var p=s.split('-'); return new Date(+p[0], +p[1]-1, +p[2], 12); }
@@ -798,14 +835,16 @@ function agregar(de, ate){
 }
 
 function barraFiltro(P){
-  var h='<div class="card filtro"><div class="f-row">';
-  h+='<label><span>Período</span><select onchange="setPreset(this.value)">'+PRESETS.map(function(x){ return '<option value="'+x[0]+'"'+(PER.preset===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join('')+'</select></label>';
-  h+='<label><span>De</span><input type="date" id="f-de" value="'+P.de+'" max="'+hojeISO()+'" onchange="setDatas()"></label>';
-  h+='<label><span>Até</span><input type="date" id="f-ate" value="'+P.ate+'" max="'+hojeISO()+'" onchange="setDatas()"></label>';
-  h+='<label><span>Comparar com</span><select onchange="setComp(this.value)"><option value="ano"'+(PER.comp==='ano'?' selected':'')+'>Ano passado (mesmos dias da semana)</option><option value="ant"'+(PER.comp==='ant'?' selected':'')+'>Período anterior</option></select></label>';
-  h+='</div><div class="f-info">'+nDias(P.de,P.ate)+' dias · comparando com '+dataBRc(P.cde)+' a '+dataBRc(P.cate)+'</div></div>';
+  var cust=PER.preset==='custom';
+  var h='<div class="fbar"><div class="seg">'+PRESETS.map(function(x){ return '<button class="'+(PER.preset===x[0]?'on':'')+'" onclick="setPreset(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div>';
+  h+='<button class="fdate'+(cust?' on':'')+'" onclick="toggleDatas(event)" title="Escolher datas"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3"/></svg>'+dataBRc(P.de)+' – '+dataBRc(P.ate)+'</button>';
+  h+='<div class="fpop" id="fpop" onclick="event.stopPropagation()"><label>De<input type="date" id="f-de" value="'+P.de+'" max="'+hojeISO()+'"></label><label>Até<input type="date" id="f-ate" value="'+P.ate+'" max="'+hojeISO()+'"></label><button class="btn btn-sm" onclick="setDatas()">Aplicar</button></div>';
+  h+='<div class="seg"><span>vs</span><button class="'+(PER.comp==='ano'?'on':'')+'" onclick="setComp(\'ano\')" title="Mesmas semanas do ano passado (segunda com segunda)">Ano passado</button><button class="'+(PER.comp==='ant'?'on':'')+'" onclick="setComp(\'ant\')" title="Mesmo número de dias logo antes">Período anterior</button></div>';
+  h+='<span class="fcomp">comparando com '+dataBRc(P.cde)+' – '+dataBRc(P.cate)+'</span></div>';
   return h;
 }
+function toggleDatas(e){ if(e) e.stopPropagation(); var p=document.getElementById('fpop'); if(p) p.classList.toggle('show'); }
+document.addEventListener('click', function(){ var p=document.getElementById('fpop'); if(p) p.classList.remove('show'); });
 
 function renderPainel(){
   if(viewAtual!=='painel') return;
@@ -1163,6 +1202,183 @@ function dadosDemoExtras(){
   Object.keys(clientes).forEach(function(id){ var c=clientes[id]; if(c.voltou&&c.enviado){ c.retornoAtend=2; c.retornoValor=168; } });
 }
 
+
+// ---------------------------------------------------------------- confirmações, pós-atendimento, oportunidades
+var confirm_ = {}, posat = {}, oport = {}, MSG = {};
+var dataConf = '', dataPos = '', campAtual = 'facial';
+var LINK_AGENDA = 'https://app.zelo.tec.br/agendamentodireto/MTcyMDUyODMzMzcxMDsxNjM4';
+var MSG_PADRAO = {
+  textoConfirm: 'Oi, {nome}! Aqui é da Voox 1956. Passando para confirmar seu horário {quando} às {hora}: {servicos}. Podemos confirmar? Se precisar remarcar, é só responder aqui.',
+  textoPos: 'Oi, {nome}! Obrigada por vir à Voox 1956 {quando}. Se gostou do atendimento, deixa sua avaliação pra gente no Google, ajuda muito: {link}',
+  camp_facial: 'Oi, {nome}! Você já conhece a limpeza de pele e os tratamentos faciais da Voox 1956? Seria um prazer cuidar da sua pele também. Responda esta mensagem que a gente encontra um horário pra você.',
+  camp_corporal: 'Oi, {nome}! Já experimentou a drenagem linfática ou as massagens da Voox 1956? É o momento de relaxar que você merece. Responda esta mensagem que a gente encontra um horário pra você.',
+  camp_podologia: 'Oi, {nome}! Que tal cuidar dos pés também com a podologia da Voox 1956? Unha encravada, calos e rachaduras resolvidos com quem entende. Responda esta mensagem que a gente encontra um horário pra você.',
+  camp_cabelo: 'Oi, {nome}! Sabia que a Voox 1956 tem um time de cabelo completo — corte, escova, coloração e tratamentos? Responda esta mensagem que a gente encontra um horário pra você.'
+};
+var CAMPS = [['facial','Estética facial'],['corporal','Estética corporal'],['podologia','Podologia'],['cabelo','Cabelo']];
+var DIAS_SEM = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+
+function textoMsg(k){ return (MSG[k]||'').trim() || MSG_PADRAO[k] || ''; }
+function preencher(t, o){ return t.replace(/\{(\w+)\}/g, function(m,k){ return o[k]!=null ? o[k] : m; }); }
+function abrirWhats(cel, txt){ window.open('https://wa.me/55'+cel+'?text='+encodeURIComponent(txt), '_blank', 'noopener'); }
+function quandoData(d){
+  var dif=nDias(hojeISO(), d)-1, w=DIAS_SEM[s2d(d).getDay()];
+  if(dif===0) return 'hoje';
+  if(dif===1) return 'amanhã ('+w+', '+dataBR(d)+')';
+  if(dif===-1) return 'ontem';
+  return dif>0 ? 'na '+w+', '+dataBR(d) : 'no dia '+dataBR(d);
+}
+function atualizarDoc(col, id, campos, local, msgOk, desfazer){
+  var antes={}; Object.keys(campos).forEach(function(k){ antes[k] = local[id] && k in local[id] ? local[id][k] : null; });
+  if(DEMO){ Object.assign(local[id], campos); renderMsgs(); if(msgOk) toast(msgOk,'', desfazer?{label:'Desfazer',fn:function(){ Object.assign(local[id], antes); renderMsgs(); }}:null); return; }
+  db.collection(col).doc(id).update(campos).then(function(){
+    if(msgOk) toast(msgOk,'', desfazer?{label:'Desfazer',fn:function(){ db.collection(col).doc(id).update(antes).catch(function(e){ toast('Não desfez: '+(e.code||e.message),'err'); }); }}:null);
+  }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
+function editorMsg(campo, titulo, ajuda, extra){
+  if(!podePainel()) return '';
+  return '<details class="card msgcard"><summary>'+titulo+'</summary><textarea id="ed-'+campo+'">'+esc(textoMsg(campo))+'</textarea>'+(extra||'')+
+    '<div class="msgrow"><span>'+ajuda+'</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarCampoMsg(\''+campo+'\')">Salvar</button></div></details>';
+}
+function salvarCampoMsg(campo){
+  var upd={}, el=document.getElementById('ed-'+campo); upd[campo]=el.value.trim();
+  var lk=document.getElementById('ed-linkAvaliacao'); if(lk) upd.linkAvaliacao=lk.value.trim();
+  if(upd[campo].length<20){ toast('Mensagem muito curta.','err'); return; }
+  if(DEMO){ Object.assign(MSG, upd); toast('Salvo (demonstração).'); renderMsgs(); return; }
+  upd.atualizadoEm=new Date().toISOString(); upd.por=email;
+  db.collection('voox_config').doc('mensagem').set(upd, {merge:true})
+    .then(function(){ toast('Mensagem salva.'); })
+    .catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
+function chipsDatas(lista, atual, fn, rot){
+  return '<div class="seg seg-pg">'+lista.map(function(x){ return '<button class="'+(x.d===atual?'on':'')+'" onclick="'+fn+'(\''+x.d+'\')">'+rot(x.d)+' <b>'+x.n+'</b></button>'; }).join('')+'</div>';
+}
+function itensTxt(it){ return (it||[]).map(function(i){ return i.hora+' '+i.servico+(i.prof?' ('+i.prof+')':''); }).join(' · '); }
+function renderMsgs(){ renderConfirm(); renderPos(); renderOport(); }
+
+// -- confirmações
+function renderConfirm(){
+  var hoje=hojeISO(), ativos=Object.keys(confirm_).map(function(id){ return Object.assign({id:id}, confirm_[id]); }).filter(function(c){ return c.ativo && c.data>=hoje; });
+  var datas={}; ativos.forEach(function(c){ datas[c.data]=(datas[c.data]||0)+1; });
+  var ld=Object.keys(datas).sort().map(function(d){ return {d:d, n:datas[d]}; });
+  if(!datas[dataConf]) dataConf = ld.length ? ld[0].d : '';
+  var prox=ld.length?ld[0].d:'', pend=ativos.filter(function(c){ return c.data===prox && !c.status && c.cel && !c.confZelo; }).length;
+  var cnt=document.getElementById('cntConf'); cnt.textContent=pend; cnt.style.display=pend?'':'none';
+  if(viewAtual!=='conf') return;
+  frescor();
+  var L=ativos.filter(function(c){ return c.data===dataConf; }).sort(function(a,b){ return ((a.itens||[{}])[0].hora||'').localeCompare((b.itens||[{}])[0].hora||''); });
+  var st={env:0,ok:0,des:0,zelo:0}; L.forEach(function(c){ if(c.status) st.env++; if(c.status==='confirmou') st.ok++; if(c.status==='desmarcou') st.des++; if(c.confZelo) st.zelo++; });
+  var h=editorMsg('textoConfirm','Mensagem de confirmação','Use <b>{nome}</b>, <b>{quando}</b>, <b>{hora}</b> e <b>{servicos}</b>.');
+  if(!ld.length){ document.getElementById('page-conf').innerHTML=h+'<div class="card empty">Nenhum horário marcado nos próximos dias abertos — ou o robô ainda não rodou a versão nova.</div>'; return; }
+  h+=chipsDatas(ld, dataConf, 'setDataConf', function(d){ var dif=nDias(hojeISO(),d)-1, w=DIAS_SEM[s2d(d).getDay()]; return (dif===1?'Amanhã':w.charAt(0).toUpperCase()+w.slice(1))+' · '+dataBR(d); });
+  h+='<div class="grid kpis" style="margin:12px 0 14px">';
+  [['Clientes',L.length,'com horário no dia'],['Mensagens enviadas',st.env,'de '+L.length],['Confirmaram',st.ok, st.zelo+' já confirmadas no Zelo'],['Desmarcaram',st.des,'liberar no Zelo']].forEach(function(x){ h+='<div class="card"><div class="klabel">'+x[0]+'</div><div class="kval">'+n0(x[1])+'</div><div class="khint">'+x[2]+'</div></div>'; });
+  h+='</div><div class="rlist">';
+  L.forEach(function(c){
+    var cor = c.status==='confirmou'||c.confZelo ? 'var(--green)' : c.status==='desmarcou' ? 'var(--red)' : c.status ? 'var(--blue)' : 'var(--amber)';
+    var tags=''; if(c.confZelo) tags+='<span class="pill p-ok">Confirmado no Zelo</span>';
+    if(c.status==='enviado') tags+='<span class="pill p-blue">Mensagem enviada</span>';
+    if(c.status==='confirmou') tags+='<span class="pill p-ok">Confirmou</span>';
+    if(c.status==='desmarcou') tags+='<span class="pill p-bad">Desmarcou — liberar no Zelo</span>';
+    if(!c.cel) tags+='<span class="pill p-mut">sem celular válido</span>';
+    h+='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+esc(c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>'+(tags?'<div class="tags">'+tags+'</div>':'')+'</div><div class="acts">';
+    if(c.cel) h+='<button class="btn btn-sm '+(c.status?'btn-ghost':'btn-wa')+'" onclick="enviarConf(\''+c.id+'\')">'+(c.status?'Reenviar':'WhatsApp')+'</button>';
+    if(c.status!=='confirmou') h+='<button class="btn btn-sm btn-ghost" onclick="respConf(\''+c.id+'\',\'confirmou\')">Confirmou</button>';
+    if(c.status!=='desmarcou') h+='<button class="btn btn-sm btn-ghost" onclick="respConf(\''+c.id+'\',\'desmarcou\')">Desmarcou</button>';
+    h+='</div></div>';
+  });
+  h+='</div><div class="nota">A lista vem da agenda do Zelo (horários marcados, ainda não atendidos) e é atualizada às 6h, 12h e 18h. Marcar aqui não altera o Zelo: quem desmarcar precisa ser liberada na agenda de lá.</div>';
+  document.getElementById('page-conf').innerHTML=h;
+}
+function setDataConf(d){ dataConf=d; renderConfirm(); }
+function enviarConf(id){
+  var c=confirm_[id], it=c.itens||[];
+  abrirWhats(c.cel, preencher(textoMsg('textoConfirm'), {nome:c.primeiro||c.nome, quando:quandoData(c.data), hora:(it[0]||{}).hora||'', servicos:it.map(function(i){ return i.servico.toLowerCase(); }).join(' e ')}));
+  var campos={enviadoEm:new Date().toISOString(), enviadoPor:email||'demo'}; if(!c.status) campos.status='enviado';
+  atualizarDoc('voox_confirmacoes', id, campos, confirm_);
+}
+function respConf(id, r){
+  atualizarDoc('voox_confirmacoes', id, {status:r, respostaEm:new Date().toISOString(), enviadoPor:email||'demo'}, confirm_, r==='desmarcou' ? 'Marcada como desmarcou. Lembre de liberar o horário no Zelo.' : 'Marcada como confirmada.', true);
+}
+
+// -- pós-atendimento
+function renderPos(){
+  var L0=Object.keys(posat).map(function(id){ return Object.assign({id:id}, posat[id]); }).filter(function(c){ return c.ativo; });
+  var datas={}; L0.forEach(function(c){ datas[c.data]=(datas[c.data]||0)+1; });
+  var ld=Object.keys(datas).sort().reverse().map(function(d){ return {d:d, n:datas[d]}; });
+  if(!datas[dataPos]) dataPos = ld.length ? (ld.filter(function(x){ return x.d<hojeISO(); })[0]||ld[0]).d : '';
+  var pend=L0.filter(function(c){ return c.data===dataPos && !c.enviado && c.cel; }).length;
+  var cnt=document.getElementById('cntPos'); cnt.textContent=pend; cnt.style.display=pend?'':'none';
+  if(viewAtual!=='pos') return;
+  frescor();
+  var link=(MSG.linkAvaliacao||'').trim();
+  var h=editorMsg('textoPos','Mensagem de pós-atendimento','Use <b>{nome}</b>, <b>{quando}</b> e <b>{link}</b>.', '<label class="lab-link">Link de avaliação no Google<input id="ed-linkAvaliacao" type="url" placeholder="https://g.page/r/..." value="'+esc(link)+'"></label>');
+  if(!link) h+='<div class="alert a-warn">⚠ Falta o link de avaliação da Voox no Google. No Perfil da Empresa no Google, clique em "Peça avaliações", copie o link e cole na mensagem acima.</div>';
+  if(!ld.length){ document.getElementById('page-pos').innerHTML=h+'<div class="card empty">Nenhum atendimento registrado ontem ou hoje — ou o robô ainda não rodou a versão nova.</div>'; return; }
+  h+=chipsDatas(ld, dataPos, 'setDataPos', function(d){ var q=quandoData(d); return q.charAt(0).toUpperCase()+q.slice(1); });
+  var L=L0.filter(function(c){ return c.data===dataPos; }).sort(function(a,b){ return ((a.itens||[{}])[0].hora||'').localeCompare((b.itens||[{}])[0].hora||''); });
+  var env=L.filter(function(c){ return c.enviado; }).length;
+  h+='<div class="sect">'+n0(L.length)+' clientes atendidas <small>'+env+' mensagem(ns) enviada(s)</small></div><div class="rlist">';
+  L.forEach(function(c){
+    h+='<div class="rrow" style="--c:'+(c.enviado?'var(--green)':'var(--amber)')+'"><div><div class="nm">'+esc(c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>';
+    if(c.enviado||!c.cel) h+='<div class="tags">'+(c.enviado?'<span class="pill p-ok">Mensagem enviada</span>':'')+(c.enviadoPor?'<span class="pill p-mut">por '+esc(c.enviadoPor.split('@')[0])+'</span>':'')+(!c.cel?'<span class="pill p-mut">sem celular válido</span>':'')+'</div>';
+    h+='</div><div class="acts">'+(c.cel?'<button class="btn btn-sm '+(c.enviado?'btn-ghost':'btn-wa')+'" onclick="enviarPos(\''+c.id+'\')">'+(c.enviado?'Reenviar':'WhatsApp')+'</button>':'')+'</div></div>';
+  });
+  h+='</div>';
+  document.getElementById('page-pos').innerHTML=h;
+}
+function setDataPos(d){ dataPos=d; renderPos(); }
+function enviarPos(id){
+  var c=posat[id], link=(MSG.linkAvaliacao||'').trim();
+  if(!link && !confirm('O link de avaliação do Google ainda não foi cadastrado. Enviar assim mesmo?')) return;
+  abrirWhats(c.cel, preencher(textoMsg('textoPos'), {nome:c.primeiro||c.nome, quando:quandoData(c.data), link:link||''}));
+  atualizarDoc('voox_posatend', id, {enviado:true, enviadoEm:new Date().toISOString(), enviadoPor:email||'demo'}, posat);
+}
+
+// -- oportunidades
+function renderOport(){
+  var L0=Object.keys(oport).map(function(id){ return Object.assign({id:id}, oport[id]); }).filter(function(o){ return o.ativo; });
+  function livre(o,k){ return (o.campanhas||[]).indexOf(k)>=0 && !(o.enviados||{})[k] && !(o.dispensadas||{})[k]; }
+  var cont={}; CAMPS.forEach(function(c){ cont[c[0]]=L0.filter(function(o){ return livre(o,c[0]); }).length; });
+  if(viewAtual!=='oport') return;
+  frescor();
+  var h='<div class="seg seg-pg">'+CAMPS.map(function(c){ return '<button class="'+(campAtual===c[0]?'on':'')+'" onclick="setCamp(\''+c[0]+'\')">'+c[1]+' <b>'+cont[c[0]]+'</b></button>'; }).join('')+'</div>';
+  h+=editorMsg('camp_'+campAtual, 'Mensagem de '+CAMPS.filter(function(c){return c[0]===campAtual;})[0][1].toLowerCase(), 'Use <b>{nome}</b>. Os serviços de estética estão fora do link de agendamento, por isso a mensagem pede para responder.');
+  var L=L0.filter(function(o){ return livre(o,campAtual); }).sort(function(a,b){ return b.n-a.n; });
+  var feitos=L0.filter(function(o){ return (o.enviados||{})[campAtual]; }).length;
+  h+='<div class="sect">'+n0(L.length)+' clientes para oferecer <small>frequentes (3+ serviços em 120 dias, vieram nos últimos 60) que ainda não fizeram · '+feitos+' já receberam</small></div><div class="rlist">';
+  if(!L.length) h+='<div class="card empty">Ninguém pendente nesta campanha — ou o robô ainda não rodou a versão nova.</div>';
+  L.slice(0, limite).forEach(function(o){
+    h+='<div class="rrow" style="--c:var(--purple)"><div><div class="nm">'+esc(o.nome)+'</div><div class="info">Faz '+esc((o.servicos||[]).join(', ').toLowerCase())+' · '+n0(o.n)+' serviços em 120 dias · última visita '+dataBR(o.ult)+'</div></div>';
+    h+='<div class="acts"><button class="btn btn-sm btn-wa" onclick="enviarOport(\''+o.id+'\')">WhatsApp</button><button class="btn btn-sm btn-ghost" onclick="dispensarOport(\''+o.id+'\')" title="Não oferecer esta campanha para ela">Não oferecer</button></div></div>';
+  });
+  h+='</div>'+(L.length>limite?'<div class="more"><button class="btn btn-sm btn-ghost" onclick="limite+=60;renderOport()">Mostrar mais ('+(L.length-limite)+')</button></div>':'');
+  document.getElementById('page-oport').innerHTML=h;
+}
+function setCamp(k){ campAtual=k; limite=60; renderOport(); }
+function enviarOport(id){
+  var o=oport[id]; abrirWhats(o.cel, preencher(textoMsg('camp_'+campAtual), {nome:o.primeiro||o.nome, agenda:LINK_AGENDA}));
+  var u={}; u['enviados.'+campAtual]=new Date().toISOString();
+  if(DEMO){ o.enviados=o.enviados||{}; o.enviados[campAtual]=u['enviados.'+campAtual]; renderOport(); toast((o.primeiro||o.nome)+' marcada como enviada.'); return; }
+  db.collection('voox_oportunidades').doc(id).update(u).then(function(){ toast((o.primeiro||o.nome)+' marcada como enviada.'); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
+function dispensarOport(id){
+  var o=oport[id], u={}; u['dispensadas.'+campAtual]=true;
+  if(DEMO){ o.dispensadas=o.dispensadas||{}; o.dispensadas[campAtual]=true; renderOport(); return; }
+  db.collection('voox_oportunidades').doc(id).update(u).then(function(){ toast('Não vai mais aparecer nesta campanha.'); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
+
+function dadosDemoMsgs(){
+  var h=hojeISO(), am=addDias(h,1), dep=addDias(h,2), on=addDias(h,-1);
+  var nomes=['ANA PAULA','BEATRIZ','CAMILA','DÉBORA','ELISA','FABIANA','GIOVANA','HELOÍSA','ISADORA','JÚLIA'];
+  nomes.forEach(function(n,i){
+    var d=i<7?am:dep;
+    confirm_['c'+i]={data:d,nome:n+' SILVA',primeiro:n.split(' ')[0].charAt(0)+n.split(' ')[0].slice(1).toLowerCase(),cel:'5199999000'+i,itens:[{hora:String(8+i).padStart(2,'0')+':00',servico:['MANICURE','PEDICURE','ESCOVA MEDIA','SOBRANCELHA'][i%4],prof:'ANA (MAN)'}],confZelo:i===2,status:i===0?'confirmou':i===1?'enviado':i===5?'desmarcou':'',ativo:true};
+    posat['p'+i]={data:i<6?on:h,nome:n+' COSTA',primeiro:n.split(' ')[0].charAt(0)+n.split(' ')[0].slice(1).toLowerCase(),cel:'5198888000'+i,itens:[{hora:String(9+i).padStart(2,'0')+':30',servico:'MANICURE',prof:'BIA (MAN)'}],enviado:i<2,enviadoPor:i<2?'vooxrecepcao@gmail.com':'',ativo:true};
+    oport['o'+i]={nome:n+' ROCHA',primeiro:n.split(' ')[0].charAt(0)+n.split(' ')[0].slice(1).toLowerCase(),cel:'5197777000'+i,n:12-i,ult:addDias(h,-i*3),servicos:['MANICURE','PEDICURE'],campanhas:i%3===0?['facial','corporal','podologia','cabelo']:['facial','cabelo'],ativo:true,enviados:i===1?{facial:h}:{}};
+  });
+}
+
 // ---------------------------------------------------------------- reativação
 var COR_ESTADO = { enviar:'var(--amber)', aguardando:'var(--blue)', voltaram:'var(--green)', descartadas:'var(--muted)' };
 
@@ -1276,9 +1492,9 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias(); dadosDemoExtras();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs();
   document.getElementById('msg-txt').value=mensagem;
-  aplicarUI(); renderReativ(); renderAniv();
+  aplicarUI(); renderReativ(); renderAniv(); renderMsgs();
 } else {
   firebase.initializeApp(firebaseConfig);
   auth=firebase.auth(); db=firebase.firestore();
