@@ -124,7 +124,19 @@ h1{font-size:21px;font-weight:700;letter-spacing:-.4px}
 .grid{display:grid;gap:13px}
 .kpis{grid-template-columns:repeat(auto-fit,minmax(176px,1fr))}
 .kpis.k6{grid-template-columns:repeat(3,1fr)}
-@media(max-width:600px){.kpis.k6,.kpis{grid-template-columns:repeat(2,1fr)} .kpis>.card:last-child:nth-child(odd){grid-column:span 2}}
+.kpis.k4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1100px){.kpis.k4{grid-template-columns:repeat(2,1fr)}}
+.card.agora{border-style:dashed}
+.p-sem{color:var(--muted)}
+.filtro{margin-bottom:14px;padding:12px 15px}
+.f-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.f-row label{display:flex;flex-direction:column;gap:5px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.f-row select,.f-row input{width:auto;min-width:150px;text-transform:none;letter-spacing:0;font-weight:500;font-size:13px}
+.f-row input[type=date]{min-width:140px;color-scheme:dark}
+html[data-theme="light"] .f-row input[type=date]{color-scheme:light}
+.f-info{font-size:11.5px;color:var(--muted);margin-top:9px}
+.a-info{background:rgba(90,169,255,.10);border:1px solid rgba(90,169,255,.35);color:var(--blue)}
+@media(max-width:600px){.kpis.k6,.kpis.k4,.kpis{grid-template-columns:repeat(2,1fr)} .f-row label{flex:1 1 140px} .f-row select,.f-row input{min-width:0;width:100%} .kpis>.card:last-child:nth-child(odd){grid-column:span 2}}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:15px;box-shadow:var(--shadow);min-width:0}
 .klabel{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
 .kval{font-size:23px;font-weight:700;margin-top:7px;letter-spacing:-.6px;white-space:nowrap}
@@ -403,6 +415,14 @@ function assinar(){
       toast('Indicadores: '+(err.code||err.message),'err');
     }));
   }
+  if(nivel==='admin'||nivel==='gerente'){
+    unsubs.push(db.collection('voox_dias').orderBy(firebase.firestore.FieldPath.documentId(),'desc').limit(26).onSnapshot(function(snap){
+      dias={}; snap.forEach(function(d){ dias[d.id]=d.data(); });
+      renderPainel();
+    }, function(err){
+      toast('Histórico dia a dia: '+(err.code||err.message),'err');
+    }));
+  }
   unsubs.push(db.collection('voox_reativacao').onSnapshot(function(snap){
     clientes={};
     snap.forEach(function(d){ clientes[d.id]=d.data(); });
@@ -551,9 +571,7 @@ function semDados(id){
   document.getElementById(id).innerHTML='<div class="card empty">Ainda não há dados. O robô do Zelo roda às 6h, 12h e 18h — ou rode manualmente em Actions no GitHub.</div>';
 }
 
-function renderPainel(){
-  if(viewAtual!=='painel') return;
-  frescor();
+function renderPainelResumo(){
   if(!resumo){ semDados('page-painel'); return; }
   var hoje=resumo.hoje||hojeISO(), kAtual=hoje.slice(0,7), dia=+hoje.slice(8,10), dm=diasNoMes(kAtual);
   var m=resumo.meses||{}, cur=m[kAtual]||{fat:0,ticket:0};
@@ -586,7 +604,7 @@ function renderPainel(){
   sem.forEach(function(v,i){ h+='<div class="col"><div class="b" style="height:'+Math.max(2, Math.round(v/mx*100))+'%"><span>'+n0(v)+'</span></div>'+SEMANA[i]+'</div>'; });
   h+='</div></div>';
 
-  document.getElementById('page-painel').innerHTML=h;
+  document.getElementById('page-painel').innerHTML='<div class="alert a-info">◇ O filtro de datas aparece assim que o robô gravar o histórico dia a dia (a partir da próxima execução).</div>'+h;
   graficoFat(document.getElementById('ch-fat'), m, kAtual, dia, dm);
 }
 
@@ -666,6 +684,218 @@ function graficoFat(el, m, kAtual, dia, dm){
   svg.addEventListener('mouseleave', function(){ tip.style.opacity=0; cross.style.display='none'; });
 }
 var rsT; window.addEventListener('resize', function(){ clearTimeout(rsT); rsT=setTimeout(function(){ if(viewAtual==='painel') renderPainel(); }, 200); });
+
+
+// ---------------------------------------------------------------- filtro de datas (dados dia a dia do robô)
+var dias = {};   // 'AAAA-MM' -> doc do voox_dias
+var PER = { preset:'mes', de:'', ate:'', comp:'ano' };
+try{ var _p=JSON.parse(localStorage.getItem('voox_painel_periodo')||'null'); if(_p && _p.preset) PER=Object.assign(PER,_p); }catch(e){}
+var PRESETS = [['mes','Este mês'],['mespass','Mês passado'],['7','Últimos 7 dias'],['30','Últimos 30 dias'],['90','Últimos 90 dias'],['ano','Este ano'],['12m','Últimos 12 meses'],['custom','Personalizado']];
+
+function d2s(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function s2d(s){ var p=s.split('-'); return new Date(+p[0], +p[1]-1, +p[2], 12); }
+function addDias(s, n){ var d=s2d(s); d.setDate(d.getDate()+n); return d2s(d); }
+function addAnos(s, n){ var d=s2d(s); var m=d.getMonth(); d.setFullYear(d.getFullYear()+n); if(d.getMonth()!==m) d.setDate(0); return d2s(d); }
+function nDias(de, ate){ return Math.round((s2d(ate)-s2d(de))/864e5)+1; }
+function dataBRc(s){ var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0].slice(2); }
+function ultimoDiaComDado(){
+  var ks=Object.keys(dias).sort(); if(!ks.length) return hojeISO();
+  var k=ks[ks.length-1], ds=Object.keys(dias[k].dias||{}).sort(); return k+'-'+(ds[ds.length-1]||'01');
+}
+function intervaloDoPreset(p){
+  var hoje=hojeISO(), y=+hoje.slice(0,4), m=hoje.slice(0,7);
+  if(p==='mes') return [m+'-01', hoje];
+  if(p==='mespass'){ var mp=addMes(m,-1); return [mp+'-01', mp+'-'+String(diasNoMes(mp)).padStart(2,'0')]; }
+  if(p==='7'||p==='30'||p==='90') return [addDias(hoje, -(+p-1)), hoje];
+  if(p==='ano') return [y+'-01-01', hoje];
+  if(p==='12m') return [addDias(addAnos(hoje,-1),1), hoje];
+  return [PER.de||m+'-01', PER.ate||hoje];
+}
+function periodoAtual(){
+  var r=intervaloDoPreset(PER.preset); if(r[0]>r[1]) r=[r[1],r[0]];
+  // ano passado = 52 semanas antes (364 dias): compara segunda com segunda, sábado com sábado
+  var c = PER.comp==='ano' ? [addDias(r[0],-364), addDias(r[1],-364)] : [addDias(r[0], -nDias(r[0],r[1])), addDias(r[0],-1)];
+  return { de:r[0], ate:r[1], cde:c[0], cate:c[1] };
+}
+function setPreset(v){ PER.preset=v; if(v!=='custom'){ var r=intervaloDoPreset(v); PER.de=r[0]; PER.ate=r[1]; } salvarPer(); renderPainel(); }
+function setDatas(){
+  var de=document.getElementById('f-de').value, ate=document.getElementById('f-ate').value;
+  if(!de||!ate) return;
+  PER.preset='custom'; PER.de=de; PER.ate=ate; salvarPer(); renderPainel();
+}
+function setComp(v){ PER.comp=v; salvarPer(); renderPainel(); }
+function salvarPer(){ try{ localStorage.setItem('voox_painel_periodo', JSON.stringify(PER)); }catch(e){} }
+
+function agregar(de, ate){
+  var a={fat:0,serv:0,prod:0,pac:0,com:0,res:0,cmd:0,at:0,on:0,canc:0,falt:0, cli:{}, s:{}, p:{}, sem:[0,0,0,0,0,0,0], serie:[], comDado:0, total:0};
+  for(var d=de; d<=ate; d=addDias(d,1)){
+    a.total++;
+    var mes=dias[d.slice(0,7)], x=mes && mes.dias ? mes.dias[d.slice(8,10)] : null;
+    a.serie.push({d:d, fat: x ? (x.fat||0) : null});
+    if(!x) continue;
+    a.comDado++;
+    ['fat','serv','prod','pac','com','res','cmd','at','on','canc','falt'].forEach(function(k){ a[k]+= +x[k]||0; });
+    (x.cli||[]).forEach(function(c){ a.cli[c]=1; });
+    (x.s||[]).forEach(function(o){ a.s[o.n]=(a.s[o.n]||0)+o.q; });
+    (x.p||[]).forEach(function(o){ a.p[o.n]=(a.p[o.n]||0)+o.q; });
+    a.sem[(s2d(d).getDay()+6)%7] += x.at||0;
+  }
+  a.nCli=Object.keys(a.cli).length;
+  a.ticket = a.cmd ? a.fat/a.cmd : 0;
+  function top(o){ return Object.keys(o).map(function(k){ return {nome:k, qtd:o[k]}; }).sort(function(x,y){ return y.qtd-x.qtd; }); }
+  a.servicos=top(a.s); a.profissionais=top(a.p);
+  return a;
+}
+
+function barraFiltro(P){
+  var h='<div class="card filtro"><div class="f-row">';
+  h+='<label><span>Período</span><select onchange="setPreset(this.value)">'+PRESETS.map(function(x){ return '<option value="'+x[0]+'"'+(PER.preset===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join('')+'</select></label>';
+  h+='<label><span>De</span><input type="date" id="f-de" value="'+P.de+'" max="'+hojeISO()+'" onchange="setDatas()"></label>';
+  h+='<label><span>Até</span><input type="date" id="f-ate" value="'+P.ate+'" max="'+hojeISO()+'" onchange="setDatas()"></label>';
+  h+='<label><span>Comparar com</span><select onchange="setComp(this.value)"><option value="ano"'+(PER.comp==='ano'?' selected':'')+'>Ano passado (mesmos dias da semana)</option><option value="ant"'+(PER.comp==='ant'?' selected':'')+'>Período anterior</option></select></label>';
+  h+='</div><div class="f-info">'+nDias(P.de,P.ate)+' dias · comparando com '+dataBRc(P.cde)+' a '+dataBRc(P.cate)+'</div></div>';
+  return h;
+}
+
+function renderPainel(){
+  if(viewAtual!=='painel') return;
+  frescor();
+  if(!Object.keys(dias).length){ renderPainelResumo(); return; }
+  var P=periodoAtual(), A=agregar(P.de,P.ate), C=agregar(P.cde,P.cate);
+  function delta(a,b){ if(!b) return '<span class="p-sem">sem base</span> '; var d=(a-b)/b; if(Math.abs(d)<0.005) return '<span class="p-sem">= </span>'; return '<span class="'+(d>=0?'up':'down')+'">'+(d>=0?'▲ ':'▼ ')+pct(Math.abs(d))+'</span> '; }
+  var compTxt = PER.comp==='ano' ? 'vs. ano passado' : 'vs. período anterior';
+  var perdas=A.canc+A.falt, base=A.at+perdas, perdasC=C.canc+C.falt, baseC=C.at+perdasC;
+
+  var h=barraFiltro(P);
+  if(A.comDado<A.total) h+='<div class="alert a-warn">⚠ '+(A.total-A.comDado)+' dia(s) do período ainda sem dados no painel. O robô preenche o histórico aos poucos, alguns meses por execução.</div>';
+  else if(C.comDado<C.total) h+='<div class="alert a-info">◇ A comparação ainda está incompleta ('+C.comDado+' de '+C.total+' dias). O histórico antigo entra nas próximas execuções do robô.</div>';
+
+  h+='<div class="grid kpis k4">';
+  h+='<div class="card"><div class="klabel">Faturamento</div><div class="kval">'+brl(A.fat)+'</div><div class="khint">'+delta(A.fat,C.fat)+compTxt+' ('+mil(C.fat)+')</div></div>';
+  h+='<div class="card"><div class="klabel">Ticket médio (comanda)</div><div class="kval">'+brl2(A.ticket)+'</div><div class="khint">'+delta(A.ticket,C.ticket)+compTxt+'</div></div>';
+  h+='<div class="card"><div class="klabel">Atendimentos</div><div class="kval">'+n0(A.at)+'</div><div class="khint">'+delta(A.at,C.at)+compTxt+'</div></div>';
+  h+='<div class="card"><div class="klabel">Clientes atendidas</div><div class="kval">'+n0(A.nCli)+'</div><div class="khint">'+delta(A.nCli,C.nCli)+compTxt+'</div></div>';
+  h+='<div class="card"><div class="klabel">Faltas e cancelamentos</div><div class="kval">'+n0(perdas)+'</div><div class="khint">'+(base?pct(perdas/base):'—')+' dos horários · antes '+(baseC?pct(perdasC/baseC):'—')+'</div></div>';
+  h+='<div class="card"><div class="klabel" title="Faturamento menos comissões e custo de produtos, como o Zelo calcula">Resultado</div><div class="kval">'+brl(A.res)+'</div><div class="khint">margem '+(A.fat?pct(A.res/A.fat):'—')+' · comissões '+(A.fat?pct(A.com/A.fat):'—')+'</div></div>';
+  // dois indicadores "de agora", que não dependem do filtro
+  var hoje=resumo&&resumo.hoje||hojeISO(), kAtual=hoje.slice(0,7), dia=+hoje.slice(8,10), dm=diasNoMes(kAtual);
+  var cur=((resumo&&resumo.meses)||{})[kAtual]||{fat:0}, proj=dia>0?cur.fat*dm/dia:0, antMes=((resumo&&resumo.meses)||{})[addMes(kAtual,-12)]||{};
+  h+='<div class="card agora"><div class="klabel">Projeção de '+MESES[+kAtual.slice(5)-1]+' <span class="pill p-mut">agora</span></div><div class="kval">'+brl(proj)+'</div><div class="khint">'+delta(proj, antMes.fat)+'vs. '+mesLabel(addMes(kAtual,-12))+(dia<7?' · ainda instável':'')+'</div></div>';
+  h+='<div class="card agora"><div class="klabel">Agenda · próximos 7 dias <span class="pill p-mut">agora</span></div><div class="kval">'+n0(resumo&&resumo.kpis30?resumo.kpis30.agendados7d:0)+'</div><div class="khint">'+n0(A.on)+' agendamentos online no período</div></div>';
+  h+='</div>';
+
+  var gran = A.total<=45 ? 'dia' : A.total<=200 ? 'semana' : 'mês';
+  h+='<div class="sect">Faturamento no período <small>por '+gran+' · linha = '+(PER.comp==='ano'?'mesmo período do ano passado':'período anterior')+'</small></div>';
+  h+='<div class="card"><div class="legend"><span><i style="background:var(--s1)"></i>Período escolhido</span><span><i class="line" style="background:var(--s2)"></i>'+(PER.comp==='ano'?'Ano passado':'Período anterior')+'</span></div><div class="chart-wrap" id="ch-per"></div></div>';
+
+  h+='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:16px">';
+  h+='<div class="card"><div class="klabel">Serviços mais feitos</div>'+hbars(A.servicos, 12)+'</div>';
+  h+='<div class="card"><div class="klabel">Atendimentos por profissional</div>'+hbars(A.profissionais, 15)+'</div>';
+  h+='</div>';
+
+  h+='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:16px">';
+  var mx=Math.max.apply(null, A.sem)||1;
+  h+='<div class="card"><div class="klabel">Movimento por dia da semana</div><div class="wk">';
+  A.sem.forEach(function(v,i){ h+='<div class="col"><div class="b" style="height:'+Math.max(2, Math.round(v/mx*100))+'%"><span>'+n0(v)+'</span></div>'+SEMANA[i]+'</div>'; });
+  h+='</div></div>';
+  var tot=A.serv+A.prod+A.pac;
+  h+='<div class="card"><div class="klabel">De onde vem o faturamento</div><div class="hbars">';
+  [['Serviços',A.serv],['Pacotes',A.pac],['Produtos',A.prod]].forEach(function(x){
+    h+='<div class="hbar"><div class="nm">'+x[0]+'</div><div class="tr"><div class="fl" style="width:'+(tot?(x[1]/tot*100).toFixed(1):0)+'%"></div></div><div class="v">'+(tot?pct(x[1]/tot):'—')+'</div></div>';
+  });
+  h+='</div><div class="khint" style="margin-top:12px">Serviços '+brl(A.serv)+' · Pacotes '+brl(A.pac)+' · Produtos '+brl(A.prod)+'</div></div>';
+  h+='</div>';
+
+  if(resumo && resumo.meses){
+    h+='<div class="sect">Faturamento por mês <small>últimos 12 meses, independente do filtro</small></div>';
+    h+='<div class="card"><div class="legend"><span><i style="background:var(--s1)"></i>Faturamento do mês</span><span><i class="line" style="background:var(--s2)"></i>Mesmo mês do ano anterior</span><span><i class="proj"></i>Projeção do mês atual</span></div><div class="chart-wrap" id="ch-fat"></div></div>';
+  }
+
+  document.getElementById('page-painel').innerHTML=h;
+  graficoPeriodo(document.getElementById('ch-per'), A.serie, C.serie, gran);
+  if(resumo && resumo.meses) graficoFat(document.getElementById('ch-fat'), resumo.meses, kAtual, dia, dm);
+}
+
+function agrupar(serie, gran){
+  var b=[], idx={};
+  serie.forEach(function(x){
+    var k = gran==='dia' ? x.d : gran==='mês' ? x.d.slice(0,7) : (function(){ var d=s2d(x.d); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d2s(d); })();
+    if(!(k in idx)){ idx[k]=b.length; b.push({k:k, ini:x.d, fim:x.d, v:null}); }
+    var o=b[idx[k]]; o.fim=x.d; if(x.fat!=null) o.v=(o.v||0)+x.fat;
+  });
+  return b;
+}
+function rotuloBucket(o, gran, curto){
+  if(gran==='dia'){ var p=o.ini.split('-'); return curto ? p[2] : p[2]+'/'+p[1]; }
+  if(gran==='mês') return mesLabel(o.k);
+  return dataBR(o.ini);
+}
+
+function graficoPeriodo(el, serie, serieC, gran){
+  var S1=cssVar('--s1')||'#B4762F', S2=cssVar('--s2')||'#2F78B8', GR=cssVar('--grid')||'rgba(0,0,0,.08)', MU=cssVar('--muted')||'#888', BG=modoAtual()==='claro'?'#fff':'#19191c';
+  var A=agrupar(serie,gran), C=agrupar(serieC,gran), n=A.length;
+  if(!n){ el.innerHTML='<div class="empty">Sem dados no período</div>'; return; }
+  var W=Math.max(300, Math.round(el.clientWidth)||900), estreito=W<600, H=estreito?220:280, L=estreito?50:64, R=8, T=14, B=30, pw=W-L-R, ph=H-T-B;
+  var vals=A.map(function(o){ return o.v||0; }), comps=A.map(function(o,i){ return C[i] ? C[i].v : null; });
+  var vmax=Math.max.apply(null, vals.concat(comps.filter(function(v){return v!=null;})))||1;
+  var step=niceStep(vmax/4), top=Math.ceil(vmax/step)*step;
+  function y(v){ return T+ph-(v/top)*ph; }
+  var bw=pw/n, bar=Math.max(2, Math.min(40, bw*0.66));
+  var cada=Math.ceil(n/(estreito?6:14));
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Faturamento no período">';
+  for(var g=0; g<=top+1e-6; g+=step){
+    s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="'+GR+'"/>';
+    s+='<text x="'+(L-8)+'" y="'+(y(g)+4)+'" text-anchor="end" font-size="11" fill="'+MU+'">'+(g===0?'0':estreito?Math.round(g/1000)+' mil':mil(g))+'</text>';
+  }
+  A.forEach(function(o,i){
+    var cx=L+bw*i+bw/2, v=vals[i], hh=Math.max(0, y(0)-y(v));
+    if(o.v!=null && hh>0) s+='<path d="'+roundTop(cx-bar/2, y(v), bar, hh, Math.min(4, bar/2))+'" fill="'+S1+'"/>';
+    if(i%cada===0) s+='<text x="'+cx+'" y="'+(H-10)+'" text-anchor="middle" font-size="11" fill="'+MU+'">'+rotuloBucket(o,gran,estreito)+'</text>';
+  });
+  var pts=[]; comps.forEach(function(v,i){ if(v!=null) pts.push([L+bw*i+bw/2, y(v)]); });
+  if(pts.length>1) s+='<polyline points="'+pts.map(function(p){return p.join(',');}).join(' ')+'" fill="none" stroke="'+S2+'" stroke-width="2" stroke-linejoin="round"/>';
+  if(n<=31) pts.forEach(function(p){ s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.5" fill="'+S2+'" stroke="'+BG+'" stroke-width="2"/>'; });
+  A.forEach(function(o,i){ s+='<rect class="hit" data-i="'+i+'" x="'+(L+bw*i)+'" y="'+T+'" width="'+bw+'" height="'+ph+'" fill="transparent"/>'; });
+  s+='<line class="cross" x1="0" x2="0" y1="'+T+'" y2="'+(T+ph)+'" stroke="'+MU+'" stroke-opacity=".5" stroke-dasharray="3 3" style="display:none"/>';
+  s+='</svg><div class="tip"></div>';
+  el.innerHTML=s;
+  var svg=el.querySelector('svg'), tip=el.querySelector('.tip'), cross=el.querySelector('.cross');
+  function rot(o){ return gran==='dia' ? dataBRc(o.ini) : gran==='mês' ? mesLabel(o.k) : dataBR(o.ini)+' a '+dataBR(o.fim); }
+  function show(i){
+    var o=A[i], c=C[i];
+    var t='<b>'+rot(o)+'</b><br><span class="sw" style="background:'+S1+'"></span>'+(o.v==null?'sem dados':brl(o.v));
+    if(c) t+='<br><span class="sw" style="background:'+S2+'"></span>'+rot(c)+': '+(c.v==null?'sem dados':brl(c.v))+(c.v&&o.v!=null?' · '+(o.v>=c.v?'+':'−')+pct(Math.abs(o.v-c.v)/c.v):'');
+    tip.innerHTML=t;
+    var cx=(L+bw*i+bw/2)/W*el.clientWidth;
+    cross.setAttribute('x1', L+bw*i+bw/2); cross.setAttribute('x2', L+bw*i+bw/2); cross.style.display='';
+    tip.style.opacity=1; var tw=tip.offsetWidth; tip.style.left=Math.min(Math.max(0, cx-tw/2), el.clientWidth-tw)+'px'; tip.style.top='0px';
+  }
+  Array.prototype.forEach.call(svg.querySelectorAll('.hit'), function(r){
+    r.addEventListener('mouseenter', function(){ show(+r.getAttribute('data-i')); });
+    r.addEventListener('click', function(){ show(+r.getAttribute('data-i')); });
+  });
+  svg.addEventListener('mouseleave', function(){ tip.style.opacity=0; cross.style.display='none'; });
+}
+
+function dadosDemoDias(){
+  dias={};
+  var hoje=hojeISO(), ini=addMes(hoje.slice(0,7),-24)+'-01', seed=7;
+  function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+  var servs=['MANICURE','SOBRANCELHA','PEDICURE','ESCOVA MEDIA','MANICURE/PEDICURE','DEPILAÇÃO VIRILHA','DEPILAÇÃO BUÇO','PODOLOGIA','CORTE FEMININO','CORTE MASCULINO','RETOQUE RAIZ','MAQUIAGEM'];
+  var pesos=[30,8,7.5,6,5,4,4,3.6,3.5,3.2,2.3,2];
+  var profs=['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','FLÁVIA (CAB)','GABI (SOB)','HELENA (EST)'];
+  for(var d=ini; d<=hoje; d=addDias(d,1)){
+    var wd=(s2d(d).getDay()+6)%7, k=d.slice(0,7);
+    if(!dias[k]) dias[k]={mes:k, dias:{}};
+    if(wd===6){ dias[k].dias[d.slice(8,10)]={fat:0,serv:0,prod:0,pac:0,com:0,res:0,cmd:0,at:0,on:0,canc:0,falt:0,cli:[],s:[],p:[]}; continue; }
+    var cres = d<addDias(hoje,-365) ? 0.92 : 1;
+    var at=Math.round((70+wd*8)*(0.85+rnd()*0.3)*cres), t=120+rnd()*15, fat=at*78*(0.9+rnd()*0.2);
+    var s=servs.map(function(n,i){ return {n:n, q:Math.round(at*pesos[i]/73*(0.7+rnd()*0.6))}; }).filter(function(o){return o.q>0;});
+    var p=profs.map(function(n,i){ return {n:n, q:Math.round(at/profs.length*(1.4-i*0.1))}; });
+    var cli=[]; for(var c=0;c<Math.round(at*0.62);c++) cli.push('c'+Math.floor(rnd()*4000));
+    dias[k].dias[d.slice(8,10)]={fat:fat, serv:fat*0.95, prod:fat*0.018, pac:fat*0.03, com:fat*0.56, res:fat*0.42, cmd:Math.round(fat/t), at:at, on:Math.round(rnd()*2), canc:Math.round(at*0.07*rnd()), falt:Math.round(at*0.015*rnd()), cli:cli, s:s, p:p};
+  }
+}
 
 // ---------------------------------------------------------------- reativação
 var COR_ESTADO = { enviar:'var(--amber)', aguardando:'var(--blue)', voltaram:'var(--green)', descartadas:'var(--muted)' };
@@ -778,7 +1008,7 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo();
+  dadosDemo(); dadosDemoDias();
   document.getElementById('msg-txt').value=mensagem;
   aplicarUI(); renderReativ();
 } else {
