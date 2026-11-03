@@ -862,6 +862,64 @@ def atualizar_diario(z, db, hoje, precos):
         log(f"Dia a dia: faltam ~{faltam} meses antigos; entram nas próximas execuções")
 
 
+# ---------------------------------------------------------------- serviços feitos (detalhe por atendimento)
+
+VERSAO_SERV = 1
+
+
+def montar_servicos_mes(z, mes_ini, hoje, precos, resumo):
+    fim = min(date_add_months(mes_ini, 1) - dt.timedelta(days=1), hoje)
+    ags = z.agendamentos(mes_ini, fim, STATUS_PAGO,
+                         "dataHora,cliente(id,nome),servico(id,nome),profissional(nomeAgenda)")
+    # agrupa por dia + cliente + profissional + serviço (q = quantas vezes o serviço foi feito)
+    grupos = defaultdict(lambda: {"v": 0.0, "q": 0})
+    tabela = 0.0
+    for a in ags:
+        if not a.get("dataHora"):
+            continue
+        c = a.get("cliente") or {}
+        sv = a.get("servico") or {}
+        nome_c = limpa_nome(c.get("nome") or "") or "(sem cliente)"
+        k = (a["dataHora"][8:10], nome_c, ((a.get("profissional") or {}).get("nomeAgenda") or "—").strip(),
+             limpa_serv(sv.get("nome")) or "—")
+        preco = precos.get(str(sv.get("id")), 0.0)
+        grupos[k]["v"] += preco
+        grupos[k]["q"] += 1
+        tabela += preco
+    real = (resumo["meses"].get(mes_ini.strftime("%Y-%m")) or {}).get("servicos", 0)
+    fator = (real / tabela) if tabela > 0 and real > 0 else 1.0
+    sd, cd, pd = {}, {}, {}
+
+    def ix(t, n):
+        if n not in t:
+            t[n] = len(t)
+        return t[n]
+
+    itens = []
+    for (dia, cli, prof, serv), g in sorted(grupos.items()):
+        # "DD,serviço,cliente,profissional,valor,quantidade" (índices nas listas sd/cd/pd)
+        itens.append(f"{dia},{ix(sd, serv)},{ix(cd, cli)},{ix(pd, prof)},{round(g['v'] * fator, 2)},{g['q']}")
+
+    def lista(t):
+        return [n for n, _ in sorted(t.items(), key=lambda x: x[1])]
+
+    return {"mes": mes_ini.strftime("%Y-%m"), "completo": fim < hoje, "v": VERSAO_SERV,
+            "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes"),
+            "sd": lista(sd), "cd": lista(cd), "pd": lista(pd), "it": itens, "fator": round(fator, 4)}
+
+
+def gravar_servicos(z, db, hoje, precos, resumo):
+    col = db.collection("voox_servicos")
+    existentes = {}
+    for doc in col.select(["completo", "v"]).stream():
+        x = doc.to_dict() or {}
+        existentes[doc.id] = bool(x.get("completo")) and (x.get("v") or 0) >= VERSAO_SERV
+    for m in meses_a_atualizar(hoje, existentes):
+        doc = montar_servicos_mes(z, m, hoje, precos, resumo)
+        col.document(doc["mes"]).set(doc)
+        log(f"Serviços: {doc['mes']} gravado ({len(doc['it'])} linhas, {len(doc['sd'])} serviços)")
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -905,7 +963,8 @@ def main():
     fones = Fones(z, {k: v for k, v in conhecidos.items() if v})
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
                       ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas)), fones)),
-                      ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v}))):
+                      ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v})),
+                      ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo))):
         try:
             fn()
         except Exception as e:
