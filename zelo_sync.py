@@ -22,6 +22,7 @@ Rodar local para teste (sem gravar no Firebase):
 import os
 import re
 import sys
+import hashlib
 import json
 import time
 import datetime as dt
@@ -543,6 +544,16 @@ def _agrupar_por_cliente(ags, data_iso):
     return por
 
 
+def token_nota(doc_id):
+    """link da nota de satisfação: fixo para o atendimento e impossível de adivinhar"""
+    try:
+        seg = json.loads(os.environ.get("FIREBASE_SA_VOOX") or "{}").get("private_key_id") or ""
+    except Exception:
+        seg = ""
+    seg = seg or os.environ.get("ZELO_PASS", "")
+    return hashlib.sha256(f"nota|{seg}|{doc_id}".encode()).hexdigest()[:22]
+
+
 def gravar_mensagens_do_dia(z, db, d, fones):
     hoje = d["hoje"]
     agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
@@ -577,6 +588,11 @@ def gravar_mensagens_do_dia(z, db, d, fones):
 
     # 2) pós-atendimento: atendidas hoje e no último dia aberto antes de hoje
     col = db.collection("voox_posatend")
+    col_notas = db.collection("voox_notas")
+    try:
+        link_google = ((db.collection("voox_config").document("mensagem").get().to_dict() or {}).get("linkAvaliacao") or "").strip()
+    except Exception:
+        link_google = ""
     datas = sorted({(a.get("dataHora") or "")[:10] for a in d["pagos"]
                     if (a.get("dataHora") or "")[:10] < hoje.isoformat()})[-1:] + [hoje.isoformat()]
     batch, ops, total = db.batch(), 0, 0
@@ -585,11 +601,19 @@ def gravar_mensagens_do_dia(z, db, d, fones):
             if EH_CRIANCA.search(x["nomeZelo"]):
                 continue
             nome = limpa_nome(x["nomeZelo"])
-            batch.set(col.document(f"{data_iso}_{cid}"), {
-                "data": data_iso, "cliente": cid, "nome": nome,
-                "primeiro": nome.split(" ")[0].capitalize() if nome else "", "cel": fones(cid),
-                "itens": x["itens"], "ativo": True, "atualizadoEm": agora}, merge=True)
-            ops += 1; total += 1
+            doc_id = f"{data_iso}_{cid}"
+            tk = token_nota(doc_id)
+            primeiro = nome.split(" ")[0].capitalize() if nome else ""
+            batch.set(col.document(doc_id), {
+                "data": data_iso, "cliente": cid, "nome": nome, "primeiro": primeiro, "cel": fones(cid),
+                "itens": x["itens"], "tk": tk, "ativo": True, "atualizadoEm": agora}, merge=True)
+            # ficha da nota de satisfação (a cliente responde pelo link; o robô nunca mexe na nota)
+            batch.set(col_notas.document(tk), {
+                "data": data_iso, "pid": doc_id, "c": cid, "nm": nome, "n": primeiro,
+                "p": sorted({i["prof"] for i in x["itens"] if i.get("prof")}),
+                "s": sorted({i["servico"] for i in x["itens"] if i.get("servico")}),
+                "g": link_google}, merge=True)
+            ops += 2; total += 1
             if ops >= 400:
                 batch.commit(); batch, ops = db.batch(), 0
     batch.commit()
@@ -920,6 +944,151 @@ def gravar_servicos(z, db, hoje, precos, resumo):
         log(f"Serviços: {doc['mes']} gravado ({len(doc['it'])} linhas, {len(doc['sd'])} serviços)")
 
 
+# ---------------------------------------------------------------- horários vagos
+
+GAP_MIN = 45            # buraco mínimo na agenda (minutos)
+CANDS_POR_PROF = 12
+
+
+def _hm(m):
+    return f"{m // 60:02d}:{m % 60:02d}"
+
+
+def montar_vagas(z, d, dia, fones):
+    hoje = d["hoje"]
+    h = (d.get("horario") or [{}] * 7)[dia.weekday()] or {}
+    abre, fecha = h.get("ini") or 8 * 60, h.get("fim") or 20 * 60
+    if dia == hoje:
+        agora = dt.datetime.now(TZ)
+        abre = max(abre, agora.hour * 60 + agora.minute + 60)
+    ags = z.agendamentos(dia, dia, STATUS_FUTURO + ",PAGO", "dataHora,duracao,profissional(nomeAgenda),cliente(id)")
+    blq = z.agendamentos(dia, dia, "BLOQUEIO_AGENDA", "dataHora,duracao,profissional(nomeAgenda)")
+    ocup = defaultdict(list)
+    for a in ags + blq:
+        if not a.get("dataHora"):
+            continue
+        p = ((a.get("profissional") or {}).get("nomeAgenda") or "").strip()
+        if not p:
+            continue
+        ini = int(a["dataHora"][11:13]) * 60 + int(a["dataHora"][14:16])
+        ocup[p].append((ini, ini + max(15, _min(a) or 30), "cliente" in a))
+    # quem trabalha no dia = tem pelo menos um atendimento marcado
+    trabalham = {p for p, xs in ocup.items() if any(c for _, _, c in xs)}
+    # histórico (120 dias) por cliente: visitas, última vez, e com quem / o quê
+    hist = defaultdict(lambda: {"dias": set(), "nome": "", "com": Counter(), "serv": defaultdict(Counter)})
+    for a in d["pagos"]:
+        c = a.get("cliente") or {}
+        if not c.get("id") or not a.get("dataHora"):
+            continue
+        x = hist[str(c["id"])]
+        x["nome"] = c.get("nome") or x["nome"]
+        x["dias"].add(a["dataHora"][:10])
+        p = ((a.get("profissional") or {}).get("nomeAgenda") or "").strip()
+        if p:
+            x["com"][p] += 1
+            x["serv"][p][limpa_serv((a.get("servico") or {}).get("nome"))] += 1
+    marcadas = {str((a.get("cliente") or {}).get("id")) for a in d["futuros"] if a.get("cliente")}
+    profs = []
+    for p in sorted(trabalham):
+        xs = sorted(ocup[p])
+        gaps, cur = [], abre
+        for i, (a, b, _) in enumerate(xs):
+            if a - cur >= GAP_MIN and cur < fecha:
+                gaps.append({"i": _hm(cur), "f": _hm(min(a, fecha)), "min": min(a, fecha) - cur, "borda": i == 0})
+            cur = max(cur, b)
+        if fecha - cur >= GAP_MIN:
+            gaps.append({"i": _hm(cur), "f": _hm(fecha), "min": fecha - cur, "borda": True})
+        gaps = [g for g in gaps if g["min"] >= GAP_MIN]
+        cands = []
+        if gaps:
+            for cid, x in hist.items():
+                if not x["com"].get(p) or cid in marcadas or EH_CRIANCA.search(x["nome"]) or EXCLUIR_NOMES.search(x["nome"]):
+                    continue
+                ds = sorted(x["dias"])
+                ult = dt.date.fromisoformat(ds[-1])
+                desde = (dia - ult).days
+                iv = round((ult - dt.date.fromisoformat(ds[0])).days / (len(ds) - 1)) if len(ds) > 1 else None
+                if desde < max(14, round(0.8 * iv) if iv else 21):
+                    continue
+                atraso = desde / iv if iv else 1.0
+                cands.append((x["com"][p] * min(atraso, 3), cid, x, desde, iv))
+            cands.sort(key=lambda t: -t[0])
+        lista = []
+        for _, cid, x, desde, iv in cands[:CANDS_POR_PROF * 2]:
+            cel = fones(cid)
+            if not cel:
+                continue
+            nome = limpa_nome(x["nome"])
+            item = {"id": cid, "n": nome, "primeiro": nome.split(" ")[0].capitalize() if nome else "", "cel": cel,
+                    "s": x["serv"][p].most_common(1)[0][0] if x["serv"][p] else "", "dias": desde, "vezes": x["com"][p]}
+            if iv:
+                item["iv"] = iv
+            lista.append(item)
+            if len(lista) >= CANDS_POR_PROF:
+                break
+        profs.append({"p": p, "gaps": gaps, "cands": lista})
+    profs.sort(key=lambda x: -sum(g["min"] for g in x["gaps"]))
+    return profs
+
+
+def gravar_vagas(z, db, d, fones):
+    hoje = d["hoje"]
+    col = db.collection("voox_vagas")
+    dias = [hoje] + proximos_dias_abertos(hoje, d.get("horario"))
+    for dia in dias:
+        h = (d.get("horario") or [{}] * 7)[dia.weekday()] or {}
+        if h and not h.get("aberto", True):
+            continue
+        profs = montar_vagas(z, d, dia, fones)
+        col.document(dia.isoformat()).set({"data": dia.isoformat(), "profs": profs,
+                                           "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes")}, merge=True)
+        log(f"Horários vagos {dia.strftime('%d/%m')}: {sum(1 for p in profs if p['gaps'])} profissionais com buraco, "
+            f"{sum(len(p['cands']) for p in profs)} clientes sugeridas")
+    for doc in col.where("data", "<", hoje.isoformat()).limit(50).stream():
+        doc.reference.delete()
+
+
+# ---------------------------------------------------------------- comissão de cada profissional por serviço (cadastro de Usuários do Zelo)
+
+def gravar_comissoes_zelo(z, db):
+    usuarios, page = [], 1
+    while page < 20:
+        c = z.get("/api/usuarios/vinculos", {"apenasComAcessoSistema": "false", "apenasInativos": "false",
+                                             "fields": "id,nomeAgenda,apelido,profissional,ativo", "page": page,
+                                             "q": "", "rpp": 100})["content"]
+        usuarios += c.get("resultList") or []
+        if not c.get("more"):
+            break
+        page += 1
+    profs, n_serv = {}, 0
+    for u in usuarios:
+        if not u.get("profissional"):
+            continue
+        d = (z.get(f"/api/usuarios/{u['id']}") or {}).get("content") or {}
+        serv = {}
+        for x in d.get("servicos") or []:
+            nome = limpa_serv((x.get("servico") or {}).get("nome"))
+            if not nome:
+                continue
+            item = {"id": str((x.get("servico") or {}).get("id") or "")}
+            if x.get("valorFixoComissao") is not None:
+                item["fixo"] = float(x["valorFixoComissao"])
+            item["pct"] = float(x["percentualComissao"]) if x.get("percentualComissao") is not None else (None if "fixo" in item else 0.0)
+            if x.get("possuiComissaoFormaPagamento"):
+                item["formaPgto"] = True
+            serv[nome] = item
+            n_serv += 1
+        chave = (u.get("nomeAgenda") or d.get("nome") or "").strip()
+        if not chave:
+            continue
+        profs[chave] = {"id": str(u["id"]), "apelido": u.get("apelido") or "", "ativo": bool(u.get("ativo")),
+                        "naoRecebe": bool(d.get("naoRecebeComissao")), "todos": bool(d.get("possuiTodosServicos")),
+                        "serv": serv}
+    db.collection("voox_fin_cfg").document("comissoes_zelo").set({
+        "profs": profs, "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes")})
+    log(f"Comissões do Zelo: {len(profs)} profissionais, {n_serv} serviços com % cadastrado")
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -964,7 +1133,9 @@ def main():
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
                       ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas)), fones)),
                       ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v})),
-                      ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo))):
+                      ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo)),
+                      ("Horários vagos", lambda: gravar_vagas(z, db, d, fones)),
+                      ("Comissões do Zelo", lambda: gravar_comissoes_zelo(z, db))):
         try:
             fn()
         except Exception as e:
