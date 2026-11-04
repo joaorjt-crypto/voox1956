@@ -695,6 +695,9 @@ function assinar(){
       COMCFG=Object.assign({pct:{}, serv:{}, conta:'bradesco', cg:'folha-salarial-profissionais', zelo:false}, snap.exists?snap.data():{});
       renderCom(); renderMarg();
     }, function(err){ toast('Comissões: '+(err.code||err.message),'err'); }));
+    unsubs.push(db.collection('voox_fin_cfg').doc('comissoes_zelo').onSnapshot(function(snap){
+      COMZ=snap.exists?Object.assign({profs:{}, atualizadoEm:''}, snap.data()):{profs:{}, atualizadoEm:''}; renderCom(); renderMarg();
+    }, function(err){ toast('Comissões do Zelo: '+(err.code||err.message),'err'); }));
     unsubs.push(db.collection('voox_fin_cfg').doc('custos').onSnapshot(function(snap){
       CUSTOS=snap.exists?((snap.data()||{}).c||{}):{}; renderMarg();
     }, function(err){ toast('Custos: '+(err.code||err.message),'err'); }));
@@ -2909,6 +2912,23 @@ var COM = { per:'', mes:'', de:'', ate:'', aberto:null, lancar:false };
 (function(){ var h=hojeISO(), m=h.slice(0,7); if(+h.slice(8,10)>=16){ COM.per='q1'; COM.mes=m; } else { COM.per='q2'; COM.mes=addMes(m,-1); } })();
 function nomeProf(p){ return titulo(String(p||'').replace(/\s*\(.*\)\s*$/,'')) || p; }
 function pctCom(prof, serv){ var s=COMCFG.serv||{}, p=COMCFG.pct||{}; if(s[serv]!=null && s[serv]!=='') return +s[serv]; if(p[prof]!=null && p[prof]!=='') return +p[prof]; return null; }
+// voox_fin_cfg/comissoes_zelo -> {profs:{NOME AGENDA:{naoRecebe, serv:{SERVIÇO:{pct, fixo}}}}} (o robô lê do cadastro de Usuários do Zelo)
+var COMZ = {profs:{}, atualizadoEm:''};
+function comissaoDe(prof, serv, v, q){
+  var z=(COMZ.profs||{})[prof];
+  if(z){
+    if(z.naoRecebe) return {pc:0, com:0, fonte:'zelo', regra:'não recebe'};
+    var x=(z.serv||{})[serv];
+    if(x){
+      if(x.fixo!=null) return {pc:null, fixo:x.fixo, com:x.fixo*(q||1), fonte:'zelo', regra:'R$ '+fmtNum(x.fixo)+' fixo'};
+      var p=+x.pct||0; return {pc:p, com:v*p/100, fonte:'zelo', regra:String(p).replace('.',',')+'%'};
+    }
+  }
+  var pm=pctCom(prof, serv);
+  if(pm!=null) return {pc:pm, com:v*pm/100, fonte:'manual', regra:String(pm).replace('.',',')+'% (reserva)'};
+  return {pc:null, com:0, fonte:null, regra:'—'};
+}
+function pctTipico(prof){ var z=(COMZ.profs||{})[prof]; if(!z) return null; if(z.naoRecebe) return 'não recebe'; var c={}; Object.keys(z.serv||{}).forEach(function(k){ var x=z.serv[k]; if(x.fixo==null && x.pct) c[x.pct]=(c[x.pct]||0)+1; }); var m=null, n=0; Object.keys(c).forEach(function(k){ if(c[k]>n){ n=c[k]; m=k; } }); return m==null?null:String(m).replace('.',',')+'%'; }
 function comIntervalo(){
   var m=COM.mes;
   if(COM.per==='q1') return [m+'-01', m+'-15'];
@@ -2925,9 +2945,9 @@ function calcComissoes(de, ate){
   var X=servItens(de, ate), por={}, semPct={}, tot=0;
   X.L.forEach(function(o){
     var p=o.p||'—', x=por[p]||(por[p]={p:p, q:0, base:0, com:0, it:[], sem:0});
-    var pc=pctCom(p, o.s), c=pc==null?0:o.v*pc/100;
-    x.q+=o.q; x.base+=o.v; x.com+=c; tot+=c; if(pc==null){ x.sem+=o.q; semPct[p]=1; }
-    x.it.push({d:o.d, c:o.c, s:o.s, v:o.v, q:o.q, pc:pc, com:c});
+    var R=comissaoDe(p, o.s, o.v, o.q), c=R.com;
+    x.q+=o.q; x.base+=o.v; x.com+=c; tot+=c; if(!R.fonte){ x.sem+=o.q; semPct[p]=1; } if(R.fonte==='manual') x.man=(x.man||0)+o.q;
+    x.it.push({d:o.d, c:o.c, s:o.s, v:o.v, q:o.q, pc:R.pc, regra:R.regra, fonte:R.fonte, com:c});
   });
   var Z=zeloCom(de, ate), fator=(COMCFG.zelo && Z.v>0 && tot>0) ? Z.v/tot : 1;
   var L=Object.keys(por).map(function(k){ var x=por[k]; x.comF=x.com*fator; x.it.forEach(function(i){ i.comF=i.com*fator; }); return x; }).sort(function(a,b){ return b.base-a.base; });
@@ -2951,11 +2971,14 @@ function renderCom(){
   h+='<div class="fpop" id="fpop" onclick="event.stopPropagation()"><label>De<input type="date" id="fc2-de" value="'+r[0]+'"></label><label>Até<input type="date" id="fc2-ate" value="'+r[1]+'"></label><button class="btn btn-sm" onclick="setComDatas()">Aplicar</button></div>';
   h+='<span style="flex:1"></span><button class="btn btn-sm btn-ghost" onclick="excelCom()">Baixar Excel</button>'+(F.lanc?'':'<button class="btn btn-sm" onclick="COM.lancar=!COM.lancar;renderCom()">Lançar no financeiro</button>')+'</div>';
   h+=avisoServ(C.X);
-  if(C.semPct.length) h+='<div class="alert a-warn">⚠ '+C.semPct.length+' profissional(is) sem % de comissão definido: '+C.semPct.map(nomeProf).map(esc).join(', ')+'. Preencha a coluna <b>%</b> na tabela.</div>';
+  var temZ=Object.keys(COMZ.profs||{}).length;
+  if(!temZ) h+='<div class="alert a-info">◇ Os % de cada profissional por serviço vêm do cadastro de <b>Usuários</b> do Zelo e chegam na próxima execução do robô. Até lá, vale o % digitado na coluna "% reserva".</div>';
+  else h+='<div class="khint" style="margin:-4px 0 10px">% por serviço de cada profissional lidos do cadastro de Usuários do Zelo em '+dataBRc(COMZ.atualizadoEm.slice(0,10))+' às '+COMZ.atualizadoEm.slice(11,16)+'.</div>';
+  if(C.semPct.length) h+='<div class="alert a-warn">⚠ '+C.semPct.length+' profissional(is) com serviço sem % no Zelo: '+C.semPct.map(nomeProf).map(esc).join(', ')+'. Cadastre o serviço no Usuário dela no Zelo ou preencha a coluna <b>% reserva</b>.</div>';
   var totAj=0, totPagar=0; C.L.forEach(function(x){ var a=+aj[x.p]||0; totAj+=a; totPagar+=x.comF+a; });
   h+='<div class="grid kpis k4">';
   h+='<div class="card"><div class="klabel">Base (serviços feitos)</div><div class="kval">'+brl(C.L.reduce(function(a,x){ return a+x.base; },0))+'</div><div class="khint">'+n0(C.L.reduce(function(a,x){ return a+x.q; },0))+' serviços · valor estimado</div></div>';
-  h+='<div class="card"><div class="klabel">Comissão calculada</div><div class="kval">'+brl2(C.totF)+'</div><div class="khint">'+(C.fator!==1?'ajustada ao total do Zelo (×'+C.fator.toFixed(2).replace('.',',')+')':'pelos % de cada profissional')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Comissão calculada</div><div class="kval">'+brl2(C.totF)+'</div><div class="khint">'+(C.fator!==1?'ajustada ao total do Zelo (×'+C.fator.toFixed(2).replace('.',',')+')':'pelo % de cada serviço no cadastro do Zelo')+'</div></div>';
   h+='<div class="card"><div class="klabel">Comissão no Zelo</div><div class="kval">'+(C.Z.dias?brl2(C.Z.v):'—')+'</div><div class="khint">'+(C.Z.dias?'total do resumo de vendas · '+(C.Z.v?'diferença '+rs(C.tot-C.Z.v):'')+'':'sem dados do Zelo no período')+'</div></div>';
   h+='<div class="card"><div class="klabel">Total a pagar</div><div class="kval" style="color:var(--primary)">'+brl2(totPagar)+'</div><div class="khint">com vales e ajustes ('+rs(totAj)+')</div></div></div>';
   h+='<label class="chk"><input type="checkbox" '+(COMCFG.zelo?'checked':'')+' onchange="salvarComCfg({zelo:this.checked})"> Ajustar as comissões para bater com o total de comissão do Zelo (divide a diferença proporcionalmente)</label>';
@@ -2974,30 +2997,30 @@ function renderCom(){
     h+='<div class="khint" style="margin-top:8px">Cada profissional vira uma saída "Comissão Nome (dd/mm a dd/mm)". Dá para conferir e corrigir depois em Lançamentos.</div></div>';
   }
 
-  h+='<div class="tw" style="margin-top:12px"><div class="tscroll"><table class="tcom"><thead><tr><th>Profissional</th><th class="r">Serviços</th><th class="r">Base (est.)</th><th class="r" style="width:90px">% padrão</th><th class="r">Comissão</th><th class="r" style="width:130px">Vales / ajustes</th><th class="r">A pagar</th><th style="width:30px"></th></tr></thead><tbody>';
-  if(!C.L.length) h+='<tr><td colspan="8" class="empty">Sem serviços no período.</td></tr>';
+  h+='<div class="tw" style="margin-top:12px"><div class="tscroll"><table class="tcom"><thead><tr><th>Profissional</th><th class="r">Serviços</th><th class="r">Base (est.)</th><th class="r" style="width:100px">% no Zelo</th><th class="r" style="width:90px" title="Usado só nos serviços que não têm % cadastrado no Zelo para a profissional">% reserva</th><th class="r">Comissão</th><th class="r" style="width:130px">Vales / ajustes</th><th class="r">A pagar</th><th style="width:30px"></th></tr></thead><tbody>';
+  if(!C.L.length) h+='<tr><td colspan="9" class="empty">Sem serviços no período.</td></tr>';
   C.L.forEach(function(x){
     var a=+aj[x.p]||0, ab=COM.aberto===x.p, pd=(COMCFG.pct||{})[x.p];
-    h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-p="'+esc(x.p)+'" onclick="toggleComProf(this.dataset.p)"><td><b>'+esc(nomeProf(x.p))+'</b> <small class="p-sem">'+esc(x.p)+'</small>'+(x.sem?' <span class="pill p-bad">'+x.sem+' sem %</span>':'')+'</td><td class="r">'+n0(x.q)+'</td><td class="r">'+brl2(x.base)+'</td>';
+    h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-p="'+esc(x.p)+'" onclick="toggleComProf(this.dataset.p)"><td><b>'+esc(nomeProf(x.p))+'</b> <small class="p-sem">'+esc(x.p)+'</small>'+(x.sem?' <span class="pill p-bad">'+x.sem+' sem %</span>':'')+(x.man?' <span class="pill p-mut" title="Serviços sem % no Zelo, calculados pelo % reserva">'+x.man+' pelo reserva</span>':'')+'</td><td class="r">'+n0(x.q)+'</td><td class="r">'+brl2(x.base)+'</td><td class="r">'+(pctTipico(x.p)?'<span title="% mais comum nos serviços dela">'+pctTipico(x.p)+'</span>':'<span class="p-sem">—</span>')+'</td>';
     h+='<td class="r" onclick="event.stopPropagation()"><input class="inp-mini" type="text" inputmode="decimal" value="'+(pd!=null&&pd!==''?String(pd).replace('.',','):'')+'" placeholder="%" data-p="'+esc(x.p)+'" onchange="salvarPctProf(this.dataset.p,this.value)"'+(F.lanc?' disabled':'')+'></td>';
     h+='<td class="r">'+brl2(x.comF)+'</td><td class="r" onclick="event.stopPropagation()"><input class="inp-mini" type="text" inputmode="decimal" value="'+(a?fmtNum(a):'')+'" placeholder="0,00" data-p="'+esc(x.p)+'" onchange="salvarAjuste(this.dataset.p,this.value)" title="Negativo para vale/desconto (ex.: -200), positivo para acréscimo"'+(F.lanc?' disabled':'')+'></td>';
     h+='<td class="r" style="font-weight:700">'+brl2(x.comF+a)+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
     if(ab){
-      h+='<tr class="sv-det"><td colspan="8"><div class="sv-panel"><div class="tscroll" style="max-height:380px"><table class="tdet"><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">%</th><th class="r">Comissão</th></tr></thead><tbody>';
-      x.it.slice().sort(function(a,b){ return a.d.localeCompare(b.d); }).forEach(function(i){ h+='<tr><td>'+dataBRc(i.d)+'</td><td>'+esc(i.c)+'</td><td>'+esc(i.s.toLowerCase())+(i.q>1?' ×'+i.q:'')+'</td><td class="r">'+brl2(i.v)+'</td><td class="r">'+(i.pc==null?'<span class="down">—</span>':String(i.pc).replace('.',',')+'%')+'</td><td class="r">'+brl2(i.comF)+'</td></tr>'; });
+      h+='<tr class="sv-det"><td colspan="9"><div class="sv-panel"><div class="tscroll" style="max-height:380px"><table class="tdet"><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">Regra</th><th class="r">Comissão</th></tr></thead><tbody>';
+      x.it.slice().sort(function(a,b){ return a.d.localeCompare(b.d); }).forEach(function(i){ h+='<tr><td>'+dataBRc(i.d)+'</td><td>'+esc(i.c)+'</td><td>'+esc(i.s.toLowerCase())+(i.q>1?' ×'+i.q:'')+'</td><td class="r">'+brl2(i.v)+'</td><td class="r">'+(i.fonte?esc(i.regra):'<span class="down">sem %</span>')+'</td><td class="r">'+brl2(i.comF)+'</td></tr>'; });
       h+='</tbody></table></div></div></td></tr>';
     }
   });
-  if(C.L.length) h+='<tr class="tot"><td>Total</td><td class="r">'+n0(C.L.reduce(function(a,x){ return a+x.q; },0))+'</td><td class="r">'+brl2(C.L.reduce(function(a,x){ return a+x.base; },0))+'</td><td></td><td class="r">'+brl2(C.totF)+'</td><td class="r">'+rs(totAj)+'</td><td class="r">'+brl2(totPagar)+'</td><td></td></tr>';
+  if(C.L.length) h+='<tr class="tot"><td>Total</td><td class="r">'+n0(C.L.reduce(function(a,x){ return a+x.q; },0))+'</td><td class="r">'+brl2(C.L.reduce(function(a,x){ return a+x.base; },0))+'</td><td></td><td></td><td class="r">'+brl2(C.totF)+'</td><td class="r">'+rs(totAj)+'</td><td class="r">'+brl2(totPagar)+'</td><td></td></tr>';
   h+='</tbody></table></div></div>';
 
   // % por serviço
   var ov=COMCFG.serv||{}, ks=Object.keys(ov).sort();
-  h+='<details class="card msgcard" style="margin-top:14px"'+(ks.length?' open':'')+'><summary>Serviços com % diferente <small class="p-sem">('+ks.length+')</small></summary><div class="khint" style="margin:6px 0 10px">Quando um serviço tem % próprio, ele vale para qualquer profissional que fizer (ex.: podologia 50%). Os outros usam o % padrão da profissional.</div>';
+  h+='<details class="card msgcard" style="margin-top:14px"><summary>Reserva por serviço <small class="p-sem">('+ks.length+') · só para serviços sem % no Zelo</small></summary><div class="khint" style="margin:6px 0 10px">O % que vale é o do cadastro de Usuários do Zelo. Esta reserva só é usada quando a profissional fez um serviço que não está cadastrado no Usuário dela (ex.: podologia 50%).</div>';
   h+='<datalist id="dl-serv">'+(SERV.grupos||agruparServ(C.X.L)).map(function(g){ return '<option value="'+esc(g.n)+'">'; }).join('')+'</datalist><div class="ovs">';
   ks.forEach(function(s){ h+='<div class="ov"><span>'+esc(s.toLowerCase())+'</span><b>'+String(ov[s]).replace('.',',')+'%</b><button class="ibtn" data-s="'+esc(s)+'" onclick="salvarPctServ(this.dataset.s,null)">✕</button></div>'; });
   h+='</div><div class="fbar" style="margin:10px 0 0"><input id="ov-s" list="dl-serv" placeholder="Serviço (ex.: PODOLOGIA)" style="flex:1;min-width:200px;height:34px"><input id="ov-p" type="text" inputmode="decimal" placeholder="%" style="width:80px;height:34px"><button class="btn btn-sm" onclick="salvarPctServ(val(\'ov-s\'),val(\'ov-p\'))">Adicionar</button></div></details>';
-  h+='<div class="nota"><b>Base</b>: valor estimado de cada serviço (preço de tabela ajustado ao faturamento real do mês), o mesmo da aba Serviços feitos. O Zelo só informa o total de comissão do período, sem separar por profissional; por isso o card "Comissão no Zelo" serve de conferência e a caixinha acima permite ajustar ao total dele.</div>';
+  h+='<div class="nota"><b>Regra</b>: o % (ou valor fixo) de cada profissional em cada serviço vem do cadastro de Usuários do Zelo, atualizado pelo robô todo dia. <b>Base</b>: valor estimado de cada serviço (preço de tabela ajustado ao faturamento real do mês), o mesmo da aba Serviços feitos — o Zelo não libera o valor cobrado em cada atendimento, então a comissão calculada pode diferir um pouco da do Zelo quando houve desconto. O card "Comissão no Zelo" serve de conferência e a caixinha acima ajusta ao total dele.</div>';
   el.innerHTML=h;
 }
 function salvarComCfg(upd, msg){
@@ -3063,10 +3086,10 @@ function desfazerLancCom(){
 function excelCom(){
   var r=comIntervalo(), C=calcComissoes(r[0], r[1]), aj=(FECH[chaveFech(r)]||{}).aj||{};
   carregarSheetJS().then(function(){
-    var A=[['Comissões Voox 1956 — '+dataBRc(r[0])+' a '+dataBRc(r[1])],[],['Profissional','Agenda','Serviços','Base (est.)','% padrão','Comissão','Vales/ajustes','A pagar']];
-    C.L.forEach(function(x){ var a=+aj[x.p]||0, pd=(COMCFG.pct||{})[x.p]; A.push([nomeProf(x.p), x.p, x.q, Math.round(x.base*100)/100, pd!=null?+pd:'', Math.round(x.comF*100)/100, a, Math.round((x.comF+a)*100)/100]); });
-    var B=[['Profissional','Data','Cliente','Serviço','Qtd','Valor (est.)','%','Comissão']];
-    C.L.forEach(function(x){ x.it.slice().sort(function(a,b){ return a.d.localeCompare(b.d); }).forEach(function(i){ B.push([nomeProf(x.p), dataBRc(i.d), i.c, i.s, i.q, Math.round(i.v*100)/100, i.pc==null?'':i.pc, Math.round(i.comF*100)/100]); }); });
+    var A=[['Comissões Voox 1956 — '+dataBRc(r[0])+' a '+dataBRc(r[1])],[],['Profissional','Agenda','Serviços','Base (est.)','% mais comum (Zelo)','Comissão','Vales/ajustes','A pagar']];
+    C.L.forEach(function(x){ var a=+aj[x.p]||0, pd=(COMCFG.pct||{})[x.p]; A.push([nomeProf(x.p), x.p, x.q, Math.round(x.base*100)/100, pctTipico(x.p)||(pd!=null?pd+'% (reserva)':''), Math.round(x.comF*100)/100, a, Math.round((x.comF+a)*100)/100]); });
+    var B=[['Profissional','Data','Cliente','Serviço','Qtd','Valor (est.)','Regra','Comissão']];
+    C.L.forEach(function(x){ x.it.slice().sort(function(a,b){ return a.d.localeCompare(b.d); }).forEach(function(i){ B.push([nomeProf(x.p), dataBRc(i.d), i.c, i.s, i.q, Math.round(i.v*100)/100, i.fonte?i.regra:'sem %', Math.round(i.comF*100)/100]); }); });
     var wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(A), ws2=XLSX.utils.aoa_to_sheet(B);
     ws['!cols']=[{wch:18},{wch:18},{wch:9},{wch:12},{wch:9},{wch:12},{wch:13},{wch:12}]; ws2['!cols']=[{wch:16},{wch:10},{wch:34},{wch:30},{wch:5},{wch:12},{wch:6},{wch:11}]; ws2['!autofilter']={ref:'A1:H'+B.length};
     XLSX.utils.book_append_sheet(wb, ws, 'Resumo'); XLSX.utils.book_append_sheet(wb, ws2, 'Detalhe');
@@ -3085,14 +3108,14 @@ function renderMarg(){
   servCarregar(listaMeses(r[0].slice(0,7), r[1].slice(0,7)));
   var X=servItens(r[0], r[1]), por={}, sem={};
   X.L.forEach(function(o){
-    var x=por[o.s]||(por[o.s]={n:o.s, q:0, rec:0, com:0}), pc=pctCom(o.p, o.s);
-    x.q+=o.q; x.rec+=o.v; x.com+= pc==null?0:o.v*pc/100; if(pc==null) sem[o.p]=1;
+    var x=por[o.s]||(por[o.s]={n:o.s, q:0, rec:0, com:0}), R=comissaoDe(o.p, o.s, o.v, o.q);
+    x.q+=o.q; x.rec+=o.v; x.com+=R.com; if(!R.fonte) sem[o.p]=1;
   });
   var L=Object.keys(por).map(function(k){ var x=por[k], cu=+(CUSTOS[k]||0); x.cu=cu; x.prod=cu*x.q; x.marg=x.rec-x.com-x.prod; x.mp=x.rec?x.marg/x.rec:0; x.ma=x.q?x.marg/x.q:0; return x; });
   var o=MARG.ord; L.sort(function(a,b){ return o.k==='n' ? a.n.localeCompare(b.n)*o.d : (a[o.k]-b[o.k])*o.d; });
   var T=L.reduce(function(a,x){ a.q+=x.q; a.rec+=x.rec; a.com+=x.com; a.prod+=x.prod; a.marg+=x.marg; return a; }, {q:0,rec:0,com:0,prod:0,marg:0});
   var h=barraP('MPER','renderMarg', r)+'</div>'+avisoServ(X);
-  if(Object.keys(sem).length) h+='<div class="alert a-warn">⚠ '+Object.keys(sem).length+' profissional(is) sem % de comissão — a margem delas está sem desconto de comissão. Defina em <a onclick="nav(\'com\')" style="cursor:pointer;text-decoration:underline">Comissões</a>.</div>';
+  if(Object.keys(sem).length) h+='<div class="alert a-warn">⚠ '+Object.keys(sem).length+' profissional(is) com serviço sem % no Zelo — nesses serviços a margem está sem desconto de comissão. Veja em <a onclick="nav(\'com\')" style="cursor:pointer;text-decoration:underline">Comissões</a>.</div>';
   var semCusto=L.filter(function(x){ return !x.cu; }).length;
   h+='<div class="grid kpis k4">';
   h+='<div class="card"><div class="klabel">Receita de serviços (est.)</div><div class="kval">'+brl(T.rec)+'</div><div class="khint">'+n0(T.q)+' serviços</div></div>';
@@ -3413,7 +3436,9 @@ function itemNota(x, atencao){
 
 // ---- demo
 function dadosDemoNovos(){
-  COMCFG.pct={'ANA (MAN)':40,'CARLA (CAB)':45,'EVA (POD)':50,'GABI (SOB)':40,'ITAMAR (CAB)':45}; COMCFG.serv={'PODOLOGIA':50};
+  COMCFG.pct={'ITAMAR (CAB)':45}; COMCFG.serv={};
+  function zs(pd, ex){ var o={}; ['MANICURE','PEDICURE','ESCOVA MEDIA','SOBRANCELHA','RETOQUE RAIZ','PODOLOGIA','DEPILAÇÃO VIRILHA','MECHAS FEMININO','LIMPEZA DE PELE','DRENAGEM LINFÁTICA','CORTE FEMININO','HIDRATAÇÃO'].forEach(function(s){ o[s]={pct:pd}; }); return Object.assign(o, ex||{}); }
+  COMZ={atualizadoEm:hojeISO()+'T06:20-03:00', profs:{'ANA (MAN)':{serv:zs(60)}, 'CARLA (CAB)':{serv:zs(50,{'MECHAS FEMININO':{pct:40},'CORTE FEMININO':{fixo:50}})}, 'EVA (POD)':{serv:zs(60,{'PODOLOGIA':{pct:55}})}, 'GABI (SOB)':{serv:zs(60)}, 'TATIANA (DEP)':{serv:{'DEPILAÇÃO VIRILHA':{pct:70},'SOBRANCELHA':{pct:60}}}}};
   CUSTOS={'MANICURE':4.5,'PEDICURE':5,'ESCOVA MEDIA':8,'MECHAS FEMININO':65,'RETOQUE RAIZ':38,'HIDRATAÇÃO':22,'LIMPEZA DE PELE':18};
   var h=hojeISO();
   [['Aluguel Dallasanta',9800,5,'despesas-diversas','banrisul','mensal'],['Folha CLT',6400,5,'folha-salarial-clt','banrisul','mensal'],['Fortpel (NF 1570090)',809.47,-2,'compra-produtos','banrisul',''],['Truss (NF 44355) 2/4',916.55,9,'compra-produtos','banrisul',''],['Marketing (recarga)',450,12,'marketing','banrisul','mensal'],['Energia',1240,15,'despesas-diversas','bradesco','']].forEach(function(x,i){
