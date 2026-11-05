@@ -25,6 +25,7 @@ import sys
 import hashlib
 import json
 import time
+import unicodedata
 import datetime as dt
 from collections import Counter, defaultdict
 from zoneinfo import ZoneInfo
@@ -494,13 +495,34 @@ def gravar_aniversariantes(z, db, hoje):
 
 # ---------------------------------------------------------------- mensagens do dia
 
+def sem_acento(t):
+    return unicodedata.normalize("NFD", str(t or "")).encode("ascii", "ignore").decode().upper()
+
+
 CAMPANHAS = {
-    # chave: (nome, regex do que conta como "já faz", regex de quem é público, ou None = todas)
-    "facial":    ("Estética facial", r"LIMPEZA DE PELE|PEELING|MICROAGULH|DRENAGEM FACIAL|NUTRI[ÇC][ÃA]O +FACIAL|HYDRA|RADIOFREQ|MASSAGEM +FACIAL|TRATAMENTO", None),
-    "corporal":  ("Estética corporal", r"DRENAGEM LINF|MASSAGEM|LIPO|CORRENTE RUSSA|REIKI|ESFOLIA|BRONZE", None),
-    "podologia": ("Podologia", r"PODOLOG|PODOPROF|ONICO|UNGUEAL|ESPICULO", r"PEDICURE"),
-    "cabelo":    ("Cabelo", r"CORTE|ESCOVA|MECHAS|RETOQUE|TINTURA +\(|COLORA|HIDRATA|SELAGEM|PROGRESSIVA|BABY ?LISS|LAVADO|TONALIZ", None),
+    # chave: (nome, regex do que conta como "já faz", regex de quem é público ou None = todas) — sem acento
+    "facial":      ("Estética facial", r"LIMPEZA DE PELE|PEELING|MICROAGULH|DRENAGEM FACIAL|NUTRICAO +FACIAL|HYDRA|RADIOFREQ|MASSAGEM +FACIAL|TRATAMENTO FACIAL|DERMAPLAN|REVITALIZ", None),
+    "corporal":    ("Estética corporal", r"DRENAGEM LINF|MASSAGEM|LIPO|CORRENTE RUSSA|REIKI|ESFOLIA|BRONZE|MODELADORA|RELAXANTE|PEDRAS QUENTES", None),
+    "podologia":   ("Podologia", r"PODOLOG|PODOPROF|ONICO|UNGUEAL|ESPICULO", r"PEDICURE"),
+    "cabelo":      ("Cabelo", r"CORTE|ESCOVA|MECHAS|RETOQUE|TINTURA|COLORA|PROGRESSIVA|BABY ?LISS|LAVADO|TONALIZ|LUZES|BALAYAGE|PENTEADO", None),
+    "capilar":     ("Tratamento capilar", r"HIDRATA|NUTRICAO CAPILAR|RECONSTRU|CRONOGRAMA|CAUTERIZ|BOTOX|SELAGEM|ETAPA|ACIDIFIC|AMPOLA|TRATAMENTO CAPILAR",
+                    r"ESCOVA|CORTE|MECHAS|COLORA|RETOQUE|TINTURA|LUZES|PROGRESSIVA"),
+    "sobrancelha": ("Sobrancelha e cílios", r"SOBRANCEL|DESIGN|HENNA|CILIO|LASH|BROW|LAMINACAO", None),
+    "depilacao":   ("Depilação", r"DEPILA|CERA |BUCO|AXILA|VIRILHA", None),
+    "maos":        ("Manicure e pedicure", r"MANICURE|PEDICURE|ESMALT|SPA DOS PES", None),
+    "gel":         ("Unhas em gel", r"GEL|FIBRA|ALONGAMENTO|BLINDAGEM|POSTICA|ACRIL", r"MANICURE|ESMALT"),
+    "maquiagem":   ("Maquiagem", r"MAQUIA|MAKE", r"ESCOVA|PENTEADO|SOBRANCEL|CILIO|MECHAS|COLORA"),
 }
+# serviços que não fazem sentido sugerir (cortesias, retornos, taxas, infantil, masculino)
+NAO_SUGERIR = re.compile(r"RETORNO|AVALIA|TAXA|CORTESIA|BRINDE|PACOTE|CREDITO|MANUTEN|INFANTIL|MASCULIN|KIDS|NOIVA|TESTE|^—$")
+TAMANHOS = re.compile(r"\b(CURTA|CURTO|MEDIA|MEDIO|LONGA|LONGO|EXTRA|GRANDE|PEQUEN[AO]|FEMININ[AO]|SIMPLES|COMPLET[AO]|[PMG]|\d+)\b")
+
+
+def base_servico(n):
+    """'ESCOVA MEDIA' e 'ESCOVA LONGA' são a mesma coisa para efeito de sugestão"""
+    return re.sub(r"\s+", " ", TAMANHOS.sub(" ", sem_acento(n).replace("/", " "))).strip()
+
+
 EH_CRIANCA = re.compile(r"FILH[OA]|INFANTIL|SOBRINH|AFILHAD", re.I)
 
 
@@ -637,8 +659,40 @@ def gravar_mensagens_do_dia(z, db, d, fones):
             b.commit()
 
 
-def montar_oportunidades(d, sumidas):
-    """clientes frequentes (3+ serviços em 120 dias, vieram nos últimos 60) que nunca fizeram cada tipo"""
+def modelo_sugestoes(conjuntos, min_clientes=25):
+    """quem faz A também costuma fazer B: P(B | A) contada sobre as clientes (24 meses quando disponível)"""
+    cnt, co = Counter(), defaultdict(Counter)
+    for S in conjuntos:
+        L = [x for x in S if x and not NAO_SUGERIR.search(sem_acento(x))][:25]
+        for a in L:
+            cnt[a] += 1
+            for b in L:
+                if a != b:
+                    co[a][b] += 1
+    populares = {x for x, n in cnt.items() if n >= min_clientes}
+    return cnt, co, populares
+
+
+def sugerir(S, cnt, co, populares, n=2):
+    bases = {base_servico(x) for x in S}
+    melhor = {}
+    for a in S:
+        if cnt.get(a, 0) < 25:
+            continue
+        for t, k in co[a].items():
+            if t not in populares or t in S or k < 10 or base_servico(t) in bases:
+                continue
+            p = k / cnt[a]
+            if p > melhor.get(t, (0, ""))[0]:
+                melhor[t] = (p, a)
+    top = sorted(melhor.items(), key=lambda x: -x[1][0])[:n]
+    return [{"s": t, "p": round(p * 100), "a": a} for t, (p, a) in top if p >= 0.15]
+
+
+def montar_oportunidades(d, sumidas, hist=None):
+    """clientes frequentes (3+ serviços em 120 dias, vieram nos últimos 60): campanhas de tipos que nunca fizeram
+    (olhando 24 meses quando o histórico está disponível) e sugestão do serviço que clientes parecidas fazem"""
+    hist = hist or {}
     hoje = d["hoje"]
     por = defaultdict(lambda: {"nome": "", "datas": [], "serv": Counter()})
     for a in d["pagos"]:
@@ -649,6 +703,10 @@ def montar_oportunidades(d, sumidas):
         x["nome"] = c.get("nome") or x["nome"]
         x["datas"].append(a["dataHora"][:10])
         x["serv"][limpa_serv((a.get("servico") or {}).get("nome"))] += 1
+    todos = dict(hist)
+    for cid, x in por.items():
+        todos[cid] = set(todos.get(cid, set())) | set(x["serv"])
+    cnt, co, populares = modelo_sugestoes(todos.values())
     out = {}
     for cid, x in por.items():
         n = len(x["datas"])
@@ -656,23 +714,80 @@ def montar_oportunidades(d, sumidas):
             continue
         if (hoje - dt.date.fromisoformat(max(x["datas"]))).days > 60:
             continue
-        servs = " | ".join(x["serv"])
+        S = todos[cid]
+        servs = " | ".join(sem_acento(v) for v in S)
         alvo = [k for k, (_, faz, publico) in CAMPANHAS.items()
                 if not re.search(faz, servs) and (publico is None or re.search(publico, servs))]
-        if not alvo:
+        sug = sugerir(S, cnt, co, populares)
+        if not alvo and not sug:
             continue
         nome = limpa_nome(x["nome"])
         out[cid] = {"nome": nome, "primeiro": nome.split(" ")[0].capitalize() if nome else "", "n": n,
-                    "ult": max(x["datas"]), "servicos": [k for k, _ in x["serv"].most_common(3)], "campanhas": alvo}
+                    "ult": max(x["datas"]), "servicos": [k for k, _ in x["serv"].most_common(3)], "campanhas": alvo,
+                    "sug": sug}
+    log(f"Sugestões: modelo com {len(todos)} clientes e {len(populares)} serviços frequentes")
     return out
 
 
-def gravar_oportunidades(db, oport, fones):
+def retornos_campanhas(docs, d):
+    """para cada mensagem enviada, procura se a cliente fez o serviço oferecido depois (até 90 dias)"""
+    pagos = defaultdict(list)
+    for a in d["pagos"]:
+        c = a.get("cliente")
+        if c and a.get("dataHora"):
+            pagos[str(c["id"])].append(a)
+    precos = d["precos"]
+    novos = {}
+    for cid, x in docs.items():
+        env = x.get("enviados") or {}
+        ret = dict(x.get("ret") or {})
+        mudou = False
+        for k, quando in env.items():
+            if k in ret or not quando:
+                continue
+            ini = str(quando)[:10]
+            fim = (dt.date.fromisoformat(ini) + dt.timedelta(days=90)).isoformat()
+            if k == "sug":
+                alvo = base_servico(x.get("sugEnviada") or "")
+                ok = (lambda nome, alvo=alvo: alvo and base_servico(nome) == alvo)
+            elif k in CAMPANHAS:
+                faz = CAMPANHAS[k][1]
+                ok = (lambda nome, faz=faz: re.search(faz, sem_acento(nome)))
+            else:
+                continue
+            achou = [a for a in pagos.get(cid, []) if ini < a["dataHora"][:10] <= fim
+                     and ok(limpa_serv((a.get("servico") or {}).get("nome")))]
+            if achou:
+                achou.sort(key=lambda a: a["dataHora"])
+                ret[k] = {"d": achou[0]["dataHora"][:10], "s": limpa_serv((achou[0].get("servico") or {}).get("nome")),
+                          "v": round(sum(precos.get(str((a.get("servico") or {}).get("id")), 0.0) for a in achou), 2)}
+                mudou = True
+        if mudou:
+            novos[cid] = ret
+    return novos
+
+
+def gravar_oportunidades(db, oport, fones, d=None):
     col = db.collection("voox_oportunidades")
     agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
-    existentes = {doc.id for doc in col.where("ativo", "==", True).select([]).stream()}
+    todos_docs = {doc.id: (doc.to_dict() or {}) for doc in col.select(["ativo", "enviados", "ret", "sugEnviada", "temEnv"]).stream()}
+    existentes = {k for k, v in todos_docs.items() if v.get("ativo")}
     batch, ops, gravadas = db.batch(), 0, 0
+    # retorno das mensagens já enviadas (vale também para quem saiu da lista por já ter feito o serviço)
+    if d:
+        rets = retornos_campanhas({k: v for k, v in todos_docs.items() if v.get("enviados")}, d)
+        for cid, ret in rets.items():
+            batch.set(col.document(cid), {"ret": ret, "temRet": True, "temEnv": True}, merge=True)
+            ops += 1
+        for cid, v in todos_docs.items():
+            if v.get("enviados") and not v.get("temEnv") and cid not in rets:
+                batch.set(col.document(cid), {"temEnv": True}, merge=True)
+                ops += 1
+        if rets:
+            log(f"Oportunidades: {len(rets)} cliente(s) fizeram o serviço oferecido depois da mensagem")
     for cid, o in oport.items():
+        if ops >= 400:
+            batch.commit(); batch, ops = db.batch(), 0
         cel = fones(cid, essencial=False)
         if not cel:
             continue
@@ -687,14 +802,15 @@ def gravar_oportunidades(db, oport, fones):
             batch.commit(); batch, ops = db.batch(), 0
     batch.commit()
     por_camp = Counter(c for o in oport.values() for c in o["campanhas"])
-    log(f"Oportunidades: {gravadas} clientes · " + ", ".join(f"{CAMPANHAS[k][0]} {v}" for k, v in por_camp.items()))
+    por_camp["sug"] = sum(1 for o in oport.values() if o.get("sug"))
+    log(f"Oportunidades: {gravadas} clientes · " + ", ".join(f"{(CAMPANHAS.get(k) or ('Sugestão',))[0]} {v}" for k, v in por_camp.items()))
 
 
 # ---------------------------------------------------------------- clientes (12 meses)
 
 POR_PARTE = 400   # clientes por documento (cada um fica bem abaixo do limite de 1 MB, mesmo com 24 meses de visitas)
 DIAS_CLI = 730    # histórico de visitas por cliente (24 meses) — o painel filtra por data em cima disso
-VERSAO_CLI = 3    # sobe quando o formato muda; força refazer no mesmo dia
+VERSAO_CLI = 4    # sobe quando o formato muda; força refazer no mesmo dia
 
 
 def gravar_clientes(z, db, d, resumo, celulares):
@@ -710,7 +826,7 @@ def gravar_clientes(z, db, d, resumo, celulares):
                          "dataHora,cliente(id,nome),servico(id,nome),profissional(nomeAgenda)")
     precos = d["precos"]
     # por cliente e por dia: valor de tabela, serviço principal (o mais caro) e profissional dele
-    por = defaultdict(lambda: {"nome": "", "dias": defaultdict(lambda: {"v": 0.0, "top": -1.0, "s": "", "p": ""})})
+    por = defaultdict(lambda: {"nome": "", "todos": set(), "dias": defaultdict(lambda: {"v": 0.0, "top": -1.0, "s": "", "p": ""})})
     tabela_mes = defaultdict(float)
     for a in ags:
         c = a.get("cliente")
@@ -720,6 +836,7 @@ def gravar_clientes(z, db, d, resumo, celulares):
         x["nome"] = c.get("nome") or x["nome"]
         dia = a["dataHora"][:10]
         preco = precos.get(str((a.get("servico") or {}).get("id")), 0.0)
+        x["todos"].add(limpa_serv((a.get("servico") or {}).get("nome")) or "")
         v = x["dias"][dia]
         v["v"] += preco
         tabela_mes[dia[:7]] += preco
@@ -756,6 +873,7 @@ def gravar_clientes(z, db, d, resumo, celulares):
                 if o["s"]: s12[o["s"]] += 1
                 if o["p"]: p12[o["p"]] += 1
         item = {"i": cid, "n": limpa_nome(x["nome"]), "u": ds[-1], "vs": vs,
+                "sv": sorted(ix(serv_ix, t) for t in x["todos"] if t),
                 # resumo dos últimos 12 meses (compatível com a versão anterior do painel)
                 "q": q12, "v": round(v12, 2), "s": s12.most_common(1)[0][0] if s12 else "",
                 "r": p12.most_common(1)[0][0] if p12 else ""}
@@ -1147,16 +1265,23 @@ def main():
         log(f"Dia a dia falhou (o resto segue): {e}")
     conhecidos = {doc.id: (doc.to_dict() or {}).get("cel") for doc in db.collection("voox_reativacao").select(["cel"]).stream()}
     # celulares já conhecidos da lista de clientes (evita buscar de novo no Zelo, que é a parte lenta)
+    hist = {}
     try:
-        for doc in db.collection("voox_clientes").stream():
-            for it in (doc.to_dict() or {}).get("itens") or []:
+        docs_cli = {doc.id: (doc.to_dict() or {}) for doc in db.collection("voox_clientes").stream()}
+        sd = (docs_cli.get("meta") or {}).get("sd") or []
+        for k, dd in docs_cli.items():
+            if k == "meta":
+                continue
+            for it in dd.get("itens") or []:
                 if it.get("c") and it.get("i") and not conhecidos.get(str(it["i"])):
                     conhecidos[str(it["i"])] = it["c"]
+                if it.get("i") and it.get("sv"):
+                    hist[str(it["i"])] = {sd[j] for j in it["sv"] if 0 <= j < len(sd)}
     except Exception as e:
         log(f"Celulares da lista de clientes não carregaram: {e}")
     fones = Fones(z, {k: v for k, v in conhecidos.items() if v})
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
-                      ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas)), fones)),
+                      ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas), hist), fones, d)),
                       ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v})),
                       ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo)),
                       ("Horários vagos", lambda: gravar_vagas(z, db, d, fones)),
