@@ -436,6 +436,9 @@ html[data-theme="light"] .tconc tr.conc-sem td{background:rgba(176,125,76,.07)}
 @media(max-width:900px){.g2{grid-template-columns:1fr}}
 .nota-n{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;border-radius:6px;color:#fff;font-weight:700;font-size:12px;margin-right:4px}
 .coment{font-size:12.5px;color:var(--text);margin-top:5px;font-style:italic}
+.seg.seg-wrap{flex-wrap:wrap;overflow:visible}
+.sug-txt{font-size:12.5px;margin-top:5px;color:var(--text)}
+.sug-txt b{color:var(--purple)}
 </style>
 </head>
 <body>
@@ -726,7 +729,10 @@ function assinar(){
   unsubs.push(db.collection('voox_posatend').where('data','>=',addDias(hojeISO(),-4)).limit(800).onSnapshot(function(snap){
     posat={}; snap.forEach(function(d){ posat[d.id]=d.data(); }); renderPos();
   }, function(err){ document.getElementById('page-pos').innerHTML='<div class="card empty">Sem permissão para ler o pós-atendimento ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
-  unsubs.push(db.collection('voox_oportunidades').where('ativo','==',true).limit(1500).onSnapshot(function(snap){
+  unsubs.push(db.collection('voox_oportunidades').where('temEnv','==',true).limit(4000).onSnapshot(function(snap){
+    OPRES={}; snap.forEach(function(d){ OPRES[d.id]=d.data(); }); renderOport();
+  }, function(err){ toast('Resultados das oportunidades: '+(err.code||err.message),'err'); }));
+  unsubs.push(db.collection('voox_oportunidades').where('ativo','==',true).limit(2500).onSnapshot(function(snap){
     oport={}; snap.forEach(function(d){ oport[d.id]=d.data(); }); renderOport();
   }, function(err){ document.getElementById('page-oport').innerHTML='<div class="card empty">Sem permissão para ler as oportunidades ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
   unsubs.push(db.collection('voox_reativacao').onSnapshot(function(snap){
@@ -1609,36 +1615,92 @@ function enviarPos(id){
 }
 
 // -- oportunidades
+var OPRES = {}, resPer = '90'; campAtual = 'sug';
+CAMPS = [['sug','✦ Sugestão inteligente'],['capilar','Tratamento capilar'],['facial','Estética facial'],['corporal','Estética corporal'],['podologia','Podologia'],['sobrancelha','Sobrancelha e cílios'],['depilacao','Depilação'],['maos','Manicure e pedicure'],['gel','Unhas em gel'],['cabelo','Cabelo'],['maquiagem','Maquiagem']];
+Object.assign(MSG_PADRAO, {
+  camp_sug: 'Oi, {nome}! Muitas clientes que fazem {base} aqui na Voox 1956 também amam {servico}. Que tal experimentar na sua próxima visita? Responda esta mensagem que a gente encontra um horário pra você.',
+  camp_capilar: 'Oi, {nome}! Seu cabelo merece um cuidado extra: a Voox 1956 tem hidratação, nutrição e reconstrução para deixar os fios bonitos por mais tempo. Quer incluir na sua próxima escova? É só responder aqui.',
+  camp_sobrancelha: 'Oi, {nome}! Já conhece o design de sobrancelha e os cílios da Voox 1956? Faz toda a diferença no olhar. Responda esta mensagem que a gente encontra um horário pra você.',
+  camp_depilacao: 'Oi, {nome}! Sabia que a Voox 1956 também faz depilação, com todo o cuidado que você já conhece? Responda esta mensagem que a gente encontra um horário pra você.',
+  camp_maos: 'Oi, {nome}! Que tal sair da Voox 1956 com as unhas feitas também? Manicure e pedicure com a equipe que você já conhece. Responda esta mensagem que a gente encontra um horário pra você.',
+  camp_gel: 'Oi, {nome}! Já pensou em unhas que duram semanas? A Voox 1956 faz unhas em gel e alongamento. Responda esta mensagem que a gente te conta mais e encontra um horário.',
+  camp_maquiagem: 'Oi, {nome}! Tem evento chegando? A Voox 1956 faz maquiagem completa — dá pra combinar com a escova no mesmo horário. Responda esta mensagem que a gente organiza tudo.'
+});
+function nomeCamp(k){ var c=CAMPS.filter(function(x){ return x[0]===k; })[0]; return c ? c[1].replace(/^✦ /,'') : k; }
+function livreOport(o,k){
+  if((o.enviados||{})[k] || (o.dispensadas||{})[k]) return false;
+  return k==='sug' ? !!(o.sug||[]).length : (o.campanhas||[]).indexOf(k)>=0;
+}
 function renderOport(){
   var L0=Object.keys(oport).map(function(id){ return Object.assign({id:id}, oport[id]); }).filter(function(o){ return o.ativo; });
-  function livre(o,k){ return (o.campanhas||[]).indexOf(k)>=0 && !(o.enviados||{})[k] && !(o.dispensadas||{})[k]; }
-  var cont={}; CAMPS.forEach(function(c){ cont[c[0]]=L0.filter(function(o){ return livre(o,c[0]); }).length; });
+  var cont={}; CAMPS.forEach(function(c){ cont[c[0]]=L0.filter(function(o){ return livreOport(o,c[0]); }).length; });
   if(viewAtual!=='oport') return;
   frescor();
-  var h='<div class="seg seg-pg">'+CAMPS.map(function(c){ return '<button class="'+(campAtual===c[0]?'on':'')+'" onclick="setCamp(\''+c[0]+'\')">'+c[1]+' <b>'+cont[c[0]]+'</b></button>'; }).join('')+'</div>';
-  h+=editorMsg('camp_'+campAtual, 'Mensagem de '+CAMPS.filter(function(c){return c[0]===campAtual;})[0][1].toLowerCase(), 'Use <b>{nome}</b>. Os serviços de estética estão fora do link de agendamento, por isso a mensagem pede para responder.');
-  var L=L0.filter(function(o){ return livre(o,campAtual); }).sort(function(a,b){ return b.n-a.n; });
-  var feitos=L0.filter(function(o){ return (o.enviados||{})[campAtual]; }).length;
-  h+='<div class="sect">'+n0(L.length)+' clientes para oferecer <small>frequentes (3+ serviços em 120 dias, vieram nos últimos 60) que ainda não fizeram · '+feitos+' já receberam</small></div><div class="rlist">';
+  if(campAtual!=='res' && !CAMPS.some(function(c){ return c[0]===campAtual; })) campAtual='sug';
+  var h='<div class="seg seg-pg seg-wrap">'+CAMPS.map(function(c){ return '<button class="'+(campAtual===c[0]?'on':'')+'" onclick="setCamp(\''+c[0]+'\')">'+c[1]+' <b>'+cont[c[0]]+'</b></button>'; }).join('')+(podePainel()?'<button class="'+(campAtual==='res'?'on':'')+'" onclick="setCamp(\'res\')">📈 Resultados</button>':'')+'</div>';
+  if(campAtual==='res'){ document.getElementById('page-oport').innerHTML=h+resultadosOport(); return; }
+  var ajuda = campAtual==='sug' ? 'Use <b>{nome}</b>, <b>{servico}</b> (o serviço sugerido) e <b>{base}</b> (o que ela já faz).' : 'Use <b>{nome}</b>. Os serviços de estética estão fora do link de agendamento, por isso a mensagem pede para responder.';
+  h+=editorMsg('camp_'+campAtual, 'Mensagem de '+nomeCamp(campAtual).toLowerCase(), ajuda);
+  var L=L0.filter(function(o){ return livreOport(o,campAtual); });
+  if(campAtual==='sug') L.sort(function(a,b){ return (b.sug[0].p-a.sug[0].p) || b.n-a.n; }); else L.sort(function(a,b){ return b.n-a.n; });
+  var feitos=Object.keys(OPRES).filter(function(id){ return ((OPRES[id]||{}).enviados||{})[campAtual]; }).length || L0.filter(function(o){ return (o.enviados||{})[campAtual]; }).length;
+  var conv=Object.keys(OPRES).filter(function(id){ return ((OPRES[id]||{}).ret||{})[campAtual]; }).length;
+  var expl = campAtual==='sug' ? 'cada cliente recebe o serviço que mais combina com o que ela já faz, segundo o que as outras clientes da casa fazem' : 'frequentes (3+ serviços em 120 dias, vieram nos últimos 60) que nunca fizeram este tipo de serviço';
+  h+='<div class="sect">'+n0(L.length)+' clientes para oferecer <small>'+expl+' · '+n0(feitos)+' já receberam'+(conv?' · <b style="color:var(--green)">'+n0(conv)+' fizeram</b>':'')+'</small></div><div class="rlist">';
   if(!L.length) h+='<div class="card empty">Ninguém pendente nesta campanha — ou o robô ainda não rodou a versão nova.</div>';
   L.slice(0, limite).forEach(function(o){
-    h+='<div class="rrow" style="--c:var(--purple)"><div><div class="nm">'+esc(o.nome)+'</div><div class="info">Faz '+esc((o.servicos||[]).join(', ').toLowerCase())+' · '+n0(o.n)+' serviços em 120 dias · última visita '+dataBR(o.ult)+'</div></div>';
-    h+='<div class="acts"><button class="btn btn-sm btn-wa" onclick="enviarOport(\''+o.id+'\')">WhatsApp</button><button class="btn btn-sm btn-ghost" onclick="dispensarOport(\''+o.id+'\')" title="Não oferecer esta campanha para ela">Não oferecer</button></div></div>';
+    var info='Faz '+esc((o.servicos||[]).join(', ').toLowerCase())+' · '+n0(o.n)+' serviços em 120 dias · última visita '+dataBR(o.ult);
+    var extra='';
+    if(campAtual==='sug'){ var s=o.sug[0]; extra='<div class="sug-txt">Sugestão: <b>'+esc(s.s.toLowerCase())+'</b> — '+s.p+'% das clientes que fazem '+esc(s.a.toLowerCase())+' também fazem'+(o.sug[1]?' <span class="p-sem">· ou '+esc(o.sug[1].s.toLowerCase())+' ('+o.sug[1].p+'%)</span>':'')+'</div>'; }
+    h+='<div class="rrow" style="--c:var(--purple)"><div><div class="nm">'+esc(o.nome)+'</div><div class="info">'+info+'</div>'+extra+'</div>';
+    h+='<div class="acts">'+(o.cel?'<button class="btn btn-sm btn-wa" onclick="enviarOport(\''+o.id+'\')">WhatsApp</button>':'<span class="pill p-mut">sem celular</span>')+'<button class="btn btn-sm btn-ghost" onclick="dispensarOport(\''+o.id+'\')" title="Não oferecer esta campanha para ela">Não oferecer</button></div></div>';
   });
   h+='</div>'+(L.length>limite?'<div class="more"><button class="btn btn-sm btn-ghost" onclick="limite+=60;renderOport()">Mostrar mais ('+(L.length-limite)+')</button></div>':'');
+  if(campAtual==='sug') h+='<div class="nota">A sugestão vem de um cálculo simples sobre os últimos 24 meses: para cada serviço que a cliente faz, o robô vê qual outro serviço as clientes que fazem o mesmo também costumam fazer, e escolhe o mais comum que ela ainda não fez (variações como escova média/longa contam como o mesmo serviço).</div>';
   document.getElementById('page-oport').innerHTML=h;
 }
 function setCamp(k){ campAtual=k; limite=60; renderOport(); }
 function enviarOport(id){
-  var o=oport[id]; abrirWhats(o.cel, preencher(textoMsg('camp_'+campAtual), {nome:o.primeiro||o.nome, agenda:LINK_AGENDA}));
-  var u={}; u['enviados.'+campAtual]=new Date().toISOString();
-  if(DEMO){ o.enviados=o.enviados||{}; o.enviados[campAtual]=u['enviados.'+campAtual]; renderOport(); toast((o.primeiro||o.nome)+' marcada como enviada.'); return; }
+  var o=oport[id], k=campAtual, s=(o.sug||[])[0]||{};
+  abrirWhats(o.cel, preencher(textoMsg('camp_'+k), {nome:o.primeiro||o.nome, agenda:LINK_AGENDA, servico:(s.s||'').toLowerCase(), base:(s.a||'').toLowerCase()}));
+  var agora=new Date().toISOString(), u={temEnv:true}; u['enviados.'+k]=agora; if(k==='sug') u.sugEnviada=s.s||'';
+  if(DEMO){ o.enviados=o.enviados||{}; o.enviados[k]=agora; if(k==='sug') o.sugEnviada=s.s; OPRES[id]=o; renderOport(); toast((o.primeiro||o.nome)+' marcada como enviada.'); return; }
   db.collection('voox_oportunidades').doc(id).update(u).then(function(){ toast((o.primeiro||o.nome)+' marcada como enviada.'); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
 }
 function dispensarOport(id){
   var o=oport[id], u={}; u['dispensadas.'+campAtual]=true;
   if(DEMO){ o.dispensadas=o.dispensadas||{}; o.dispensadas[campAtual]=true; renderOport(); return; }
   db.collection('voox_oportunidades').doc(id).update(u).then(function(){ toast('Não vai mais aparecer nesta campanha.'); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
+function setResPer(p){ resPer=p; renderOport(); }
+function resultadosOport(){
+  var corte = resPer==='tudo' ? '' : addDias(hojeISO(), -(+resPer));
+  var por={}, envT=0, convT=0, recT=0, lista=[];
+  Object.keys(OPRES).forEach(function(id){
+    var o=OPRES[id], env=o.enviados||{}, ret=o.ret||{};
+    Object.keys(env).forEach(function(k){
+      var d=String(env[k]||'').slice(0,10); if(!d || (corte && d<corte)) return;
+      var x=por[k]||(por[k]={k:k, env:0, conv:0, rec:0}); x.env++; envT++;
+      var r=ret[k]; if(r){ x.conv++; x.rec+=r.v||0; convT++; recT+=r.v||0; lista.push({nome:o.nome, k:k, env:d, r:r, sug:o.sugEnviada}); }
+    });
+  });
+  var h='<div class="fbar" style="margin-top:4px"><div class="seg"><button class="'+(resPer==='30'?'on':'')+'" onclick="setResPer(\'30\')">30 dias</button><button class="'+(resPer==='90'?'on':'')+'" onclick="setResPer(\'90\')">90 dias</button><button class="'+(resPer==='tudo'?'on':'')+'" onclick="setResPer(\'tudo\')">Tudo</button></div><span class="fcomp">mensagens enviadas no período e o que as clientes fizeram em até 90 dias depois</span></div>';
+  h+='<div class="grid kpis k4">';
+  h+='<div class="card"><div class="klabel">Mensagens enviadas</div><div class="kval">'+n0(envT)+'</div><div class="khint">em todas as campanhas</div></div>';
+  h+='<div class="card"><div class="klabel">Fizeram o serviço oferecido</div><div class="kval" style="color:var(--green)">'+n0(convT)+'</div><div class="khint">'+(envT?pct(convT/envT)+' das mensagens':'—')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Receita gerada (est.)</div><div class="kval">'+brl(recT)+'</div><div class="khint">preço de tabela dos serviços oferecidos que elas fizeram</div></div>';
+  h+='<div class="card"><div class="klabel">Por mensagem enviada</div><div class="kval">'+(envT?brl2(recT/envT):'—')+'</div><div class="khint">receita ÷ mensagens</div></div></div>';
+  var L=Object.keys(por).map(function(k){ return por[k]; }).sort(function(a,b){ return b.rec-a.rec || b.env-a.env; });
+  h+='<div class="sect">Por campanha</div><div class="tw"><div class="tscroll"><table><thead><tr><th>Campanha</th><th class="r">Enviadas</th><th class="r">Fizeram</th><th class="r">Taxa</th><th class="r">Receita (est.)</th><th class="r">Por mensagem</th></tr></thead><tbody>';
+  if(!L.length) h+='<tr><td colspan="6" class="empty">Nenhuma mensagem de oportunidade enviada no período.</td></tr>';
+  L.forEach(function(x){ h+='<tr><td>'+esc(nomeCamp(x.k))+'</td><td class="r">'+n0(x.env)+'</td><td class="r" style="font-weight:700">'+n0(x.conv)+'</td><td class="r">'+(x.env?pct(x.conv/x.env):'—')+'</td><td class="r">'+brl(x.rec)+'</td><td class="r">'+(x.env?brl2(x.rec/x.env):'—')+'</td></tr>'; });
+  h+='</tbody></table></div></div>';
+  lista.sort(function(a,b){ return b.r.d.localeCompare(a.r.d); });
+  h+='<div class="sect">Quem fez <small>'+n0(lista.length)+'</small></div><div class="rlist">';
+  if(!lista.length) h+='<div class="card empty">Ainda ninguém — o robô confere 3 vezes por dia se quem recebeu a mensagem fez o serviço oferecido.</div>';
+  lista.slice(0,80).forEach(function(x){ h+='<div class="rrow" style="--c:var(--green)"><div><div class="nm">'+esc(x.nome)+'</div><div class="info">'+esc(nomeCamp(x.k))+' · mensagem em '+dataBR(x.env)+' · fez <b>'+esc((x.r.s||'').toLowerCase())+'</b> em '+dataBR(x.r.d)+' ('+(nDias(x.env,x.r.d)-1)+' dias depois)</div></div><div class="acts"><span class="pill p-ok">'+brl(x.r.v||0)+'</span></div></div>'; });
+  h+='</div><div class="nota">Conta como "fez" quando a cliente realiza um serviço do tipo oferecido (ou o serviço sugerido) até 90 dias depois da mensagem. O valor é o preço de tabela desses serviços. A conferência é feita pelo robô, que olha os atendimentos pagos dos últimos 120 dias.</div>';
+  return h;
 }
 
 function dadosDemoMsgs(){
@@ -1648,7 +1710,8 @@ function dadosDemoMsgs(){
     var d=i<7?am:dep;
     confirm_['c'+i]={data:d,nome:n+' SILVA',primeiro:n.split(' ')[0].charAt(0)+n.split(' ')[0].slice(1).toLowerCase(),cel:'5199999000'+i,itens:[{hora:String(8+i).padStart(2,'0')+':00',servico:['MANICURE','PEDICURE','ESCOVA MEDIA','SOBRANCELHA'][i%4],prof:'ANA (MAN)'}],confZelo:i===2,status:i===0?'confirmou':i===1?'enviado':i===5?'desmarcou':'',ativo:true};
     posat['p'+i]={data:i<6?on:h,nome:n+' COSTA',primeiro:n.split(' ')[0].charAt(0)+n.split(' ')[0].slice(1).toLowerCase(),cel:'5198888000'+i,itens:[{hora:String(9+i).padStart(2,'0')+':30',servico:'MANICURE',prof:'BIA (MAN)'}],enviado:i<2,enviadoPor:i<2?'vooxrecepcao@gmail.com':'',ativo:true};
-    oport['o'+i]={nome:n+' ROCHA',primeiro:n.split(' ')[0].charAt(0)+n.split(' ')[0].slice(1).toLowerCase(),cel:'5197777000'+i,n:12-i,ult:addDias(h,-i*3),servicos:['MANICURE','PEDICURE'],campanhas:i%3===0?['facial','corporal','podologia','cabelo']:['facial','cabelo'],ativo:true,enviados:i===1?{facial:h}:{}};
+    oport['o'+i]={nome:n+' ROCHA',primeiro:n.split(' ')[0].charAt(0)+n.split(' ')[0].slice(1).toLowerCase(),cel:'5197777000'+i,n:12-i,ult:addDias(h,-i*3),servicos:i%2?['ESCOVA MEDIA','MANICURE']:['MANICURE','PEDICURE'],campanhas:i%3===0?['facial','corporal','podologia','capilar','sobrancelha','gel']:['facial','cabelo','depilacao','maquiagem'],sug:i%2?[{s:'HIDRATAÇÃO',p:64,a:'ESCOVA MEDIA'},{s:'PEDICURE',p:41,a:'MANICURE'}]:[{s:'PODOLOGIA',p:38,a:'PEDICURE'}],ativo:true,enviados:i===1?{facial:h}:{}};
+    if(i<8) OPRES['r'+i]={nome:n+' LIMA', enviados:i%2?{sug:addDias(h,-20-i)}:{capilar:addDias(h,-30-i), facial:addDias(h,-50)}, sugEnviada:'HIDRATAÇÃO', ret:i%3===0?(i%2?{sug:{d:addDias(h,-10),s:'HIDRATAÇÃO',v:120}}:{capilar:{d:addDias(h,-22),s:'HIDRATAÇÃO',v:120}}):{}};
   });
 }
 
