@@ -448,6 +448,12 @@ html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
 .seq-row .acts{display:flex;gap:6px;flex-wrap:wrap}
 .sug-txt{font-size:12.5px;margin-top:5px;color:var(--text)}
 .sug-txt b{color:var(--purple)}
+.minha-ola{font-size:18px;margin:0 0 12px}
+.ag-dia{font-weight:700;font-size:12.5px;margin:10px 0 4px;color:var(--primary)}
+.ag-dia:first-child{margin-top:0}
+.ag-it{font-size:13px;padding:5px 0;border-bottom:1px solid var(--border)}
+.ag-it.vg-c{display:flex;justify-content:space-between;align-items:center;gap:8px}
+@media(max-width:600px){.minha-ola{font-size:16px}}
 </style>
 </head>
 <body>
@@ -475,12 +481,15 @@ html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
       <div class="brand-cap">Painel da casa</div>
     </div>
     <div class="side-sec lbl gestao-only">Gestão</div>
+    <button class="navbtn prof-only" data-p="minha" onclick="nav('minha')" style="display:none"><span class="side-ico">◉</span><span class="lbl">Meu painel</span></button>
     <button class="navbtn gestao-only" data-p="painel" onclick="nav('painel')"><span class="side-ico">◷</span><span class="lbl">Painel</span></button>
+    <button class="navbtn gestao-only" data-p="semana" onclick="nav('semana')"><span class="side-ico">▣</span><span class="lbl">Resumo da semana</span></button>
     <button class="navbtn gestao-only" data-p="prof" onclick="nav('prof')"><span class="side-ico">☺</span><span class="lbl">Profissionais</span></button>
     <button class="navbtn gestao-only" data-p="agenda" onclick="nav('agenda')"><span class="side-ico">▦</span><span class="lbl">Agenda</span></button>
     <button class="navbtn gestao-only" data-p="serv" onclick="nav('serv')"><span class="side-ico">✂</span><span class="lbl">Serviços feitos</span></button>
     <button class="navbtn gestao-only" data-p="sat" onclick="nav('sat')"><span class="side-ico">☆</span><span class="lbl">Satisfação</span></button>
     <button class="navbtn gestao-only" data-p="vendas" onclick="nav('vendas')"><span class="side-ico">▤</span><span class="lbl">Mês a mês</span></button>
+    <button class="navbtn gestao-only" data-p="acessos" onclick="nav('acessos')"><span class="side-ico">⚿</span><span class="lbl">Acessos</span></button>
     <div class="side-sec lbl gestao-only">Financeiro</div>
     <button class="navbtn gestao-only" data-p="fin" onclick="nav('fin')"><span class="side-ico">$</span><span class="lbl">Dashboard</span></button>
     <button class="navbtn gestao-only" data-p="lanc" onclick="nav('lanc')"><span class="side-ico">±</span><span class="lbl">Lançamentos</span></button>
@@ -492,6 +501,7 @@ html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
     <div class="side-sec lbl">Clientes</div>
     <button class="navbtn gestao-only" data-p="cli" onclick="nav('cli')"><span class="side-ico">☷</span><span class="lbl">Clientes</span></button>
     <button class="navbtn" data-p="conf" onclick="nav('conf')"><span class="side-ico">☎</span><span class="lbl">Confirmações</span><span class="cnt" id="cntConf" style="display:none">0</span></button>
+    <button class="navbtn" data-p="falt" onclick="nav('falt')"><span class="side-ico">⚠</span><span class="lbl">Faltosas</span><span class="cnt" id="cntFalt" style="display:none">0</span></button>
     <button class="navbtn" data-p="vagas" onclick="nav('vagas')"><span class="side-ico">◷</span><span class="lbl">Horários vagos</span></button>
     <button class="navbtn" data-p="pos" onclick="nav('pos')"><span class="side-ico">♡</span><span class="lbl">Pós-atendimento</span><span class="cnt" id="cntPos" style="display:none">0</span></button>
     <button class="navbtn" data-p="reativ" onclick="nav('reativ')"><span class="side-ico">↺</span><span class="lbl">Reativação</span><span class="cnt" id="cntReativ" style="display:none">0</span></button>
@@ -525,6 +535,10 @@ html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
     <div class="page" id="page-prof"><div class="empty">Carregando…</div></div>
 
     <!-- NOVAS: financeiro, satisfação, vagas -->
+    <div class="page" id="page-semana"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-acessos"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-falt"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-minha"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-pagar"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-com"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-marg"><div class="empty">Carregando…</div></div>
@@ -570,6 +584,7 @@ html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
           <button class="btn btn-sm" onclick="salvarMensagem()">Salvar mensagem</button>
         </div>
       </details>
+      <div id="r-seq"></div>
       <div class="sect" id="r-titulo">Clientes</div>
       <div class="tools">
         <input id="r-busca" type="search" placeholder="Buscar cliente ou serviço" oninput="renderLista()">
@@ -726,6 +741,12 @@ function assinar(){
       metas = snap.exists ? snap.data() : {}; renderAtual();
     }, function(err){ toast('Metas: '+(err.code||err.message),'err'); }));
   }
+  unsubs.push(db.collection('voox_faltosas').doc('lista').onSnapshot(function(snap){
+    setFalt(snap.exists?snap.data():null); renderFalt(); renderConfirm();
+  }, function(err){ document.getElementById('page-falt').innerHTML='<div class="card empty">Sem permissão para ler as faltosas ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
+  if(podePainel()) unsubs.push(db.collection('voox_prof_acesso').limit(200).onSnapshot(function(snap){
+    ACESSOS={}; snap.forEach(function(d){ ACESSOS[d.id]=d.data(); }); renderAcessos();
+  }, function(err){ toast('Acessos: '+(err.code||err.message),'err'); }));
   unsubs.push(db.collection('voox_vagas').where('data','>=',hojeISO()).limit(6).onSnapshot(function(snap){
     VAGAS={}; snap.forEach(function(d){ VAGAS[d.id]=d.data(); }); renderVagas();
   }, function(err){ document.getElementById('page-vagas').innerHTML='<div class="card empty">Sem permissão para ler os horários vagos ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
@@ -812,7 +833,7 @@ function linkWhats(c){
 function enviar(id, reenvio){
   var c=clientes[id]; if(!c) return;
   if(!c.cel){ toast('Cliente sem celular válido no Zelo.','err'); return; }
-  window.open(linkWhats(c), '_blank', 'noopener');
+  abrirWhats(c.cel, mensagem.replace(/\{nome\}/g, c.primeiro || (c.nome||'').split(' ')[0]));
   atualizarCliente(id, { enviado:true, enviadoEm:new Date().toISOString(), enviadoPor:email||'demo' }, reenvio ? 'Reenvio registrado.' : (c.primeiro||c.nome)+' marcada como enviada.');
 }
 function voltou(id){ atualizarCliente(id, { voltou:true, voltouEm:hojeISO(), voltouTipo:'manual' }, 'Marcada como "voltou".'); }
@@ -850,6 +871,10 @@ var TITULOS = {
   agenda: ['Agenda', 'Horários de pico e faltas por dia da semana'],
   aniv:   ['Aniversariantes', 'Clientes que fazem aniversário esta semana'],
   conf:   ['Confirmações', 'Confirme por WhatsApp os horários dos próximos dias'],
+  semana: ['Resumo da semana', 'A semana em uma página — para olhar toda segunda'],
+  acessos:['Acesso das profissionais', 'Quem pode ver o próprio painel'],
+  falt:   ['Faltosas', 'Clientes que costumam faltar — peça sinal ou confirme antes'],
+  minha:  ['Meu painel', 'Sua agenda, seus serviços e o que as clientes disseram'],
   pagar:  ['Contas a pagar', 'Vencimentos e saldo projetado das contas'],
   com:    ['Comissões', 'Fechamento por profissional, com lançamento no financeiro'],
   marg:   ['Margem por serviço', 'Quanto sobra de cada serviço depois de comissão e produto'],
@@ -864,7 +889,7 @@ var TITULOS = {
   lanc:   ['Lançamentos', 'Entradas e saídas do Caixa, Bradesco e Banrisul'],
   cgs:    ['Contas gerenciais', 'Categorias de despesa e receita e saldo inicial das contas']
 };
-var SO_GESTAO = {painel:1, vendas:1, prof:1, agenda:1, cli:1, serv:1, pagar:1, com:1, marg:1, conc:1, sat:1, fin:1, lanc:1, cgs:1};
+var SO_GESTAO = {semana:1, acessos:1, painel:1, vendas:1, prof:1, agenda:1, cli:1, serv:1, pagar:1, com:1, marg:1, conc:1, sat:1, fin:1, lanc:1, cgs:1};
 function renderAtual(){ if(viewAtual==='painel') renderPainel(); if(viewAtual==='prof') renderProf(); if(viewAtual==='agenda') renderAgenda(); if(viewAtual==='com') renderCom(); if(viewAtual==='conc') renderConc(); }
 
 function aplicarUI(){
@@ -872,17 +897,22 @@ function aplicarUI(){
   if(logado){
     ov.style.display='none'; app.style.display='block';
     document.getElementById('uname').textContent = nome;
-    document.getElementById('urole').textContent = nivel==='admin' ? 'Direção' : nivel==='gerente' ? 'Gerência' : 'Recepção';
+    document.getElementById('urole').textContent = nivel==='admin' ? 'Direção' : nivel==='gerente' ? 'Gerência' : nivel==='prof' ? 'Profissional' : 'Recepção';
     document.getElementById('uavatar').textContent = (nome||'?').charAt(0).toUpperCase();
     Array.prototype.forEach.call(document.querySelectorAll('.gestao-only'), function(el){ el.style.display = podePainel() ? '' : 'none'; });
+    var ehProf=nivel==='prof';
+    Array.prototype.forEach.call(document.querySelectorAll('#sidebar .navbtn, #sidebar .side-sec'), function(el){ if(ehProf) el.style.display = el.classList.contains('prof-only') ? '' : 'none'; else if(el.classList.contains('prof-only')) el.style.display='none'; });
     var hash=(location.hash||'').replace('#','');
-    nav(TITULOS[hash] ? hash : (viewAtual || (podePainel() ? 'painel' : 'reativ')));
+    nav(ehProf ? 'minha' : TITULOS[hash] ? hash : (viewAtual || (podePainel() ? 'painel' : 'reativ')));
   } else {
     ov.style.display='flex'; app.style.display='none';
   }
 }
 
 function nav(v){
+  if(nivel==='prof') v='minha';
+  else if(v==='minha' && !PROF.preview) v='painel';
+  if(v!=='minha') PROF.preview=false;
   if(SO_GESTAO[v] && !podePainel()) v='reativ';
   viewAtual=v;
   Array.prototype.forEach.call(document.querySelectorAll('.page'), function(p){ p.classList.toggle('on', p.id==='page-'+v); });
@@ -906,6 +936,10 @@ function nav(v){
   if(v==='conc') renderConc();
   if(v==='sat') renderSat();
   if(v==='vagas') renderVagas();
+  if(v==='semana') renderSemana();
+  if(v==='acessos') renderAcessos();
+  if(v==='falt') renderFalt();
+  if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
   if(v==='oport'){ limite=60; renderOport(); }
   if(v==='fin') renderFin();
@@ -1444,6 +1478,7 @@ function renderAniv(){
   if(podePainel()){
     h+='<details class="card msgcard"><summary>Mensagem de aniversário</summary><textarea id="msg-aniv">'+esc(mensagemAniv||MSG_ANIV_PADRAO)+'</textarea><div class="msgrow"><span>Use <b>{nome}</b> para o primeiro nome.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarMsgAniv()">Salvar mensagem</button></div></details>';
   }
+  h+=barraSeq('aniv')+botaoSeq('aniv');
   h+='<div class="sect">Aniversariantes da semana <small>'+lista.length+' cliente(s) com aniversário cadastrado no Zelo</small></div>';
   if(!lista.length) h+='<div class="card empty">Nenhuma aniversariante esta semana — ou poucas clientes com data de nascimento no cadastro. Vale pedir a data na recepção.</div>';
   h+='<div class="rlist">';
@@ -1459,7 +1494,7 @@ function renderAniv(){
 function enviarAniv(id){
   var a=aniversarios[id]; if(!a||!a.cel) return;
   var txt=(mensagemAniv||MSG_ANIV_PADRAO).replace(/\{nome\}/g, a.primeiro||(a.nome||'').split(' ')[0]);
-  window.open('https://wa.me/55'+a.cel+'?text='+encodeURIComponent(txt), '_blank', 'noopener');
+  abrirWhats(a.cel, txt);
   var campos={enviadoAno:hojeISO().slice(0,4), enviadoEm:new Date().toISOString(), enviadoPor:email||'demo'};
   if(DEMO){ Object.assign(aniversarios[id], campos); renderAniv(); return; }
   db.collection('voox_aniversarios').doc(id).update(campos).catch(function(e){ toast('Não marcou como enviada: '+(e.code||e.message),'err'); });
@@ -1505,7 +1540,6 @@ var DIAS_SEM = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'
 
 function textoMsg(k){ return (MSG[k]||'').trim() || MSG_PADRAO[k] || ''; }
 function preencher(t, o){ return t.replace(/\{(\w+)\}/g, function(m,k){ return o[k]!=null ? o[k] : m; }); }
-function abrirWhats(cel, txt){ window.open('https://wa.me/55'+cel+'?text='+encodeURIComponent(txt), '_blank', 'noopener'); }
 function quandoData(d){
   var dif=nDias(hojeISO(), d)-1, w=DIAS_SEM[s2d(d).getDay()];
   if(dif===0) return 'hoje';
@@ -1556,6 +1590,7 @@ function renderConfirm(){
   var h=editorMsg('textoConfirm','Mensagem de confirmação','Use <b>{nome}</b>, <b>{quando}</b>, <b>{hora}</b> e <b>{servicos}</b>.');
   if(!ld.length){ document.getElementById('page-conf').innerHTML=h+'<div class="card empty">Nenhum horário marcado nos próximos dias abertos — ou o robô ainda não rodou a versão nova.</div>'; return; }
   h+=chipsDatas(ld, dataConf, 'setDataConf', function(d){ var dif=nDias(hojeISO(),d)-1, w=DIAS_SEM[s2d(d).getDay()]; return (dif===1?'Amanhã':w.charAt(0).toUpperCase()+w.slice(1))+' · '+dataBR(d); });
+  h+=barraSeq('conf')+botaoSeq('conf');
   h+='<div class="grid kpis" style="margin:12px 0 14px">';
   [['Clientes',L.length,'com horário no dia'],['Mensagens enviadas',st.env,'de '+L.length],['Confirmaram',st.ok, st.zelo+' já confirmadas no Zelo'],['Desmarcaram',st.des,'liberar no Zelo']].forEach(function(x){ h+='<div class="card"><div class="klabel">'+x[0]+'</div><div class="kval">'+n0(x[1])+'</div><div class="khint">'+x[2]+'</div></div>'; });
   h+='</div><div class="rlist">';
@@ -1566,6 +1601,7 @@ function renderConfirm(){
     if(c.status==='confirmou') tags+='<span class="pill p-ok">Confirmou</span>';
     if(c.status==='desmarcou') tags+='<span class="pill p-bad">Desmarcou — liberar no Zelo</span>';
     if(!c.cel) tags+='<span class="pill p-mut">sem celular válido</span>';
+    if(FALTMAP[c.cliente]) tags+='<span class="pill p-bad" title="Faltou '+FALTMAP[c.cliente].f+' vez(es) nos últimos 6 meses">⚠ costuma faltar ('+FALTMAP[c.cliente].f+'×)</span>';
     h+='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+esc(c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>'+(tags?'<div class="tags">'+tags+'</div>':'')+'</div><div class="acts">';
     if(c.cel) h+='<button class="btn btn-sm '+(c.status?'btn-ghost':'btn-wa')+'" onclick="enviarConf(\''+c.id+'\')">'+(c.status?'Reenviar':'WhatsApp')+'</button>';
     if(c.status!=='confirmou') h+='<button class="btn btn-sm btn-ghost" onclick="respConf(\''+c.id+'\',\'confirmou\')">Confirmou</button>';
@@ -1602,6 +1638,7 @@ function renderPos(){
   if(!link) h+='<div class="alert a-warn">⚠ Falta o link de avaliação da Voox no Google. No Perfil da Empresa no Google, clique em "Peça avaliações", copie o link e cole na mensagem acima.</div>';
   if(!ld.length){ document.getElementById('page-pos').innerHTML=h+'<div class="card empty">Nenhum atendimento registrado ontem ou hoje — ou o robô ainda não rodou a versão nova.</div>'; return; }
   h+=chipsDatas(ld, dataPos, 'setDataPos', function(d){ var q=quandoData(d); return q.charAt(0).toUpperCase()+q.slice(1); });
+  h+=barraSeq('pos')+botaoSeq('pos');
   var L=L0.filter(function(c){ return c.data===dataPos; }).sort(function(a,b){ return ((a.itens||[{}])[0].hora||'').localeCompare((b.itens||[{}])[0].hora||''); });
   var env=L.filter(function(c){ return c.enviado; }).length;
   h+='<div class="sect">'+n0(L.length)+' clientes atendidas <small>'+env+' mensagem(ns) enviada(s)</small></div><div class="rlist">';
@@ -1655,9 +1692,7 @@ function renderOport(){
   var feitos=Object.keys(OPRES).filter(function(id){ return ((OPRES[id]||{}).enviados||{})[campAtual]; }).length || L0.filter(function(o){ return (o.enviados||{})[campAtual]; }).length;
   var conv=Object.keys(OPRES).filter(function(id){ return ((OPRES[id]||{}).ret||{})[campAtual]; }).length;
   var expl = campAtual==='sug' ? 'cada cliente recebe o serviço que mais combina com o que ela já faz, segundo o que as outras clientes da casa fazem' : 'frequentes (3+ serviços em 120 dias, vieram nos últimos 60) que nunca fizeram este tipo de serviço';
-  h+=barraSeq();
-  var comCel=L.filter(function(o){ return o.cel; }).length;
-  if(!SEQ && comCel) h+='<div class="seq-ini"><button class="btn" onclick="iniciarSeq()">▶ Enviar em sequência ('+n0(comCel)+')</button><span>Abre uma cliente por vez no WhatsApp com a mensagem pronta. Você só aperta enviar, volta aqui e clica na próxima (ou aperta Enter).</span></div>';
+  h+=barraSeq('oport')+botaoSeq('oport');
   h+='<div class="sect">'+n0(L.length)+' clientes para oferecer <small>'+expl+' · '+n0(feitos)+' já receberam'+(conv?' · <b style="color:var(--green)">'+n0(conv)+' fizeram</b>':'')+'</small></div><div class="rlist">';
   if(!L.length) h+='<div class="card empty">Ninguém pendente nesta campanha — ou o robô ainda não rodou a versão nova.</div>';
   L.slice(0, limite).forEach(function(o){
@@ -1671,40 +1706,107 @@ function renderOport(){
   if(campAtual==='sug') h+='<div class="nota">A sugestão vem de um cálculo simples sobre os últimos 24 meses: para cada serviço que a cliente faz, o robô vê qual outro serviço as clientes que fazem o mesmo também costumam fazer, e escolhe o mais comum que ela ainda não fez (variações como escova média/longa contam como o mesmo serviço).</div>';
   document.getElementById('page-oport').innerHTML=h;
 }
-function setCamp(k){ if(SEQ && SEQ.k!==k) SEQ=null; campAtual=k; limite=60; renderOport(); }
-// ---- envio em sequência
-var SEQ=null;
+function setCamp(k){ campAtual=k; limite=60; renderOport(); }
+// ---- envio em sequência (Oportunidades, Reativação, Confirmações, Pós-atendimento, Aniversariantes)
+var SEQ=null, MODO_SEQ=false;
 function ehCelular(){ return /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent); }
 function abrirWhatsSeq(cel, txt){
   var url = ehCelular() ? 'https://wa.me/55'+cel+'?text='+encodeURIComponent(txt) : 'https://web.whatsapp.com/send?phone=55'+cel+'&text='+encodeURIComponent(txt);
   var w=window.open(url, 'voox_whats'); if(!w) toast('O navegador bloqueou a janela do WhatsApp — libere pop-ups para voox1956.com.br.','err');
 }
-function iniciarSeq(){
-  var L=Object.keys(oport).map(function(id){ return Object.assign({id:id}, oport[id]); }).filter(function(o){ return o.ativo && o.cel && livreOport(o,campAtual); });
-  if(campAtual==='sug') L.sort(function(a,b){ return (b.sug[0].p-a.sug[0].p) || b.n-a.n; }); else L.sort(function(a,b){ return b.n-a.n; });
-  if(!L.length) return;
-  SEQ={k:campAtual, fila:L.map(function(o){ return o.id; }), i:0, env:0, pul:0};
-  renderOport(); window.scrollTo({top:0, behavior:'smooth'});
+function abrirWhats(cel, txt){ if(MODO_SEQ) return abrirWhatsSeq(cel, txt); window.open('https://wa.me/55'+cel+'?text='+encodeURIComponent(txt), '_blank', 'noopener'); }
+var SEQCFG = {
+  oport: {
+    ctx: function(){ return campAtual; },
+    pend: function(){
+      var L=Object.keys(oport).map(function(id){ return Object.assign({id:id}, oport[id]); }).filter(function(o){ return o.ativo && o.cel && livreOport(o,campAtual); });
+      if(campAtual==='sug') L.sort(function(a,b){ return (b.sug[0].p-a.sug[0].p) || b.n-a.n; }); else L.sort(function(a,b){ return b.n-a.n; });
+      return L.map(function(o){ return o.id; });
+    },
+    livre: function(id){ var o=oport[id]; return o && livreOport(o, SEQ.ctx); },
+    item: function(id){ var o=oport[id], s=(o.sug||[])[0]; return {nome:o.nome, info:(SEQ.ctx==='sug'&&s?'Sugestão: '+s.s.toLowerCase()+' · ':'')+'faz '+(o.servicos||[]).join(', ').toLowerCase()}; },
+    enviar: function(id){ enviarOport(id, true); }, dispensar: function(id){ dispensarOport(id); }, rotDisp:'Não oferecer',
+    render: function(){ renderOport(); }
+  },
+  reativ: {
+    ctx: function(){ return 'enviar'; },
+    pend: function(){
+      return Object.keys(clientes).map(function(id){ return Object.assign({id:id}, clientes[id]); }).filter(function(c){ return estado(c)==='enviar' && c.cel; })
+        .sort(function(a,b){ return (a.prioridade-b.prioridade) || (b.n-a.n) || (diasDesde(a.ult)-diasDesde(b.ult)); }).map(function(c){ return c.id; });
+    },
+    livre: function(id){ var c=clientes[id]; return c && estado(c)==='enviar' && c.cel; },
+    item: function(id){ var c=clientes[id]; return {nome:c.nome, info:(c.servico||'')+' · última visita há '+diasDesde(c.ult)+' dias · costuma vir a cada '+c.intervalo+' dias'}; },
+    enviar: function(id){ enviar(id); }, dispensar: function(id){ descartar(id); }, rotDisp:'Descartar',
+    render: function(){ renderReativ(); }
+  },
+  conf: {
+    ctx: function(){ return dataConf; },
+    pend: function(){
+      return Object.keys(confirm_).map(function(id){ return Object.assign({id:id}, confirm_[id]); }).filter(function(c){ return c.ativo && c.data===dataConf && !c.status && c.cel && !c.confZelo; })
+        .sort(function(a,b){ return ((a.itens||[{}])[0].hora||'').localeCompare((b.itens||[{}])[0].hora||''); }).map(function(c){ return c.id; });
+    },
+    livre: function(id){ var c=confirm_[id]; return c && !c.status && c.cel; },
+    item: function(id){ var c=confirm_[id]; return {nome:c.nome, info:itensTxt(c.itens)}; },
+    enviar: function(id){ enviarConf(id); }, render: function(){ renderConfirm(); }
+  },
+  pos: {
+    ctx: function(){ return dataPos; },
+    pend: function(){
+      return Object.keys(posat).map(function(id){ return Object.assign({id:id}, posat[id]); }).filter(function(c){ return c.ativo && c.data===dataPos && !c.enviado && c.cel; })
+        .sort(function(a,b){ return ((a.itens||[{}])[0].hora||'').localeCompare((b.itens||[{}])[0].hora||''); }).map(function(c){ return c.id; });
+    },
+    livre: function(id){ var c=posat[id]; return c && !c.enviado && c.cel; },
+    item: function(id){ var c=posat[id]; return {nome:c.nome, info:itensTxt(c.itens)}; },
+    enviar: function(id){ enviarPos(id); }, render: function(){ renderPos(); }
+  },
+  aniv: {
+    ctx: function(){ return hojeISO().slice(0,4); },
+    pend: function(){
+      var ano=hojeISO().slice(0,4);
+      return Object.keys(aniversarios).map(function(id){ return Object.assign({id:id}, aniversarios[id]); }).filter(function(a){ return a.ativo && a.cel && a.enviadoAno!==ano; }).map(function(a){ return a.id; });
+    },
+    livre: function(id){ var a=aniversarios[id]; return a && a.cel && a.enviadoAno!==hojeISO().slice(0,4); },
+    item: function(id){ var a=aniversarios[id]; return {nome:a.nome, info:'Aniversário '+(a.dia||'—')}; },
+    enviar: function(id){ enviarAniv(id); }, render: function(){ renderAniv(); }
+  }
+};
+function botaoSeq(tela){
+  var C=SEQCFG[tela]; if(!C || (SEQ && SEQ.tela===tela && SEQ.ctx===C.ctx())) return '';
+  var n=C.pend().length; if(!n) return '';
+  return '<div class="seq-ini"><button class="btn" onclick="iniciarSeq(\''+tela+'\')">▶ Enviar em sequência ('+n0(n)+')</button><span>Abre uma cliente por vez no WhatsApp com a mensagem pronta. Você aperta enviar, volta aqui e aperta <b>Enter</b> para a próxima.</span></div>';
 }
-function seqAtual(){ while(SEQ && SEQ.i<SEQ.fila.length){ var o=oport[SEQ.fila[SEQ.i]]; if(o && livreOport(o,SEQ.k)) return SEQ.fila[SEQ.i]; SEQ.i++; } return null; }
-function barraSeq(){
-  if(!SEQ || SEQ.k!==campAtual) return '';
+function iniciarSeq(tela){
+  var C=SEQCFG[tela], fila=C.pend(); if(!fila.length) return;
+  SEQ={tela:tela, ctx:C.ctx(), fila:fila, i:0, env:0, pul:0};
+  C.render(); window.scrollTo({top:0, behavior:'smooth'});
+}
+function seqAtual(){ if(!SEQ) return null; var C=SEQCFG[SEQ.tela]; while(SEQ.i<SEQ.fila.length){ var id=SEQ.fila[SEQ.i]; if(C.livre(id)) return id; SEQ.i++; } return null; }
+function barraSeq(tela){
+  if(!SEQ || SEQ.tela!==tela) return '';
+  var C=SEQCFG[tela]; if(SEQ.ctx!==C.ctx()){ SEQ=null; return ''; }
   var id=seqAtual(), tot=SEQ.fila.length, feito=Math.min(SEQ.i,tot);
   var h='<div class="seq-bar"><div class="seq-prog"><i style="width:'+(tot?feito/tot*100:0).toFixed(1)+'%"></i></div>';
-  if(!id){ h+='<div class="seq-row"><div><b>Pronto!</b> '+n0(SEQ.env)+' mensagem(ns) enviada(s)'+(SEQ.pul?' · '+n0(SEQ.pul)+' pulada(s)':'')+'.</div><button class="btn btn-sm btn-ghost" onclick="SEQ=null;renderOport()">Fechar</button></div></div>'; return h; }
-  var o=oport[id], s=(o.sug||[])[0];
-  h+='<div class="seq-row"><div><div class="klabel" style="margin:0">Envio em sequência · '+(feito+1)+' de '+tot+' · '+n0(SEQ.env)+' enviada(s)</div><div class="nm" style="margin-top:4px">'+esc(o.nome)+'</div><div class="info">'+(SEQ.k==='sug'&&s?'Sugestão: '+esc(s.s.toLowerCase())+' · ':'')+'faz '+esc((o.servicos||[]).join(', ').toLowerCase())+'</div></div>';
-  h+='<div class="acts"><button class="btn btn-wa" id="seq-go" onclick="seqEnviar()">Abrir WhatsApp ▶</button><button class="btn btn-sm btn-ghost" onclick="seqPular()">Pular</button><button class="btn btn-sm btn-ghost" onclick="seqNaoOferecer()">Não oferecer</button><button class="btn btn-sm btn-ghost" onclick="SEQ=null;renderOport()">Parar</button></div></div>';
-  return h+'<div class="khint" style="margin-top:6px">Depois de enviar no WhatsApp, volte para esta aba e aperte <b>Enter</b> (ou clique) para abrir a próxima. O WhatsApp abre sempre na mesma aba.</div></div>';
+  if(!id) return h+'<div class="seq-row"><div><b>Pronto!</b> '+n0(SEQ.env)+' mensagem(ns) enviada(s)'+(SEQ.pul?' · '+n0(SEQ.pul)+' pulada(s)':'')+'.</div><button class="btn btn-sm btn-ghost" onclick="pararSeq()">Fechar</button></div></div>';
+  var it=C.item(id);
+  h+='<div class="seq-row"><div><div class="klabel" style="margin:0">Envio em sequência · '+(feito+1)+' de '+tot+' · '+n0(SEQ.env)+' enviada(s)</div><div class="nm" style="margin-top:4px">'+esc(it.nome)+'</div><div class="info">'+esc(it.info||'')+'</div></div>';
+  h+='<div class="acts"><button class="btn btn-wa" id="seq-go" onclick="seqEnviar()">Abrir WhatsApp ▶</button><button class="btn btn-sm btn-ghost" onclick="seqPular()">Pular</button>'+(C.dispensar?'<button class="btn btn-sm btn-ghost" onclick="seqDispensar()">'+C.rotDisp+'</button>':'')+'<button class="btn btn-sm btn-ghost" onclick="pararSeq()">Parar</button></div></div>';
+  return h+'<div class="khint" style="margin-top:6px">Depois de enviar no WhatsApp, volte para esta aba e aperte <b>Enter</b> (ou clique) para abrir a próxima. No computador o WhatsApp abre sempre na mesma aba.</div></div>';
 }
-function seqEnviar(){ var id=seqAtual(); if(!id) return; SEQ.env++; SEQ.i++; enviarOport(id, true); }
-function seqPular(){ if(!seqAtual()) return; SEQ.pul++; SEQ.i++; renderOport(); }
-function seqNaoOferecer(){ var id=seqAtual(); if(!id) return; SEQ.i++; dispensarOport(id); }
+function pararSeq(){ var t=SEQ&&SEQ.tela; SEQ=null; if(t) SEQCFG[t].render(); }
+function seqEnviar(){
+  var id=seqAtual(); if(!id) return;
+  var C=SEQCFG[SEQ.tela]; SEQ.env++; SEQ.i++;
+  MODO_SEQ=true; try{ C.enviar(id); } finally { MODO_SEQ=false; }
+  C.render();
+}
+function seqPular(){ if(!seqAtual()) return; SEQ.pul++; SEQ.i++; SEQCFG[SEQ.tela].render(); }
+function seqDispensar(){ var id=seqAtual(); if(!id) return; var C=SEQCFG[SEQ.tela]; SEQ.i++; C.dispensar(id); C.render(); }
 document.addEventListener('keydown', function(ev){
-  if(!SEQ || viewAtual!=='oport' || ev.key!=='Enter') return;
-  var t=ev.target; if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')) return;
+  if(!SEQ || viewAtual!==SEQ.tela || ev.key!=='Enter') return;
+  var t=ev.target; if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.tagName==='BUTTON')) return;
   ev.preventDefault(); seqEnviar();
 });
+
 function enviarOport(id, seq){
   var o=oport[id], k=campAtual, s=(o.sug||[])[0]||{};
   (seq?abrirWhatsSeq:abrirWhats)(o.cel, preencher(textoMsg('camp_'+k), {nome:o.primeiro||o.nome, agenda:LINK_AGENDA, servico:(s.s||'').toLowerCase(), base:(s.a||'').toLowerCase()}));
@@ -1715,7 +1817,6 @@ function enviarOport(id, seq){
 function dispensarOport(id){
   var o=oport[id], u={}; u['dispensadas.'+campAtual]=true;
   if(DEMO){ o.dispensadas=o.dispensadas||{}; o.dispensadas[campAtual]=true; renderOport(); return; }
-  if(SEQ) renderOport();
   db.collection('voox_oportunidades').doc(id).update(u).then(function(){ toast('Não vai mais aparecer nesta campanha.'); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
 }
 function setResPer(p){ resPer=p; renderOport(); }
@@ -2001,6 +2102,7 @@ function carregarMes(conta, mes){
     FIN.meses[k]=s.exists ? (s.data().itens||[]) : [];
     if(viewAtual==='lanc') renderExtrato();
     if(viewAtual==='conc') renderConc();
+    if(viewAtual==='semana') renderSemana();
   }, function(err){ toast('Lançamentos: '+(err.code||err.message),'err'); });
   unsubs.push(FIN.carregando[k]);
 }
@@ -3562,6 +3664,190 @@ function dadosDemoNovos(){
   for(var i=0;i<140;i++){ var nt=[10,10,10,9,9,10,8,10,9,7,10,6,10,9,3][i%15], k=i%4; NOTAS['n'+i]={data:addDias(h,-(i%85)), c:'x'+(i%260), nm:['ANA SILVA','BEATRIZ COSTA','CAMILA LIMA','DÉBORA ROCHA','ELISA MOURA'][i%5], n:'Ana', p:[profs[k]], s:[servs[k]], enviado:true, nota:i%5===4?null:nt, comentario:i%7===0?coms[i%6]:(nt<=6?coms[3+(i%3)]:'')}; }
 }
 
+
+// ================================================================ CLIENTES FALTOSAS
+// voox_faltosas/lista -> {data, itens:[{i,n,primeiro,c,f,cx,a,uf,s,prox}]}
+var FALT = {itens:[], data:''}, FALTMAP = {};
+MSG_PADRAO.textoFalta='Oi, {nome}! Tudo bem? Aqui é da Voox 1956. Para garantir o seu horário {quando}, estamos pedindo um sinal de R$ 30 por Pix, que é descontado no dia do atendimento. Posso te mandar a chave?';
+function setFalt(x){ FALT=x||{itens:[]}; FALTMAP={}; (FALT.itens||[]).forEach(function(o){ FALTMAP[o.i]=o; }); }
+function quandoProx(p){ if(!p) return ''; return quandoData(p.slice(0,10))+' às '+p.slice(11,16); }
+function renderFalt(){
+  var L=(FALT.itens||[]).slice(), hoje=hojeISO(), comProx=L.filter(function(o){ return o.prox && o.prox.slice(0,10)>=hoje; });
+  var cnt=document.getElementById('cntFalt'); if(cnt){ cnt.textContent=comProx.length; cnt.style.display=comProx.length?'':'none'; }
+  if(viewAtual!=='falt') return;
+  frescor();
+  var el=document.getElementById('page-falt');
+  var h=editorMsg('textoFalta','Mensagem pedindo sinal','Use <b>{nome}</b> e <b>{quando}</b> (o próximo horário dela).');
+  if(!FALT.data){ el.innerHTML=h+'<div class="card empty">A lista aparece depois que o robô rodar a versão nova (ele olha os últimos 6 meses uma vez por dia).</div>'; return; }
+  var tf=L.reduce(function(a,o){ return a+o.f; },0);
+  h+='<div class="grid kpis k4" style="margin-top:12px">';
+  h+='<div class="card"><div class="klabel">Clientes que costumam faltar</div><div class="kval">'+n0(L.length)+'</div><div class="khint">2+ faltas ou 1 a cada 3 horários, em 6 meses</div></div>';
+  h+='<div class="card"><div class="klabel">Faltas em 6 meses</div><div class="kval">'+n0(tf)+'</div><div class="khint">só destas clientes</div></div>';
+  h+='<div class="card"><div class="klabel">Com horário marcado</div><div class="kval" style="'+(comProx.length?'color:var(--red)':'')+'">'+n0(comProx.length)+'</div><div class="khint">vale pedir sinal ou confirmar antes</div></div>';
+  h+='<div class="card"><div class="klabel">Atualizado</div><div class="kval" style="font-size:16px">'+dataBRc(FALT.data)+'</div><div class="khint">uma vez por dia</div></div></div>';
+  L.sort(function(a,b){ var pa=a.prox&&a.prox.slice(0,10)>=hoje, pb=b.prox&&b.prox.slice(0,10)>=hoje; if(pa!==pb) return pa?-1:1; if(pa) return a.prox.localeCompare(b.prox); return b.f-a.f; });
+  h+='<div class="sect">Lista <small>quem tem horário marcado aparece primeiro</small></div><div class="rlist">';
+  if(!L.length) h+='<div class="card empty">Ninguém com faltas frequentes nos últimos 6 meses.</div>';
+  L.forEach(function(o){
+    var pr=o.prox && o.prox.slice(0,10)>=hoje, taxa=o.f/(o.f+o.a);
+    h+='<div class="rrow" style="--c:'+(pr?'var(--red)':'var(--amber)')+'"><div><div class="nm">'+esc(o.n)+'</div><div class="info">Faltou <b>'+o.f+'×</b>'+(o.cx?' · cancelou '+o.cx+'×':'')+' · veio '+o.a+'× · '+pct(taxa)+' dos horários sem aparecer · última falta '+dataBR(o.uf)+(o.s?' · '+esc(o.s.toLowerCase()):'')+'</div>';
+    if(pr) h+='<div class="tags"><span class="pill p-bad">Tem horário '+esc(quandoProx(o.prox))+'</span></div>';
+    h+='</div><div class="acts">'+(o.c?'<button class="btn btn-sm '+(pr?'btn-wa':'btn-ghost')+'" onclick="enviarFalt(\''+o.i+'\')">'+(pr?'Pedir sinal':'WhatsApp')+'</button>':'<span class="pill p-mut">sem celular</span>')+'</div></div>';
+  });
+  h+='</div><div class="nota">Falta = horário marcado em que a cliente não apareceu (status "faltou" no Zelo), nos últimos 6 meses. Cancelamentos aparecem só como informação, porque o Zelo não diz com quanta antecedência foram feitos. Na aba Confirmações, essas clientes ganham a etiqueta "costuma faltar".</div>';
+  el.innerHTML=h;
+}
+function enviarFalt(i){ var o=FALTMAP[i]; if(!o||!o.c) return; abrirWhats(o.c, preencher(textoMsg('textoFalta'), {nome:o.primeiro||o.n, quando:o.prox?quandoProx(o.prox):'no próximo agendamento'})); }
+
+// ================================================================ RESUMO DA SEMANA
+var SEM = { ini:'' };
+function segundaDe(d){ var w=(s2d(d).getDay()+6)%7; return addDias(d,-w); }
+function setSemana(n){ SEM.ini=addDias(SEM.ini, 7*n); renderSemana(); }
+function dadosSemana(){
+  if(!SEM.ini) SEM.ini=addDias(segundaDe(hojeISO()), -7);
+  var de=SEM.ini, ate=addDias(de,6), A=agregar(de,ate), C=agregar(addDias(de,-364), addDias(ate,-364)), P=agregar(addDias(de,-7), addDias(ate,-7));
+  var nts=Object.keys(NOTAS).map(function(k){ return NOTAS[k]; }).filter(function(x){ return x.data>=de && x.data<=ate && x.nota!=null; });
+  var contas=finCfg().contas, lanc=0, falta=false;
+  listaMeses(de.slice(0,7), ate.slice(0,7)).forEach(function(m){ contas.forEach(function(c){ var k=c.id+'_'+m; if(!FIN.meses[k]){ carregarMes(c.id, m); if(!FIN.meses[k]) falta=true; } (FIN.meses[k]||[]).forEach(function(x){ if(x.v>0 && x.d>=de && x.d<=ate && cgPorId(x.cg).tipo==='receita') lanc+=x.v; }); }); });
+  var h=hojeISO(), pag=pgLista().filter(function(x){ return !x.pago && x.venc<=addDias(h,7); }).sort(function(a,b){ return a.venc.localeCompare(b.venc); });
+  var env=0, conv=0, rec=0;
+  Object.keys(OPRES).forEach(function(id){ var o=OPRES[id]; Object.keys(o.enviados||{}).forEach(function(k){ var d=String(o.enviados[k]).slice(0,10); if(d>=de && d<=ate){ env++; } }); Object.keys(o.ret||{}).forEach(function(k){ var r=o.ret[k]; if(r.d>=de && r.d<=ate){ conv++; rec+=r.v||0; } }); });
+  var renv=0, rvol=0; Object.keys(clientes).forEach(function(id){ var c=clientes[id]; if(c.enviadoEm && c.enviadoEm.slice(0,10)>=de && c.enviadoEm.slice(0,10)<=ate) renv++; if(c.voltouEm && c.voltouEm>=de && c.voltouEm<=ate) rvol++; });
+  var hj=hojeISO(), q1=hj.slice(8,10)>='16', mq=q1?hj.slice(0,7):addMes(hj.slice(0,7),-1), rq=q1?[mq+'-01',mq+'-15']:[mq+'-16',fimMes(mq)], fq=FECH[rq[0]+'_'+rq[1]]||{};
+  return {de:de, ate:ate, A:A, C:C, P:P, nps:npsDe(nts), nn:nts.length, media:nts.length?nts.reduce(function(a,x){ return a+x.nota; },0)/nts.length:null, baixas:nts.filter(function(x){ return x.nota<=6; }).length,
+    lanc:lanc, faltaFin:falta, pag:pag, env:env, conv:conv, rec:rec, renv:renv, rvol:rvol, quinz:{r:rq, lanc:!!fq.lanc}};
+}
+function varTxt(a,b){ if(!b) return '<span class="p-sem">sem base</span>'; var d=(a-b)/b; return '<span class="'+(d>=0?'up':'down')+'">'+(d>=0?'▲ ':'▼ ')+pct(Math.abs(d))+'</span>'; }
+function renderSemana(){
+  if(viewAtual!=='semana') return;
+  frescor();
+  var S=dadosSemana(), A=S.A, el=document.getElementById('page-semana');
+  var h='<div class="fbar"><div class="seg"><button onclick="setSemana(-1)">‹</button><span style="color:var(--text);font-weight:600;padding:5px 8px">'+dataBR(S.de)+' a '+dataBR(S.ate)+'</span><button onclick="setSemana(1)"'+(S.ate>=hojeISO()?' disabled':'')+'>›</button></div><span style="flex:1"></span><button class="btn btn-sm" onclick="imprimirSemana()">Imprimir / salvar PDF</button></div>';
+  if(A.comDado<A.total) h+='<div class="alert a-warn">⚠ '+(A.total-A.comDado)+' dia(s) da semana ainda sem dados do Zelo.</div>';
+  h+='<div class="grid kpis k4">';
+  h+='<div class="card"><div class="klabel">Faturamento</div><div class="kval">'+brl(A.fat)+'</div><div class="khint">'+varTxt(A.fat,S.C.fat)+' vs. mesma semana do ano passado · '+varTxt(A.fat,S.P.fat)+' vs. semana anterior</div></div>';
+  h+='<div class="card"><div class="klabel">Atendimentos</div><div class="kval">'+n0(A.at)+'</div><div class="khint">'+varTxt(A.at,S.C.at)+' vs. ano passado · '+n0(A.nCli)+' clientes</div></div>';
+  h+='<div class="card"><div class="klabel">Ticket médio</div><div class="kval">'+brl2(A.ticket)+'</div><div class="khint">'+varTxt(A.ticket,S.C.ticket)+' vs. ano passado</div></div>';
+  h+='<div class="card"><div class="klabel">Faltas e cancelamentos</div><div class="kval">'+n0(A.canc+A.falt)+'</div><div class="khint">'+n0(A.falt)+' faltas · '+n0(A.canc)+' cancelamentos</div></div>';
+  h+='<div class="card"><div class="klabel">Satisfação (NPS)</div><div class="kval">'+(S.nps==null?'—':S.nps)+'</div><div class="khint">'+n0(S.nn)+' respostas'+(S.media!=null?' · média '+S.media.toFixed(1).replace('.',','):'')+(S.baixas?' · <span class="down">'+S.baixas+' nota(s) 0–6</span>':'')+'</div></div>';
+  var dif=S.lanc-A.fat;
+  h+='<div class="card"><div class="klabel">Conferência Zelo × financeiro</div><div class="kval" style="color:'+(Math.abs(dif)>Math.max(50,0.02*A.fat)?'var(--red)':'var(--green)')+'">'+(S.faltaFin?'…':rs(dif).replace(/,\d\d$/,''))+'</div><div class="khint">receita lançada '+brl(S.lanc)+' · Zelo '+brl(A.fat)+'</div></div>';
+  h+='<div class="card"><div class="klabel">Mensagens de venda</div><div class="kval">'+n0(S.env+S.renv)+'</div><div class="khint">'+n0(S.env)+' oportunidades · '+n0(S.renv)+' reativação · '+n0(S.conv+S.rvol)+' voltaram/fizeram</div></div>';
+  h+='<div class="card"><div class="klabel">Comissões '+(S.quinz.r[0].slice(8)==='01'?'1ª':'2ª')+' quinzena</div><div class="kval" style="font-size:17px;color:'+(S.quinz.lanc?'var(--green)':'var(--amber)')+'">'+(S.quinz.lanc?'lançadas':'a lançar')+'</div><div class="khint">'+dataBR(S.quinz.r[0])+' a '+dataBR(S.quinz.r[1])+'</div></div></div>';
+  h+='<div class="grid g2"><div><div class="sect">Serviços mais feitos</div><div class="card"><div class="hbars">'+A.servicos.slice(0,8).map(function(x){ var mx=A.servicos[0].qtd; return '<div class="hbar"><div class="nm">'+esc(x.nome.toLowerCase())+'</div><div class="tr"><div class="fl" style="width:'+(x.qtd/mx*100).toFixed(0)+'%"></div></div><div class="v">'+x.qtd+'</div></div>'; }).join('')+'</div></div></div>';
+  h+='<div><div class="sect">Profissionais (atendimentos)</div><div class="card"><div class="hbars">'+A.profissionais.slice(0,8).map(function(x){ var mx=A.profissionais[0].qtd; return '<div class="hbar"><div class="nm">'+esc(nomeProf(x.nome))+'</div><div class="tr"><div class="fl" style="width:'+(x.qtd/mx*100).toFixed(0)+'%;background:var(--s2)"></div></div><div class="v">'+x.qtd+'</div></div>'; }).join('')+'</div></div></div></div>';
+  h+='<div class="sect">Contas a pagar nos próximos 7 dias <small>'+n0(S.pag.length)+' · '+brl2(S.pag.reduce(function(a,x){ return a+x.v; },0))+'</small></div><div class="tw"><table><tbody>';
+  if(!S.pag.length) h+='<tr><td class="empty">Nenhuma conta cadastrada vencendo.</td></tr>';
+  S.pag.forEach(function(x){ h+='<tr><td>'+dataBRc(x.venc)+(x.venc<hojeISO()?' <span class="pill p-bad">atrasada</span>':'')+'</td><td>'+esc(x.ds)+'</td><td>'+esc(contaPorId(x.conta).nome)+'</td><td class="r">'+brl2(x.v)+'</td></tr>'; });
+  h+='</tbody></table></div><div class="nota">O resumo usa a semana de segunda a domingo. Ao abrir na segunda-feira, ele já mostra a semana que acabou.</div>';
+  el.innerHTML=h;
+}
+function imprimirSemana(){
+  var w=window.open('', '_blank'); if(!w){ toast('Libere pop-ups para imprimir.','err'); return; }
+  var html=document.getElementById('page-semana').innerHTML.replace(/<div class="fbar">[\s\S]*?<\/button><\/div>/,'');
+  var css='body{font-family:Arial,sans-serif;color:#111;margin:22px;font-size:11.5px}h1{font-size:18px;margin:0 0 4px}.sub{color:#666;margin-bottom:14px}.grid{display:grid;gap:8px}.kpis{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:1fr 1fr;gap:16px}.card{border:1px solid #ddd;border-radius:8px;padding:8px 10px}.klabel{font-size:9.5px;text-transform:uppercase;color:#777;letter-spacing:.04em}.kval{font-size:17px;font-weight:bold;margin:3px 0}.khint{font-size:10px;color:#555}.sect{font-weight:bold;margin:14px 0 6px;font-size:12.5px}.sect small{font-weight:normal;color:#777}.hbar{display:grid;grid-template-columns:40% 1fr 34px;gap:8px;align-items:center;margin:3px 0}.tr{height:8px;background:#eee;border-radius:4px}.fl{height:8px;background:#B07D4C;border-radius:4px}.v{text-align:right}table{width:100%;border-collapse:collapse}td{border-bottom:1px solid #eee;padding:4px 6px}.r{text-align:right}.up{color:#2e7d55;font-weight:bold}.down{color:#c0443e;font-weight:bold}.pill{border:1px solid #c0443e;color:#c0443e;border-radius:9px;padding:0 5px;font-size:9px}.alert{border:1px solid #e0b040;padding:6px;border-radius:6px;margin-bottom:8px}.nota{color:#777;font-size:10px;margin-top:10px}.p-sem{color:#888}';
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Resumo da semana · Voox 1956</title><style>'+css+'</style></head><body><h1>Resumo da semana · Voox 1956</h1><div class="sub">'+dataBRc(SEM.ini)+' a '+dataBRc(addDias(SEM.ini,6))+' · emitido em '+dataBRc(hojeISO())+'</div>'+html+'<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
+}
+
+// ================================================================ PAINEL DA PROFISSIONAL
+// voox_prof_acesso/{email} -> {prof, slug, nome}   ·   voox_prof/{slug} -> montado pelo robô
+var PROF = { slug:'', doc:null, mes:'', unsub:null, preview:false }, ACESSOS = {};
+function slugProf(p){ return String(p||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'prof'; }
+function assinarProf(slug){
+  if(PROF.unsub){ try{ PROF.unsub(); }catch(e){} }
+  PROF.slug=slug; PROF.doc=null;
+  if(DEMO){ PROF.doc=demoProfDoc(); renderMinha(); return; }
+  PROF.unsub=db.collection('voox_prof').doc(slug).onSnapshot(function(s){ PROF.doc=s.exists?s.data():{vazio:true}; renderMinha(); },
+    function(err){ document.getElementById('page-minha').innerHTML='<div class="card empty">Sem permissão para ler o painel ('+esc(err.code||err.message)+').</div>'; });
+  unsubs.push(PROF.unsub);
+}
+function renderMinha(){
+  if(viewAtual!=='minha') return;
+  var el=document.getElementById('page-minha'), D=PROF.doc;
+  document.getElementById('freshTxt').textContent=D&&D.atualizadoEm?'Atualizado '+dataBR(D.atualizadoEm)+' às '+D.atualizadoEm.slice(11,16):'—'; document.getElementById('fresh').classList.remove('velho');
+  var topo = PROF.preview ? '<div class="alert a-info">◇ Você está vendo o painel como '+esc(nomeProf(D&&D.prof||''))+' vê. <button class="btn btn-sm btn-ghost" onclick="PROF.preview=false;nav(\'acessos\')">Voltar</button></div>' : '';
+  if(!D){ el.innerHTML=topo+'<div class="card empty">Carregando…</div>'; return; }
+  if(D.vazio){ el.innerHTML=topo+'<div class="card empty">Seu painel ainda está sendo montado — ele é atualizado às 6h, 12h e 18h.</div>'; return; }
+  var ms=Object.keys(D.meses||{}).sort().reverse(); if(!PROF.mes || ms.indexOf(PROF.mes)<0) PROF.mes=ms[0];
+  var M=(D.meses||{})[PROF.mes]||{tot:{},itens:[]}, T=M.tot||{};
+  var nts=D.notas||[], media=nts.length?nts.reduce(function(a,x){ return a+x.nota; },0)/nts.length:null;
+  var h=topo+'<div class="minha-ola">Olá, <b>'+esc(nomeProf(D.prof))+'</b>!</div>';
+  h+='<div class="fbar"><div class="seg">'+ms.map(function(m){ return '<button class="'+(PROF.mes===m?'on':'')+'" onclick="PROF.mes=\''+m+'\';renderMinha()">'+(m===hojeISO().slice(0,7)?'Este mês':MESES_NOME[+m.slice(5)-1])+'</button>'; }).join('')+'</div></div>';
+  h+='<div class="grid kpis k4">';
+  h+='<div class="card"><div class="klabel">Serviços feitos</div><div class="kval">'+n0(T.q)+'</div><div class="khint">'+mesLabel(PROF.mes)+'</div></div>';
+  h+='<div class="card"><div class="klabel">Valor dos serviços (est.)</div><div class="kval">'+brl(T.v)+'</div><div class="khint">estimativa pelo preço de tabela</div></div>';
+  h+='<div class="card"><div class="klabel">Comissão prevista (est.)</div><div class="kval" style="color:var(--green)">'+brl2(T.com)+'</div><div class="khint">'+(T.sem?n0(T.sem)+' serviço(s) sem % no cadastro · ':'')+'o valor oficial é o do fechamento</div></div>';
+  h+='<div class="card"><div class="klabel">Sua nota (90 dias)</div><div class="kval">'+(media==null?'—':media.toFixed(1).replace('.',','))+'</div><div class="khint">'+n0(nts.length)+' avaliação(ões) das clientes</div></div></div>';
+  // agenda
+  var ag=D.agenda||[], porDia={}; ag.forEach(function(a){ (porDia[a.d]=porDia[a.d]||[]).push(a); });
+  h+='<div class="grid g2"><div><div class="sect">Sua agenda <small>próximos 7 dias</small></div><div class="card">';
+  if(!ag.length) h+='<div class="empty">Nenhum horário marcado.</div>';
+  Object.keys(porDia).sort().forEach(function(d){ var q=quandoData(d); h+='<div class="ag-dia">'+esc(q.charAt(0).toUpperCase()+q.slice(1))+' <small class="p-sem">'+porDia[d].length+'</small></div>'+porDia[d].map(function(a){ return '<div class="ag-it"><b>'+a.h+'</b> '+esc(a.c)+' <span class="p-sem">· '+esc((a.s||'').toLowerCase())+'</span></div>'; }).join(''); });
+  h+='</div></div>';
+  // vagas
+  var vg=D.vagas||[];
+  h+='<div><div class="sect">Horários livres e clientes para chamar</div><div class="card">';
+  if(!vg.length) h+='<div class="empty">Sem horários livres de 45 min ou mais nos próximos dias.</div>';
+  vg.forEach(function(v){ var q=quandoData(v.data); h+='<div class="ag-dia">'+esc(q.charAt(0).toUpperCase()+q.slice(1))+' · '+v.gaps.map(function(g){ return g.i+'–'+g.f; }).join(', ')+'</div>';
+    (v.cands||[]).slice(0,6).forEach(function(c){ var txt=preencher(MSG_PADRAO.textoVaga, {nome:c.primeiro||c.n, prof:nomeProf(D.prof), quando:quandoData(v.data), horarios:horasTxt(v.gaps), servico:(c.s||'').toLowerCase()});
+      h+='<div class="ag-it vg-c"><span>'+esc(c.n)+' <span class="p-sem">· '+esc((c.s||'').toLowerCase())+' · há '+c.dias+' dias</span></span>'+(c.cel?'<a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="https://wa.me/55'+c.cel+'?text='+encodeURIComponent(txt)+'">WhatsApp</a>':'')+'</div>'; }); });
+  h+='</div></div></div>';
+  // notas
+  if(nts.length){ h+='<div class="sect">O que as clientes disseram <small>últimos 90 dias</small></div><div class="rlist">'+nts.filter(function(x){ return x.com; }).slice(0,15).map(function(x){ return '<div class="rrow" style="--c:'+corNota(x.nota)+'"><div><div class="nm"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+esc(x.n||'')+' <small class="p-sem">'+dataBRc(x.d)+'</small></div><div class="coment">“'+esc(x.com)+'”</div></div></div>'; }).join('')+'</div>'; }
+  // serviços
+  var it=M.itens||[];
+  h+='<div class="sect">Seus serviços em '+mesLabel(PROF.mes)+' <small>'+n0(it.length)+'</small></div><div class="tw"><div class="tscroll" style="max-height:480px"><table><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">Regra</th><th class="r">Comissão (est.)</th></tr></thead><tbody>';
+  if(!it.length) h+='<tr><td colspan="6" class="empty">Nenhum serviço no mês.</td></tr>';
+  it.forEach(function(x){ h+='<tr><td>'+dataBRc(x.d)+'</td><td>'+esc(x.c)+'</td><td>'+esc((x.s||'').toLowerCase())+(x.q>1?' ×'+x.q:'')+'</td><td class="r">'+brl2(x.v)+'</td><td class="r">'+(x.r?esc(x.r):'<span class="p-sem">—</span>')+'</td><td class="r">'+(x.cm==null?'<span class="p-sem">—</span>':brl2(x.cm))+'</td></tr>'; });
+  h+='</tbody></table></div></div><div class="nota">Valores estimados pelo preço de tabela de cada serviço. O valor oficial da sua comissão é o do fechamento feito pela gestão.</div>';
+  el.innerHTML=h;
+}
+// ---- gestão: quem tem acesso
+function renderAcessos(){
+  if(viewAtual!=='acessos') return;
+  frescor();
+  var el=document.getElementById('page-acessos'), profs={};
+  Object.keys(COMZ.profs||{}).forEach(function(p){ if(!(COMZ.profs[p]||{}).naoRecebe) profs[p]=1; });
+  Object.keys(dias).forEach(function(m){ var x=dias[m].dias||{}; Object.keys(x).forEach(function(d){ (x[d].p||[]).forEach(function(o){ if(o.n && o.n!=='—') profs[o.n]=1; }); }); });
+  var porProf={}; Object.keys(ACESSOS).forEach(function(e){ var a=ACESSOS[e]; (porProf[a.prof]=porProf[a.prof]||[]).push(e); });
+  var L=Object.keys(profs).sort();
+  var h='<div class="card" style="margin-bottom:14px"><div class="klabel">Como funciona</div><div class="khint" style="margin-top:6px;font-size:12.5px;line-height:1.5">Cadastre o e-mail do Google de cada profissional. Ela entra em <b>voox1956.com.br/painel</b> com esse Google e vê só o painel dela: agenda, serviços do mês, comissão prevista, notas das clientes e clientes para chamar nos horários livres. O painel dela é montado pelo robô (6h, 12h e 18h) — depois de cadastrar, ele aparece na próxima rodada.</div></div>';
+  h+='<div class="tw"><div class="tscroll"><table><thead><tr><th>Profissional</th><th>E-mail(s) com acesso</th><th style="width:330px">Adicionar e-mail do Google</th><th></th></tr></thead><tbody>';
+  L.forEach(function(p){
+    var em=porProf[p]||[];
+    h+='<tr><td><b>'+esc(nomeProf(p))+'</b> <small class="p-sem">'+esc(p)+'</small></td><td>'+(em.length?em.map(function(e){ return '<span class="ov" style="margin:2px">'+esc(e)+' <button class="ibtn" data-e="'+esc(e)+'" onclick="removerAcesso(this.dataset.e)">✕</button></span>'; }).join(''):'<span class="p-sem">—</span>')+'</td>';
+    h+='<td><span class="pg-pay"><input type="email" placeholder="nome@gmail.com" data-p="'+esc(p)+'" style="width:210px"><button class="btn btn-sm" onclick="addAcesso(this.previousElementSibling)">Liberar</button></span></td><td class="r"><button class="btn btn-sm btn-ghost" data-p="'+esc(p)+'" onclick="verComo(this.dataset.p)">Ver como ela</button></td></tr>';
+  });
+  if(!L.length) h+='<tr><td colspan="4" class="empty">A lista de profissionais aparece depois que o robô ler o cadastro do Zelo.</td></tr>';
+  h+='</tbody></table></div></div>';
+  el.innerHTML=h;
+}
+function addAcesso(inp){
+  var e=String(inp.value||'').trim().toLowerCase(), p=inp.dataset.p;
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ toast('E-mail inválido.','err'); return; }
+  if(USUARIOS[e]){ toast('Esse e-mail já é da gestão/recepção.','err'); return; }
+  var d={prof:p, slug:slugProf(p), nome:nomeProf(p), criadoEm:new Date().toISOString(), por:email||'demo'};
+  if(DEMO){ ACESSOS[e]=d; renderAcessos(); toast('Acesso liberado (demonstração).'); return; }
+  db.collection('voox_prof_acesso').doc(e).set(d).then(function(){ toast('Acesso liberado para '+nomeProf(p)+'. O painel dela aparece na próxima rodada do robô.'); }).catch(function(x){ toast('Não salvou: '+(x.code||x.message),'err'); });
+}
+function removerAcesso(e){
+  if(!confirm('Tirar o acesso de '+e+'?')) return;
+  if(DEMO){ delete ACESSOS[e]; renderAcessos(); return; }
+  db.collection('voox_prof_acesso').doc(e).delete().then(function(){ toast('Acesso removido.'); }).catch(function(x){ toast('Não removeu: '+(x.code||x.message),'err'); });
+}
+function verComo(p){ PROF.preview=true; PROF.mes=''; assinarProf(slugProf(p)); nav('minha'); if(DEMO){ PROF.doc=demoProfDoc(p); renderMinha(); } }
+function demoProfDoc(p){
+  p=p||'GILMARA (DEP)'; var h=hojeISO(), m0=h.slice(0,7), m1=addMes(m0,-1), it0=[], it1=[];
+  for(var i=0;i<40;i++){ var d=addDias(h,-(i%25)); var v=40+(i%5)*15; (d.slice(0,7)===m0?it0:it1).push({d:d, c:['ANA SOUZA','BEATRIZ LIMA','CAMILA ROCHA','DÉBORA DIAS'][i%4], s:['DEPILAÇÃO BUÇO','DEPILAÇÃO VIRILHA','SOBRANCELHA'][i%3], v:v, q:1, cm:v*0.7, r:'70%'}); }
+  function tot(L){ return {q:L.length, v:L.reduce(function(a,x){ return a+x.v; },0), com:L.reduce(function(a,x){ return a+x.cm; },0), sem:0}; }
+  var M={}; M[m0]={tot:tot(it0), itens:it0}; M[m1]={tot:tot(it1), itens:it1};
+  return {prof:p, atualizadoEm:h+'T12:20-03:00', meses:M,
+    agenda:[{d:addDias(h,1),h:'09:00',c:'MARIA KRAMER',s:'DEPILAÇÃO VIRILHA'},{d:addDias(h,1),h:'10:30',c:'ANA KRUSE',s:'SOBRANCELHA'},{d:addDias(h,2),h:'14:00',c:'BEATRIZ ROSA',s:'DEPILAÇÃO BUÇO'}],
+    notas:[{d:addDias(h,-3),nota:10,com:'Super cuidadosa, amei!',n:'Ana'},{d:addDias(h,-9),nota:9,com:'Rápida e sem dor',n:'Camila'}],
+    vagas:[{data:addDias(h,1), gaps:[{i:'13:30',f:'15:00',min:90}], cands:[{n:'LAVINIA LEITE',primeiro:'Lavinia',cel:'51999990009',s:'DEPILAÇÃO VIRILHA',dias:33}]}]};
+}
+
 // ---------------------------------------------------------------- reativação
 var COR_ESTADO = { enviar:'var(--amber)', aguardando:'var(--blue)', voltaram:'var(--green)', descartadas:'var(--muted)' };
 
@@ -3589,6 +3875,7 @@ function renderReativ(){
   s+='<div class="card" title="Soma dos serviços feitos depois da mensagem, pelo preço de tabela"><div class="klabel">Retorno em R$</div><div class="kval">'+brl(retV)+'</div><div class="khint">'+n0(retN)+' atendimentos de '+n0(retC)+' cliente(s) · estimado</div></div>';
   s+='<div class="card kclick'+(filtro==='descartadas'?' on':'')+'" onclick="setFiltro(\'descartadas\')"><div class="klabel">Descartadas</div><div class="kval">'+n0(cont.descartadas)+'</div><div class="khint">fora da lista</div></div>';
   document.getElementById('r-stats').innerHTML=s;
+  document.getElementById('r-seq').innerHTML = filtro==='enviar' ? barraSeq('reativ')+botaoSeq('reativ') : '';
   renderLista();
 }
 
@@ -3676,6 +3963,8 @@ if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
   dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
+  setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
+  ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
   document.getElementById('msg-txt').value=mensagem;
   aplicarUI(); renderReativ(); renderAniv(); renderMsgs();
 } else {
@@ -3685,6 +3974,19 @@ if(DEMO){
   auth.onAuthStateChanged(function(user){
     var u = user ? USUARIOS[(user.email||'').toLowerCase()] : null;
     if(user && !u){
+      var em=(user.email||'').toLowerCase();
+      db.collection('voox_prof_acesso').doc(em).get().then(function(s){
+        if(!s.exists) throw {code:'sem-acesso'};
+        var a=s.data(); nivel='prof'; nome=a.nome||nomeProf(a.prof); email=em; logado=true;
+        pararListeners(); assinarProf(a.slug||slugProf(a.prof)); aplicarUI();
+      }).catch(function(){
+        pararListeners();
+        document.getElementById('authMsg').innerHTML='A conta <b>'+esc(user.email)+'</b> não tem acesso a este painel. Peça ao João para liberar.';
+        nivel='publico'; logado=false; aplicarUI(); auth.signOut();
+      });
+      return;
+    }
+    if(false){
       pararListeners();
       document.getElementById('authMsg').innerHTML='A conta <b>'+esc(user.email)+'</b> não tem acesso a este painel. Peça ao João para liberar.';
       nivel='publico'; logado=false; aplicarUI();
