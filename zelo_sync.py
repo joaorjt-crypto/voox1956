@@ -515,13 +515,21 @@ def proximos_dias_abertos(hoje, horario, n=2):
 
 
 class Fones:
-    """celular por cliente, buscando no Zelo só uma vez por execução"""
-    def __init__(self, z, conhecidos=None):
-        self.z, self.c = z, dict(conhecidos or {})
+    """celular por cliente, buscando no Zelo só uma vez por execução (com limite de buscas novas por rodada)"""
+    LIMITE_NOVOS = 250
 
-    def __call__(self, cid):
+    def __init__(self, z, conhecidos=None):
+        self.z, self.c, self.novos, self.avisou = z, dict(conhecidos or {}), 0, False
+
+    def __call__(self, cid, essencial=True):
         cid = str(cid)
         if cid not in self.c:
+            if not essencial and self.novos >= self.LIMITE_NOVOS:
+                if not self.avisou:
+                    log(f"  limite de {self.LIMITE_NOVOS} buscas de telefone atingido; o resto fica para a próxima rodada")
+                    self.avisou = True
+                return ""
+            self.novos += 1
             try:
                 self.c[cid] = celular_br(self.z.cliente(cid).get("celular"))
             except Exception as e:
@@ -665,7 +673,7 @@ def gravar_oportunidades(db, oport, fones):
     existentes = {doc.id for doc in col.where("ativo", "==", True).select([]).stream()}
     batch, ops, gravadas = db.batch(), 0, 0
     for cid, o in oport.items():
-        cel = fones(cid)
+        cel = fones(cid, essencial=False)
         if not cel:
             continue
         batch.set(col.document(cid), dict(o, cel=cel, ativo=True, atualizadoEm=agora), merge=True)
@@ -1015,7 +1023,7 @@ def montar_vagas(z, d, dia, fones):
             cands.sort(key=lambda t: -t[0])
         lista = []
         for _, cid, x, desde, iv in cands[:CANDS_POR_PROF * 2]:
-            cel = fones(cid)
+            cel = fones(cid, essencial=False)
             if not cel:
                 continue
             nome = limpa_nome(x["nome"])
@@ -1091,6 +1099,10 @@ def gravar_comissoes_zelo(z, db):
 
 # ---------------------------------------------------------------- main
 
+INICIO = time.time()
+LIMITE_MIN = 28     # depois disso as etapas extras ficam para a próxima rodada (o GitHub corta em 40)
+
+
 def main():
     user, pwd = os.environ.get("ZELO_USER"), os.environ.get("ZELO_PASS")
     if not user or not pwd:
@@ -1128,7 +1140,20 @@ def main():
         gravar_aniversariantes(z, db, d["hoje"])
     except Exception as e:
         log(f"Aniversariantes falharam (o resto foi gravado): {e}")
+    # o dia a dia alimenta o Painel: roda logo, antes das etapas mais demoradas
+    try:
+        atualizar_diario(z, db, d["hoje"], d["precos"])
+    except Exception as e:
+        log(f"Dia a dia falhou (o resto segue): {e}")
     conhecidos = {doc.id: (doc.to_dict() or {}).get("cel") for doc in db.collection("voox_reativacao").select(["cel"]).stream()}
+    # celulares já conhecidos da lista de clientes (evita buscar de novo no Zelo, que é a parte lenta)
+    try:
+        for doc in db.collection("voox_clientes").stream():
+            for it in (doc.to_dict() or {}).get("itens") or []:
+                if it.get("c") and it.get("i") and not conhecidos.get(str(it["i"])):
+                    conhecidos[str(it["i"])] = it["c"]
+    except Exception as e:
+        log(f"Celulares da lista de clientes não carregaram: {e}")
     fones = Fones(z, {k: v for k, v in conhecidos.items() if v})
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
                       ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas)), fones)),
@@ -1136,11 +1161,17 @@ def main():
                       ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo)),
                       ("Horários vagos", lambda: gravar_vagas(z, db, d, fones)),
                       ("Comissões do Zelo", lambda: gravar_comissoes_zelo(z, db))):
+        minutos = (time.time() - INICIO) / 60
+        if minutos > LIMITE_MIN and etapa not in ("Mensagens do dia",):
+            log(f"{etapa}: pulado para não estourar o tempo ({minutos:.0f} min); roda na próxima execução")
+            continue
+        t0 = time.time()
         try:
             fn()
         except Exception as e:
             log(f"{etapa} falhou (o resto foi gravado): {e}")
-    atualizar_diario(z, db, d["hoje"], d["precos"])
+        log(f"  {etapa}: {time.time() - t0:.0f}s")
+    log(f"Fim · {(time.time() - INICIO) / 60:.1f} min · {fones.novos} telefones buscados no Zelo")
 
 
 if __name__ == "__main__":
