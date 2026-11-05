@@ -437,6 +437,15 @@ html[data-theme="light"] .tconc tr.conc-sem td{background:rgba(176,125,76,.07)}
 .nota-n{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;border-radius:6px;color:#fff;font-weight:700;font-size:12px;margin-right:4px}
 .coment{font-size:12.5px;color:var(--text);margin-top:5px;font-style:italic}
 .seg.seg-wrap{flex-wrap:wrap;overflow:visible}
+.seq-ini{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 4px;font-size:12.5px;color:var(--muted)}
+.seq-bar{position:sticky;top:8px;z-index:15;margin:14px 0 6px;padding:12px 14px;border:1px solid var(--primary);border-radius:14px;background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,.25);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+html[data-theme="dark"] .seq-bar{background:#1c1c1f}
+html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
+.seq-prog{height:4px;border-radius:2px;background:rgba(127,127,127,.18);overflow:hidden;margin-bottom:10px}
+.seq-prog i{display:block;height:100%;background:var(--primary)}
+.seq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.seq-row .nm{font-weight:700;font-size:15px}
+.seq-row .acts{display:flex;gap:6px;flex-wrap:wrap}
 .sug-txt{font-size:12.5px;margin-top:5px;color:var(--text)}
 .sug-txt b{color:var(--purple)}
 </style>
@@ -1646,6 +1655,9 @@ function renderOport(){
   var feitos=Object.keys(OPRES).filter(function(id){ return ((OPRES[id]||{}).enviados||{})[campAtual]; }).length || L0.filter(function(o){ return (o.enviados||{})[campAtual]; }).length;
   var conv=Object.keys(OPRES).filter(function(id){ return ((OPRES[id]||{}).ret||{})[campAtual]; }).length;
   var expl = campAtual==='sug' ? 'cada cliente recebe o serviço que mais combina com o que ela já faz, segundo o que as outras clientes da casa fazem' : 'frequentes (3+ serviços em 120 dias, vieram nos últimos 60) que nunca fizeram este tipo de serviço';
+  h+=barraSeq();
+  var comCel=L.filter(function(o){ return o.cel; }).length;
+  if(!SEQ && comCel) h+='<div class="seq-ini"><button class="btn" onclick="iniciarSeq()">▶ Enviar em sequência ('+n0(comCel)+')</button><span>Abre uma cliente por vez no WhatsApp com a mensagem pronta. Você só aperta enviar, volta aqui e clica na próxima (ou aperta Enter).</span></div>';
   h+='<div class="sect">'+n0(L.length)+' clientes para oferecer <small>'+expl+' · '+n0(feitos)+' já receberam'+(conv?' · <b style="color:var(--green)">'+n0(conv)+' fizeram</b>':'')+'</small></div><div class="rlist">';
   if(!L.length) h+='<div class="card empty">Ninguém pendente nesta campanha — ou o robô ainda não rodou a versão nova.</div>';
   L.slice(0, limite).forEach(function(o){
@@ -1659,10 +1671,43 @@ function renderOport(){
   if(campAtual==='sug') h+='<div class="nota">A sugestão vem de um cálculo simples sobre os últimos 24 meses: para cada serviço que a cliente faz, o robô vê qual outro serviço as clientes que fazem o mesmo também costumam fazer, e escolhe o mais comum que ela ainda não fez (variações como escova média/longa contam como o mesmo serviço).</div>';
   document.getElementById('page-oport').innerHTML=h;
 }
-function setCamp(k){ campAtual=k; limite=60; renderOport(); }
-function enviarOport(id){
+function setCamp(k){ if(SEQ && SEQ.k!==k) SEQ=null; campAtual=k; limite=60; renderOport(); }
+// ---- envio em sequência
+var SEQ=null;
+function ehCelular(){ return /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent); }
+function abrirWhatsSeq(cel, txt){
+  var url = ehCelular() ? 'https://wa.me/55'+cel+'?text='+encodeURIComponent(txt) : 'https://web.whatsapp.com/send?phone=55'+cel+'&text='+encodeURIComponent(txt);
+  var w=window.open(url, 'voox_whats'); if(!w) toast('O navegador bloqueou a janela do WhatsApp — libere pop-ups para voox1956.com.br.','err');
+}
+function iniciarSeq(){
+  var L=Object.keys(oport).map(function(id){ return Object.assign({id:id}, oport[id]); }).filter(function(o){ return o.ativo && o.cel && livreOport(o,campAtual); });
+  if(campAtual==='sug') L.sort(function(a,b){ return (b.sug[0].p-a.sug[0].p) || b.n-a.n; }); else L.sort(function(a,b){ return b.n-a.n; });
+  if(!L.length) return;
+  SEQ={k:campAtual, fila:L.map(function(o){ return o.id; }), i:0, env:0, pul:0};
+  renderOport(); window.scrollTo({top:0, behavior:'smooth'});
+}
+function seqAtual(){ while(SEQ && SEQ.i<SEQ.fila.length){ var o=oport[SEQ.fila[SEQ.i]]; if(o && livreOport(o,SEQ.k)) return SEQ.fila[SEQ.i]; SEQ.i++; } return null; }
+function barraSeq(){
+  if(!SEQ || SEQ.k!==campAtual) return '';
+  var id=seqAtual(), tot=SEQ.fila.length, feito=Math.min(SEQ.i,tot);
+  var h='<div class="seq-bar"><div class="seq-prog"><i style="width:'+(tot?feito/tot*100:0).toFixed(1)+'%"></i></div>';
+  if(!id){ h+='<div class="seq-row"><div><b>Pronto!</b> '+n0(SEQ.env)+' mensagem(ns) enviada(s)'+(SEQ.pul?' · '+n0(SEQ.pul)+' pulada(s)':'')+'.</div><button class="btn btn-sm btn-ghost" onclick="SEQ=null;renderOport()">Fechar</button></div></div>'; return h; }
+  var o=oport[id], s=(o.sug||[])[0];
+  h+='<div class="seq-row"><div><div class="klabel" style="margin:0">Envio em sequência · '+(feito+1)+' de '+tot+' · '+n0(SEQ.env)+' enviada(s)</div><div class="nm" style="margin-top:4px">'+esc(o.nome)+'</div><div class="info">'+(SEQ.k==='sug'&&s?'Sugestão: '+esc(s.s.toLowerCase())+' · ':'')+'faz '+esc((o.servicos||[]).join(', ').toLowerCase())+'</div></div>';
+  h+='<div class="acts"><button class="btn btn-wa" id="seq-go" onclick="seqEnviar()">Abrir WhatsApp ▶</button><button class="btn btn-sm btn-ghost" onclick="seqPular()">Pular</button><button class="btn btn-sm btn-ghost" onclick="seqNaoOferecer()">Não oferecer</button><button class="btn btn-sm btn-ghost" onclick="SEQ=null;renderOport()">Parar</button></div></div>';
+  return h+'<div class="khint" style="margin-top:6px">Depois de enviar no WhatsApp, volte para esta aba e aperte <b>Enter</b> (ou clique) para abrir a próxima. O WhatsApp abre sempre na mesma aba.</div></div>';
+}
+function seqEnviar(){ var id=seqAtual(); if(!id) return; SEQ.env++; SEQ.i++; enviarOport(id, true); }
+function seqPular(){ if(!seqAtual()) return; SEQ.pul++; SEQ.i++; renderOport(); }
+function seqNaoOferecer(){ var id=seqAtual(); if(!id) return; SEQ.i++; dispensarOport(id); }
+document.addEventListener('keydown', function(ev){
+  if(!SEQ || viewAtual!=='oport' || ev.key!=='Enter') return;
+  var t=ev.target; if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')) return;
+  ev.preventDefault(); seqEnviar();
+});
+function enviarOport(id, seq){
   var o=oport[id], k=campAtual, s=(o.sug||[])[0]||{};
-  abrirWhats(o.cel, preencher(textoMsg('camp_'+k), {nome:o.primeiro||o.nome, agenda:LINK_AGENDA, servico:(s.s||'').toLowerCase(), base:(s.a||'').toLowerCase()}));
+  (seq?abrirWhatsSeq:abrirWhats)(o.cel, preencher(textoMsg('camp_'+k), {nome:o.primeiro||o.nome, agenda:LINK_AGENDA, servico:(s.s||'').toLowerCase(), base:(s.a||'').toLowerCase()}));
   var agora=new Date().toISOString(), u={temEnv:true}; u['enviados.'+k]=agora; if(k==='sug') u.sugEnviada=s.s||'';
   if(DEMO){ o.enviados=o.enviados||{}; o.enviados[k]=agora; if(k==='sug') o.sugEnviada=s.s; OPRES[id]=o; renderOport(); toast((o.primeiro||o.nome)+' marcada como enviada.'); return; }
   db.collection('voox_oportunidades').doc(id).update(u).then(function(){ toast((o.primeiro||o.nome)+' marcada como enviada.'); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
@@ -1670,6 +1715,7 @@ function enviarOport(id){
 function dispensarOport(id){
   var o=oport[id], u={}; u['dispensadas.'+campAtual]=true;
   if(DEMO){ o.dispensadas=o.dispensadas||{}; o.dispensadas[campAtual]=true; renderOport(); return; }
+  if(SEQ) renderOport();
   db.collection('voox_oportunidades').doc(id).update(u).then(function(){ toast('Não vai mais aparecer nesta campanha.'); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
 }
 function setResPer(p){ resPer=p; renderOport(); }
