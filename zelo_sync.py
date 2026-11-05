@@ -1215,6 +1215,138 @@ def gravar_comissoes_zelo(z, db):
     log(f"Comissões do Zelo: {len(profs)} profissionais, {n_serv} serviços com % cadastrado")
 
 
+# ---------------------------------------------------------------- clientes faltosas (180 dias, uma vez por dia)
+
+def gravar_faltosas(z, db, d, fones):
+    hoje = d["hoje"]
+    ref = db.collection("voox_faltosas").document("lista")
+    snap = ref.get()
+    if snap.exists and (snap.to_dict() or {}).get("data") == hoje.isoformat() and "--faltosas" not in sys.argv:
+        log("Faltosas: já atualizado hoje")
+        return
+    ini = hoje - dt.timedelta(days=180)
+    perdas = z.agendamentos(ini, hoje, "FALTOU,CANCELADO", "dataHora,status,cliente(id,nome),servico(nome)")
+    pagos = z.agendamentos(ini, hoje, STATUS_PAGO, "dataHora,cliente(id)")
+    por = defaultdict(lambda: {"nome": "", "f": set(), "cx": set(), "a": set(), "s": Counter()})
+    for a in perdas:
+        c = a.get("cliente") or {}
+        if not c.get("id") or not a.get("dataHora"):
+            continue
+        x = por[str(c["id"])]
+        x["nome"] = c.get("nome") or x["nome"]
+        (x["f"] if a.get("status") == "FALTOU" else x["cx"]).add(a["dataHora"][:10])
+        x["s"][limpa_serv((a.get("servico") or {}).get("nome"))] += 1
+    for a in pagos:
+        c = a.get("cliente") or {}
+        if c.get("id") and str(c["id"]) in por and a.get("dataHora"):
+            por[str(c["id"])]["a"].add(a["dataHora"][:10])
+    prox = {}
+    for a in d["futuros"]:
+        c = a.get("cliente") or {}
+        if c.get("id") and a.get("dataHora"):
+            k = str(c["id"])
+            if k not in prox or a["dataHora"] < prox[k]:
+                prox[k] = a["dataHora"][:16]
+    itens = []
+    for cid, x in por.items():
+        f, a = len(x["f"]), len(x["a"])
+        if not f or EXCLUIR_NOMES.search(x["nome"]) or EH_CRIANCA.search(x["nome"]):
+            continue
+        taxa = f / (f + a)
+        if f < 2 and taxa < 0.34:
+            continue
+        nome = limpa_nome(x["nome"])
+        item = {"i": cid, "n": nome, "primeiro": nome.split(" ")[0].capitalize() if nome else "", "f": f, "cx": len(x["cx"]),
+                "a": a, "uf": max(x["f"]), "s": x["s"].most_common(1)[0][0] if x["s"] else ""}
+        if prox.get(cid):
+            item["prox"] = prox[cid]
+        itens.append(item)
+    itens.sort(key=lambda o: (-o["f"], -(o["f"] / (o["f"] + o["a"]))))
+    itens = itens[:400]
+    for o in itens:
+        o["c"] = fones(o["i"], essencial=bool(o.get("prox")))
+    ref.set({"data": hoje.isoformat(), "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes"), "itens": itens})
+    log(f"Faltosas: {len(itens)} clientes · {sum(1 for o in itens if o.get('prox'))} com horário marcado")
+
+
+# ---------------------------------------------------------------- painel de cada profissional (só para quem tem acesso)
+
+def slug_prof(p):
+    return re.sub(r"[^a-z0-9]+", "-", sem_acento(p).lower()).strip("-") or "prof"
+
+
+def gravar_paineis_prof(z, db, d):
+    acessos = {doc.id: (doc.to_dict() or {}) for doc in db.collection("voox_prof_acesso").stream()}
+    profs = sorted({v.get("prof") for v in acessos.values() if v.get("prof")})
+    if not profs:
+        log("Painel das profissionais: nenhuma profissional com acesso cadastrado")
+        return
+    hoje = d["hoje"]
+    m0 = hoje.strftime("%Y-%m")
+    m1 = date_add_months(hoje.replace(day=1), -1).strftime("%Y-%m")
+    serv = {}
+    for m in (m0, m1):
+        snap = db.collection("voox_servicos").document(m).get()
+        serv[m] = snap.to_dict() if snap.exists else {}
+    regras = ((db.collection("voox_fin_cfg").document("comissoes_zelo").get().to_dict() or {}).get("profs") or {})
+
+    def comissao(p, s, v, q):
+        r = regras.get(p)
+        if not r:
+            return None, ""
+        if r.get("naoRecebe"):
+            return 0.0, "não recebe"
+        x = (r.get("serv") or {}).get(s)
+        if not x:
+            return None, ""
+        if x.get("fixo") is not None:
+            return float(x["fixo"]) * q, f"R$ {x['fixo']:.0f} fixo"
+        pc = float(x.get("pct") or 0)
+        return v * pc / 100, f"{pc:g}%"
+
+    ags = z.agendamentos(hoje, hoje + dt.timedelta(days=7), STATUS_FUTURO,
+                         "dataHora,duracao,cliente(nome),servico(nome),profissional(nomeAgenda)")
+    corte = (hoje - dt.timedelta(days=90)).isoformat()
+    notas = [x.to_dict() for x in db.collection("voox_notas").where("data", ">=", corte).stream()]
+    vagas = [x.to_dict() for x in db.collection("voox_vagas").where("data", ">=", hoje.isoformat()).stream()]
+    agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
+    for p in profs:
+        meses = {}
+        for m, doc in serv.items():
+            sd, cd, pd = doc.get("sd") or [], doc.get("cd") or [], doc.get("pd") or []
+            itens, tot = [], {"q": 0, "v": 0.0, "com": 0.0, "sem": 0}
+            for t in doc.get("it") or []:
+                a = t.split(",")
+                if len(a) < 6 or int(a[3]) >= len(pd) or pd[int(a[3])] != p:
+                    continue
+                sv, v, q = sd[int(a[1])], float(a[4]), int(a[5])
+                cm, regra = comissao(p, sv, v, q)
+                itens.append({"d": f"{m}-{a[0]}", "c": cd[int(a[2])], "s": sv, "v": round(v, 2), "q": q,
+                              "cm": round(cm, 2) if cm is not None else None, "r": regra})
+                tot["q"] += q; tot["v"] += v
+                if cm is None:
+                    tot["sem"] += q
+                else:
+                    tot["com"] += cm
+            tot["v"], tot["com"] = round(tot["v"], 2), round(tot["com"], 2)
+            meses[m] = {"tot": tot, "itens": sorted(itens, key=lambda o: o["d"], reverse=True)}
+        agenda = sorted([{"d": a["dataHora"][:10], "h": a["dataHora"][11:16], "c": limpa_nome((a.get("cliente") or {}).get("nome") or ""),
+                          "s": limpa_serv((a.get("servico") or {}).get("nome")), "min": _min(a)}
+                         for a in ags if ((a.get("profissional") or {}).get("nomeAgenda") or "").strip() == p and a.get("dataHora")],
+                        key=lambda o: (o["d"], o["h"]))
+        nts = sorted([{"d": x.get("data"), "nota": x.get("nota"), "com": x.get("comentario") or "", "s": x.get("s") or [], "n": x.get("n") or ""}
+                      for x in notas if p in (x.get("p") or []) and x.get("nota") is not None], key=lambda o: o["d"], reverse=True)[:60]
+        vg = []
+        for v in vagas:
+            for pp in v.get("profs") or []:
+                if pp.get("p") == p and pp.get("gaps"):
+                    vg.append({"data": v.get("data"), "gaps": pp["gaps"], "cands": pp.get("cands") or []})
+        db.collection("voox_prof").document(slug_prof(p)).set({
+            "prof": p, "atualizadoEm": agora, "meses": meses, "agenda": agenda, "notas": nts,
+            "vagas": sorted(vg, key=lambda o: o["data"])})
+    log(f"Painel das profissionais: {len(profs)} atualizado(s)")
+
+
 # ---------------------------------------------------------------- main
 
 INICIO = time.time()
@@ -1285,7 +1417,9 @@ def main():
                       ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v})),
                       ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo)),
                       ("Horários vagos", lambda: gravar_vagas(z, db, d, fones)),
-                      ("Comissões do Zelo", lambda: gravar_comissoes_zelo(z, db))):
+                      ("Comissões do Zelo", lambda: gravar_comissoes_zelo(z, db)),
+                      ("Faltosas", lambda: gravar_faltosas(z, db, d, fones)),
+                      ("Painel das profissionais", lambda: gravar_paineis_prof(z, db, d))):
         minutos = (time.time() - INICIO) / 60
         if minutos > LIMITE_MIN and etapa not in ("Mensagens do dia",):
             log(f"{etapa}: pulado para não estourar o tempo ({minutos:.0f} min); roda na próxima execução")
