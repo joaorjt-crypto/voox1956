@@ -480,6 +480,20 @@ body.sem-rolar{overflow:hidden}
 .fi-d small{color:var(--muted)}
 .fi-s>div{display:flex;gap:6px;align-items:baseline}
 .fi-v{margin-left:auto;color:var(--muted);white-space:nowrap}
+/* metas */
+.podio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.pod{text-align:center}
+.pod .pod-n{font-size:26px}
+.pod .nm{font-weight:700;margin-top:2px}
+.pod1{border-color:rgba(232,179,63,.6)}
+.mt-bar{position:relative;height:10px;border-radius:5px;background:rgba(127,127,127,.16);overflow:visible}
+.mt-bar i{display:block;height:100%;border-radius:5px}
+.mt-bar b{position:absolute;top:-3px;width:2px;height:16px;background:var(--muted)}
+.mt-bar.grande{height:14px}
+.minha-meta{margin:14px 0 4px;border-color:var(--primary)}
+.mt-pos{font-size:28px;font-weight:800;color:var(--primary);line-height:1}
+.mt-pos small{font-size:12px;color:var(--muted);font-weight:500}
+@media(max-width:600px){.podio{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -511,6 +525,7 @@ body.sem-rolar{overflow:hidden}
     <button class="navbtn gestao-only" data-p="painel" onclick="nav('painel')"><span class="side-ico">◷</span><span class="lbl">Painel</span></button>
     <button class="navbtn gestao-only" data-p="semana" onclick="nav('semana')"><span class="side-ico">▣</span><span class="lbl">Resumo da semana</span></button>
     <button class="navbtn gestao-only" data-p="prof" onclick="nav('prof')"><span class="side-ico">☺</span><span class="lbl">Profissionais</span></button>
+    <button class="navbtn gestao-only" data-p="metas" onclick="nav('metas')"><span class="side-ico">◎</span><span class="lbl">Metas da equipe</span></button>
     <button class="navbtn gestao-only" data-p="agenda" onclick="nav('agenda')"><span class="side-ico">▦</span><span class="lbl">Agenda</span></button>
     <button class="navbtn gestao-only" data-p="serv" onclick="nav('serv')"><span class="side-ico">✂</span><span class="lbl">Serviços feitos</span></button>
     <button class="navbtn gestao-only" data-p="sat" onclick="nav('sat')"><span class="side-ico">☆</span><span class="lbl">Satisfação</span></button>
@@ -561,6 +576,7 @@ body.sem-rolar{overflow:hidden}
     <div class="page" id="page-prof"><div class="empty">Carregando…</div></div>
 
     <!-- NOVAS: financeiro, satisfação, vagas -->
+    <div class="page" id="page-metas"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-semana"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-acessos"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-falt"><div class="empty">Carregando…</div></div>
@@ -752,6 +768,9 @@ function assinar(){
     unsubs.push(db.collection('voox_fin_cfg').doc('comissoes_zelo').onSnapshot(function(snap){
       COMZ=snap.exists?Object.assign({profs:{}, atualizadoEm:''}, snap.data()):{profs:{}, atualizadoEm:''}; renderCom(); renderMarg();
     }, function(err){ toast('Comissões do Zelo: '+(err.code||err.message),'err'); }));
+    unsubs.push(db.collection('voox_config').doc('metas_prof').onSnapshot(function(snap){
+      METASP=snap.exists?Object.assign({m:{}}, snap.data()):{m:{}}; renderMetas(); renderCom();
+    }, function(err){ toast('Metas da equipe: '+(err.code||err.message),'err'); }));
     unsubs.push(db.collection('voox_fin_cfg').doc('custos').onSnapshot(function(snap){
       CUSTOS=snap.exists?((snap.data()||{}).c||{}):{}; renderMarg();
     }, function(err){ toast('Custos: '+(err.code||err.message),'err'); }));
@@ -898,6 +917,7 @@ var TITULOS = {
   agenda: ['Agenda', 'Horários de pico e faltas por dia da semana'],
   aniv:   ['Aniversariantes', 'Clientes que fazem aniversário esta semana'],
   conf:   ['Confirmações', 'Confirme por WhatsApp os horários dos próximos dias'],
+  metas:  ['Metas da equipe', 'Meta, progresso, ranking e bônus de cada profissional'],
   semana: ['Resumo da semana', 'A semana em uma página — para olhar toda segunda'],
   acessos:['Acesso das profissionais', 'Quem pode ver o próprio painel'],
   falt:   ['Faltosas', 'Clientes que costumam faltar — peça sinal ou confirme antes'],
@@ -916,7 +936,7 @@ var TITULOS = {
   lanc:   ['Lançamentos', 'Entradas e saídas do Caixa, Bradesco e Banrisul'],
   cgs:    ['Contas gerenciais', 'Categorias de despesa e receita e saldo inicial das contas']
 };
-var SO_GESTAO = {semana:1, acessos:1, painel:1, vendas:1, prof:1, agenda:1, cli:1, serv:1, pagar:1, com:1, marg:1, conc:1, sat:1, fin:1, lanc:1, cgs:1};
+var SO_GESTAO = {metas:1, semana:1, acessos:1, painel:1, vendas:1, prof:1, agenda:1, cli:1, serv:1, pagar:1, com:1, marg:1, conc:1, sat:1, fin:1, lanc:1, cgs:1};
 function renderAtual(){ if(viewAtual==='painel') renderPainel(); if(viewAtual==='prof') renderProf(); if(viewAtual==='agenda') renderAgenda(); if(viewAtual==='com') renderCom(); if(viewAtual==='conc') renderConc(); }
 
 function aplicarUI(){
@@ -964,6 +984,7 @@ function nav(v){
   if(v==='sat') renderSat();
   if(v==='vagas') renderVagas();
   if(v==='semana') renderSemana();
+  if(v==='metas') renderMetas();
   if(v==='acessos') renderAcessos();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
@@ -2972,7 +2993,7 @@ function servCarregar(meses){
     SERV.carregando[m]=db.collection('voox_servicos').doc(m).onSnapshot(function(s){
       if(s.exists){ SERV.meses[m]=parseServDoc(s.data(), m); delete SERV.semDado[m]; }
       else { delete SERV.meses[m]; SERV.semDado[m]=1; }
-      clearTimeout(SERV._t); SERV._t=setTimeout(function(){ if(viewAtual==='serv') renderServ(true); if(FICHA.nome) renderFicha(); if(viewAtual==='com') renderCom(); if(viewAtual==='marg') renderMarg(); }, 60);
+      clearTimeout(SERV._t); SERV._t=setTimeout(function(){ if(viewAtual==='serv') renderServ(true); if(viewAtual==='metas') renderMetas(); if(FICHA.nome) renderFicha(); if(viewAtual==='com') renderCom(); if(viewAtual==='marg') renderMarg(); }, 60);
     }, function(err){ toast('Serviços: '+(err.code||err.message),'err'); });
     unsubs.push(SERV.carregando[m]);
   });
@@ -3189,7 +3210,10 @@ function calcComissoes(de, ate){
   });
   var Z=zeloCom(de, ate), fator=(COMCFG.zelo && Z.v>0 && tot>0) ? Z.v/tot : 1;
   var L=Object.keys(por).map(function(k){ var x=por[k]; x.comF=x.com*fator; x.it.forEach(function(i){ i.comF=i.com*fator; }); return x; }).sort(function(a,b){ return b.base-a.base; });
-  return {X:X, L:L, tot:tot, totF:tot*fator, fator:fator, Z:Z, semPct:Object.keys(semPct)};
+  // bônus de meta: entra quando o período fecha no último dia do mês
+  var mm=ate.slice(0,7), RB=(ate===fimMes(mm)) ? realizadoProfs(mm) : null, totB=0;
+  L.forEach(function(x){ x.bm = RB ? bonusMeta(x.p, mm, (RB[x.p]||{}).v||0) : 0; totB+=x.bm; });
+  return {X:X, L:L, tot:tot, totF:tot*fator, fator:fator, Z:Z, semPct:Object.keys(semPct), totB:totB, mesB:RB?mm:''};
 }
 function chaveFech(r){ return r[0]+'_'+r[1]; }
 function setComPer(p){ COM.per=p; COM.aberto=null; COM.lancar=false; renderCom(); }
@@ -3213,12 +3237,12 @@ function renderCom(){
   if(!temZ) h+='<div class="alert a-info">◇ Os % de cada profissional por serviço vêm do cadastro de <b>Usuários</b> do Zelo e chegam na próxima execução do robô. Até lá, vale o % digitado na coluna "% reserva".</div>';
   else h+='<div class="khint" style="margin:-4px 0 10px">% por serviço de cada profissional lidos do cadastro de Usuários do Zelo em '+dataBRc(COMZ.atualizadoEm.slice(0,10))+' às '+COMZ.atualizadoEm.slice(11,16)+'.</div>';
   if(C.semPct.length) h+='<div class="alert a-warn">⚠ '+C.semPct.length+' profissional(is) com serviço sem % no Zelo: '+C.semPct.map(nomeProf).map(esc).join(', ')+'. Cadastre o serviço no Usuário dela no Zelo ou preencha a coluna <b>% reserva</b>.</div>';
-  var totAj=0, totPagar=0; C.L.forEach(function(x){ var a=+aj[x.p]||0; totAj+=a; totPagar+=x.comF+a; });
+  var totAj=0, totPagar=0; C.L.forEach(function(x){ var a=(+aj[x.p]||0)+(x.bm||0); totAj+=a; totPagar+=x.comF+a; });
   h+='<div class="grid kpis k4">';
   h+='<div class="card"><div class="klabel">Base (serviços feitos)</div><div class="kval">'+brl(C.L.reduce(function(a,x){ return a+x.base; },0))+'</div><div class="khint">'+n0(C.L.reduce(function(a,x){ return a+x.q; },0))+' serviços · valor estimado</div></div>';
   h+='<div class="card"><div class="klabel">Comissão calculada</div><div class="kval">'+brl2(C.totF)+'</div><div class="khint">'+(C.fator!==1?'ajustada ao total do Zelo (×'+C.fator.toFixed(2).replace('.',',')+')':'pelo % de cada serviço no cadastro do Zelo')+'</div></div>';
   h+='<div class="card"><div class="klabel">Comissão no Zelo</div><div class="kval">'+(C.Z.dias?brl2(C.Z.v):'—')+'</div><div class="khint">'+(C.Z.dias?'total do resumo de vendas · '+(C.Z.v?'diferença '+rs(C.tot-C.Z.v):'')+'':'sem dados do Zelo no período')+'</div></div>';
-  h+='<div class="card"><div class="klabel">Total a pagar</div><div class="kval" style="color:var(--primary)">'+brl2(totPagar)+'</div><div class="khint">com vales e ajustes ('+rs(totAj)+')</div></div></div>';
+  h+='<div class="card"><div class="klabel">Total a pagar</div><div class="kval" style="color:var(--primary)">'+brl2(totPagar)+'</div><div class="khint">com vales, ajustes'+(C.totB?' e bônus de meta ('+brl(C.totB)+')':'')+' ('+rs(totAj)+')</div></div></div>';
   h+='<label class="chk"><input type="checkbox" '+(COMCFG.zelo?'checked':'')+' onchange="salvarComCfg({zelo:this.checked})"> Ajustar as comissões para bater com o total de comissão do Zelo (divide a diferença proporcionalmente)</label>';
 
   if(F.lanc){
@@ -3230,7 +3254,7 @@ function renderCom(){
     h+='<label>Data do pagamento<input type="date" id="lc-d" value="'+hojeISO()+'"></label>';
     h+='<label>Conta<select id="lc-c">'+cfg.contas.map(function(c){ return '<option value="'+c.id+'"'+((COMCFG.conta||'bradesco')===c.id?' selected':'')+'>'+esc(c.nome)+'</option>'; }).join('')+'</select></label>';
     h+='<label>Conta gerencial<select id="lc-cg">'+cgDesp.map(function(c){ return '<option value="'+c.id+'"'+((COMCFG.cg||'folha-salarial-profissionais')===c.id?' selected':'')+'>'+esc(c.nome)+'</option>'; }).join('')+'</select></label>';
-    var n=C.L.filter(function(x){ return x.comF+(+aj[x.p]||0)>0.009; }).length;
+    var n=C.L.filter(function(x){ return x.comF+(+aj[x.p]||0)+(x.bm||0)>0.009; }).length;
     h+='<div class="lf-bt"><button class="btn btn-ghost" onclick="COM.lancar=false;renderCom()">Cancelar</button><button class="btn" id="lc-ok" onclick="lancarComissoes()">Lançar '+n+' pagamento(s) · '+brl2(totPagar)+'</button></div></div>';
     h+='<div class="khint" style="margin-top:8px">Cada profissional vira uma saída "Comissão Nome (dd/mm a dd/mm)". Dá para conferir e corrigir depois em Lançamentos.</div></div>';
   }
@@ -3238,10 +3262,10 @@ function renderCom(){
   h+='<div class="tw" style="margin-top:12px"><div class="tscroll"><table class="tcom"><thead><tr><th>Profissional</th><th class="r">Serviços</th><th class="r">Base (est.)</th><th class="r" style="width:100px">% no Zelo</th><th class="r" style="width:90px" title="Usado só nos serviços que não têm % cadastrado no Zelo para a profissional">% reserva</th><th class="r">Comissão</th><th class="r" style="width:130px">Vales / ajustes</th><th class="r">A pagar</th><th style="width:30px"></th></tr></thead><tbody>';
   if(!C.L.length) h+='<tr><td colspan="9" class="empty">Sem serviços no período.</td></tr>';
   C.L.forEach(function(x){
-    var a=+aj[x.p]||0, ab=COM.aberto===x.p, pd=(COMCFG.pct||{})[x.p];
-    h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-p="'+esc(x.p)+'" onclick="toggleComProf(this.dataset.p)"><td><b>'+esc(nomeProf(x.p))+'</b> <small class="p-sem">'+esc(x.p)+'</small>'+(x.sem?' <span class="pill p-bad">'+x.sem+' sem %</span>':'')+(x.man?' <span class="pill p-mut" title="Serviços sem % no Zelo, calculados pelo % reserva">'+x.man+' pelo reserva</span>':'')+'</td><td class="r">'+n0(x.q)+'</td><td class="r">'+brl2(x.base)+'</td><td class="r">'+(pctTipico(x.p)?'<span title="% mais comum nos serviços dela">'+pctTipico(x.p)+'</span>':'<span class="p-sem">—</span>')+'</td>';
+    var a=(+aj[x.p]||0)+(x.bm||0), ab=COM.aberto===x.p, pd=(COMCFG.pct||{})[x.p];
+    h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-p="'+esc(x.p)+'" onclick="toggleComProf(this.dataset.p)"><td><b>'+esc(nomeProf(x.p))+'</b> <small class="p-sem">'+esc(x.p)+'</small>'+(x.sem?' <span class="pill p-bad">'+x.sem+' sem %</span>':'')+(x.man?' <span class="pill p-mut" title="Serviços sem % no Zelo, calculados pelo % reserva">'+x.man+' pelo reserva</span>':'')+(x.bm?' <span class="pill p-ok" title="Bônus por bater a meta do mês (aba Metas da equipe)">+ bônus meta '+brl(x.bm)+'</span>':'')+'</td><td class="r">'+n0(x.q)+'</td><td class="r">'+brl2(x.base)+'</td><td class="r">'+(pctTipico(x.p)?'<span title="% mais comum nos serviços dela">'+pctTipico(x.p)+'</span>':'<span class="p-sem">—</span>')+'</td>';
     h+='<td class="r" onclick="event.stopPropagation()"><input class="inp-mini" type="text" inputmode="decimal" value="'+(pd!=null&&pd!==''?String(pd).replace('.',','):'')+'" placeholder="%" data-p="'+esc(x.p)+'" onchange="salvarPctProf(this.dataset.p,this.value)"'+(F.lanc?' disabled':'')+'></td>';
-    h+='<td class="r">'+brl2(x.comF)+'</td><td class="r" onclick="event.stopPropagation()"><input class="inp-mini" type="text" inputmode="decimal" value="'+(a?fmtNum(a):'')+'" placeholder="0,00" data-p="'+esc(x.p)+'" onchange="salvarAjuste(this.dataset.p,this.value)" title="Negativo para vale/desconto (ex.: -200), positivo para acréscimo"'+(F.lanc?' disabled':'')+'></td>';
+    h+='<td class="r">'+brl2(x.comF)+'</td><td class="r" onclick="event.stopPropagation()"><input class="inp-mini" type="text" inputmode="decimal" value="'+((+aj[x.p]||0)?fmtNum(+aj[x.p]):'')+'" placeholder="0,00" data-p="'+esc(x.p)+'" onchange="salvarAjuste(this.dataset.p,this.value)" title="Negativo para vale/desconto (ex.: -200), positivo para acréscimo"'+(F.lanc?' disabled':'')+'></td>';
     h+='<td class="r" style="font-weight:700">'+brl2(x.comF+a)+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
     if(ab){
       h+='<tr class="sv-det"><td colspan="9"><div class="sv-panel"><div class="tscroll" style="max-height:380px"><table class="tdet"><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">Regra</th><th class="r">Comissão</th></tr></thead><tbody>';
@@ -3300,7 +3324,7 @@ function lancarComissoes(){
   var r=comIntervalo(), k=chaveFech(r), C=calcComissoes(r[0], r[1]), aj=(FECH[k]||{}).aj||{};
   var d=val('lc-d'), conta=val('lc-c'), cg=val('lc-cg'); if(!d){ toast('Informe a data.','err'); return; }
   if(C.X.carregando){ toast('Espere carregar os serviços.','err'); return; }
-  var itens=C.L.map(function(x){ var v=Math.round((x.comF+(+aj[x.p]||0))*100)/100; return v>0.009 ? {i:novoId(), conta:conta, d:d, ds:'Comissão '+nomeProf(x.p)+' ('+dataBR(r[0])+' a '+dataBR(r[1])+')', v:-v, cg:cg} : null; }).filter(Boolean);
+  var itens=C.L.map(function(x){ var v=Math.round((x.comF+(+aj[x.p]||0)+(x.bm||0))*100)/100; return v>0.009 ? {i:novoId(), conta:conta, d:d, ds:'Comissão '+nomeProf(x.p)+' ('+dataBR(r[0])+' a '+dataBR(r[1])+')', v:-v, cg:cg} : null; }).filter(Boolean);
   if(!itens.length){ toast('Nada a lançar.','err'); return; }
   if(!confirm('Lançar '+itens.length+' pagamento(s) de comissão, total '+brl2(itens.reduce(function(a,x){ return a-x.v; },0))+', em '+contaPorId(conta).nome+' com data '+dataBRc(d)+'?')) return;
   var bt=document.getElementById('lc-ok'); if(bt){ bt.disabled=true; bt.textContent='Lançando…'; }
@@ -3325,7 +3349,7 @@ function excelCom(){
   var r=comIntervalo(), C=calcComissoes(r[0], r[1]), aj=(FECH[chaveFech(r)]||{}).aj||{};
   carregarSheetJS().then(function(){
     var A=[['Comissões Voox 1956 — '+dataBRc(r[0])+' a '+dataBRc(r[1])],[],['Profissional','Agenda','Serviços','Base (est.)','% mais comum (Zelo)','Comissão','Vales/ajustes','A pagar']];
-    C.L.forEach(function(x){ var a=+aj[x.p]||0, pd=(COMCFG.pct||{})[x.p]; A.push([nomeProf(x.p), x.p, x.q, Math.round(x.base*100)/100, pctTipico(x.p)||(pd!=null?pd+'% (reserva)':''), Math.round(x.comF*100)/100, a, Math.round((x.comF+a)*100)/100]); });
+    C.L.forEach(function(x){ var a=(+aj[x.p]||0)+(x.bm||0), pd=(COMCFG.pct||{})[x.p]; A.push([nomeProf(x.p), x.p, x.q, Math.round(x.base*100)/100, pctTipico(x.p)||(pd!=null?pd+'% (reserva)':''), Math.round(x.comF*100)/100, a, Math.round((x.comF+a)*100)/100]); });
     var B=[['Profissional','Data','Cliente','Serviço','Qtd','Valor (est.)','Regra','Comissão']];
     C.L.forEach(function(x){ x.it.slice().sort(function(a,b){ return a.d.localeCompare(b.d); }).forEach(function(i){ B.push([nomeProf(x.p), dataBRc(i.d), i.c, i.s, i.q, Math.round(i.v*100)/100, i.fonte?i.regra:'sem %', Math.round(i.comF*100)/100]); }); });
     var wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(A), ws2=XLSX.utils.aoa_to_sheet(B);
@@ -3806,6 +3830,13 @@ function renderMinha(){
   h+='<div class="card"><div class="klabel">Valor dos serviços (est.)</div><div class="kval">'+brl(T.v)+'</div><div class="khint">estimativa pelo preço de tabela</div></div>';
   h+='<div class="card"><div class="klabel">Comissão prevista (est.)</div><div class="kval" style="color:var(--green)">'+brl2(T.com)+'</div><div class="khint">'+(T.sem?n0(T.sem)+' serviço(s) sem % no cadastro · ':'')+'o valor oficial é o do fechamento</div></div>';
   h+='<div class="card"><div class="klabel">Sua nota (90 dias)</div><div class="kval">'+(media==null?'—':media.toFixed(1).replace('.',','))+'</div><div class="khint">'+n0(nts.length)+' avaliação(ões) das clientes</div></div></div>';
+  var MT2=D.meta;
+  if(MT2 && MT2.m===PROF.mes && MT2.meta){
+    var pc=MT2.real/MT2.meta, falta=Math.max(0,MT2.meta-MT2.real);
+    h+='<div class="card minha-meta"><div class="fbar" style="margin:0 0 8px;justify-content:space-between"><div><div class="klabel" style="margin:0">Sua meta de '+mesLabel(MT2.m)+'</div><div class="kval" style="margin-top:4px">'+brl(MT2.real)+' <small class="p-sem" style="font-size:13px">de '+brl(MT2.meta)+'</small></div></div>'+(MT2.pos?'<div class="mt-pos">'+MT2.pos+'º<small> de '+MT2.de+'</small></div>':'')+'</div>';
+    h+='<div class="mt-bar grande"><i style="width:'+Math.min(100,pc*100).toFixed(1)+'%;background:'+(pc>=1?'var(--green)':'var(--primary)')+'"></i></div>';
+    h+='<div class="khint" style="margin-top:6px">'+(pc>=1?'🎉 Meta batida!'+(MT2.bonus?' Bônus de '+brl(MT2.bonus)+' garantido.':''):pct(pc)+' da meta · faltam '+brl(falta)+(MT2.restam?' · uns '+brl(falta/MT2.restam)+' por dia útil':'')+(MT2.bonus?' · bônus de '+brl(MT2.bonus)+' ao bater':''))+(MT2.superMeta&&MT2.bonusSuper?' · super meta '+brl(MT2.superMeta)+' vale mais '+brl(MT2.bonusSuper):'')+'</div></div>';
+  }
   // agenda
   var ag=D.agenda||[], porDia={}; ag.forEach(function(a){ (porDia[a.d]=porDia[a.d]||[]).push(a); });
   h+='<div class="grid g2"><div><div class="sect">Sua agenda <small>próximos 7 dias</small></div><div class="card">';
@@ -3872,7 +3903,8 @@ function demoProfDoc(p){
   return {prof:p, atualizadoEm:h+'T12:20-03:00', meses:M,
     agenda:[{d:addDias(h,1),h:'09:00',c:'MARIA KRAMER',s:'DEPILAÇÃO VIRILHA'},{d:addDias(h,1),h:'10:30',c:'ANA KRUSE',s:'SOBRANCELHA'},{d:addDias(h,2),h:'14:00',c:'BEATRIZ ROSA',s:'DEPILAÇÃO BUÇO'}],
     notas:[{d:addDias(h,-3),nota:10,com:'Super cuidadosa, amei!',n:'Ana'},{d:addDias(h,-9),nota:9,com:'Rápida e sem dor',n:'Camila'}],
-    vagas:[{data:addDias(h,1), gaps:[{i:'13:30',f:'15:00',min:90}], cands:[{n:'LAVINIA LEITE',primeiro:'Lavinia',cel:'51999990009',s:'DEPILAÇÃO VIRILHA',dias:33}]}]};
+    vagas:[{data:addDias(h,1), gaps:[{i:'13:30',f:'15:00',min:90}], cands:[{n:'LAVINIA LEITE',primeiro:'Lavinia',cel:'51999990009',s:'DEPILAÇÃO VIRILHA',dias:33}]}],
+    meta:{m:m0, meta:1200, real:tot(it0).v, bonus:150, superMeta:1500, bonusSuper:100, pos:2, de:9, restam:18}};
 }
 
 
@@ -3936,6 +3968,84 @@ function renderFicha(){
   if(!V.length) h+='<div class="empty">Sem visitas registradas.</div>';
   h+='</div><div class="nota">Atendimentos pagos dos últimos 24 meses, vindos do Zelo pelo robô. Valores estimados pelo preço de tabela ajustado ao faturamento do mês.</div>';
   box.innerHTML=h;
+}
+
+
+// ================================================================ METAS DA EQUIPE
+// voox_config/metas_prof -> {m:{'AAAA-MM':{PROF:{meta, bonus, superMeta, bonusSuper}}}}
+var METASP = {m:{}}, MT = { mes:'' };
+function metaDe(p, m){ var x=((METASP.m||{})[m]||{})[p]; return x||null; }
+function diasUteis(de, ate){ var n=0; for(var d=de; d<=ate; d=addDias(d,1)) if(s2d(d).getDay()!==0) n++; return n; }
+function realizadoProfs(m){
+  // valor estimado dos serviços por profissional no mês (mesma base das Comissões e do painel dela)
+  servCarregar([m]);
+  var L=SERV.meses[m], por={};
+  if(L===undefined) return null;
+  (L||[]).forEach(function(o){ var x=por[o.p]||(por[o.p]={v:0,q:0}); x.v+=o.v; x.q+=o.q; });
+  return por;
+}
+function bonusMeta(p, m, real){
+  var x=metaDe(p,m); if(!x || !x.meta || real==null) return 0;
+  var b=0; if(real>=x.meta) b+=+x.bonus||0; if(x.superMeta && real>=x.superMeta) b+=+x.bonusSuper||0; return b;
+}
+function setMtMes(n){ MT.mes=addMes(MT.mes,n); renderMetas(); }
+function renderMetas(){
+  if(viewAtual!=='metas') return;
+  frescor();
+  if(!MT.mes) MT.mes=hojeISO().slice(0,7);
+  var m=MT.mes, el=document.getElementById('page-metas'), hoje=hojeISO(), R=realizadoProfs(m);
+  var h='<div class="fbar"><div class="seg"><button onclick="setMtMes(-1)">‹</button><span style="color:var(--text);font-weight:600;padding:5px 8px">'+mesLabel(m)+'</span><button onclick="setMtMes(1)">›</button></div><span style="flex:1"></span><button class="btn btn-sm btn-ghost" onclick="copiarMetas()">Copiar metas do mês anterior</button></div>';
+  if(R===null){ el.innerHTML=h+'<div class="card empty">Carregando os serviços do mês…</div>'; return; }
+  var ini=m+'-01', fim=fimMes(m), ate=hoje<fim?hoje:fim, passados=hoje<ini?0:diasUteis(ini, ate), totU=diasUteis(ini, fim), restam=Math.max(0, totU-(hoje<ini?0:diasUteis(ini, hoje)));
+  var profs={}; Object.keys(R).forEach(function(p){ profs[p]=1; }); Object.keys((METASP.m||{})[m]||{}).forEach(function(p){ profs[p]=1; });
+  Object.keys(COMZ.profs||{}).forEach(function(p){ if(!(COMZ.profs[p]||{}).naoRecebe) profs[p]=1; });
+  delete profs['—']; delete profs['CASA'];
+  var L=Object.keys(profs).map(function(p){
+    var r=(R[p]||{}).v||0, x=metaDe(p,m)||{}, pr=passados?r/passados*totU:0;
+    return {p:p, r:r, q:(R[p]||{}).q||0, meta:+x.meta||0, bonus:+x.bonus||0, sm:+x.superMeta||0, bs:+x.bonusSuper||0, pct:x.meta?r/x.meta:null, proj:pr, b:bonusMeta(p,m,r)};
+  }).sort(function(a,b){ if((a.pct==null)!==(b.pct==null)) return a.pct==null?1:-1; return (b.pct||0)-(a.pct||0) || b.r-a.r; });
+  var comMeta=L.filter(function(x){ return x.meta; }), bateram=comMeta.filter(function(x){ return x.r>=x.meta; }).length;
+  var tMeta=comMeta.reduce(function(a,x){ return a+x.meta; },0), tReal=comMeta.reduce(function(a,x){ return a+x.r; },0), tBonus=L.reduce(function(a,x){ return a+x.b; },0);
+  h+='<div class="grid kpis k4">';
+  h+='<div class="card"><div class="klabel">Equipe · realizado</div><div class="kval">'+brl(tReal)+'</div><div class="khint">de '+brl(tMeta)+' somando as metas · '+(tMeta?pct(tReal/tMeta):'—')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Bateram a meta</div><div class="kval" style="color:var(--green)">'+n0(bateram)+'</div><div class="khint">de '+n0(comMeta.length)+' com meta definida</div></div>';
+  h+='<div class="card"><div class="klabel">Dias úteis</div><div class="kval">'+n0(passados)+' / '+n0(totU)+'</div><div class="khint">'+(restam?restam+' dia(s) pela frente':'mês encerrado')+' · domingos fora</div></div>';
+  h+='<div class="card"><div class="klabel">Bônus a pagar</div><div class="kval">'+brl(tBonus)+'</div><div class="khint">'+(m<hoje.slice(0,7)?'mês encerrado — entra nas Comissões':'se o mês fechasse hoje')+'</div></div></div>';
+  // pódio
+  var top=L.filter(function(x){ return x.pct!=null; }).slice(0,3);
+  if(top.length) h+='<div class="podio">'+top.map(function(x,i){ return '<div class="card pod pod'+(i+1)+'"><div class="pod-n">'+['🥇','🥈','🥉'][i]+'</div><div class="nm">'+esc(nomeProf(x.p))+'</div><div class="kval">'+pct(x.pct)+'</div><div class="khint">'+brl(x.r)+' de '+brl(x.meta)+'</div></div>'; }).join('')+'</div>';
+  h+='<div class="tw" style="margin-top:12px"><div class="tscroll"><table class="tmeta"><thead><tr><th style="width:36px">#</th><th>Profissional</th><th class="r" style="width:120px">Meta (R$)</th><th class="r">Realizado</th><th style="width:22%">Progresso</th><th class="r">Projeção</th><th class="r">Falta por dia</th><th class="r" style="width:110px">Bônus (R$)</th><th class="r" style="width:120px">Super meta</th><th class="r" style="width:110px">Bônus extra</th></tr></thead><tbody>';
+  L.forEach(function(x,i){
+    var cor=x.pct==null?'var(--muted)':x.pct>=1?'var(--green)':x.proj>=x.meta?'var(--s2)':'var(--amber)', falta=x.meta>x.r&&restam?(x.meta-x.r)/restam:0;
+    function inp(k,v){ return '<input class="inp-mini" type="text" inputmode="decimal" data-p="'+esc(x.p)+'" data-k="'+k+'" value="'+(v?fmtNum(v).replace(/,00$/,''):'')+'" placeholder="—" onchange="salvarMetaProf(this)">'; }
+    h+='<tr><td class="r" style="color:var(--muted)">'+(x.pct!=null?(i+1)+'º':'')+'</td><td><b>'+esc(nomeProf(x.p))+'</b> <small class="p-sem">'+esc(x.p)+'</small>'+(x.b?' <span class="pill p-ok">bônus '+brl(x.b)+'</span>':'')+'</td>';
+    h+='<td class="r">'+inp('meta',x.meta)+'</td><td class="r" style="font-weight:700">'+brl(x.r)+'<div class="khint">'+n0(x.q)+' serviços</div></td>';
+    h+='<td>'+(x.meta?'<div class="mt-bar"><i style="width:'+Math.min(100,x.pct*100).toFixed(1)+'%;background:'+cor+'"></i>'+(x.sm?'<b style="left:'+Math.min(100,x.meta/x.sm*100).toFixed(1)+'%"></b>':'')+'</div><div class="khint">'+pct(x.pct)+(x.sm?' · super meta '+pct(x.r/x.sm):'')+'</div>':'<span class="p-sem">defina a meta</span>')+'</td>';
+    h+='<td class="r" style="color:'+cor+'">'+(passados&&m>=hoje.slice(0,7)?brl(x.proj):'—')+'</td><td class="r">'+(falta?brl(falta):x.meta&&x.r>=x.meta?'<span class="up">batida</span>':'—')+'</td>';
+    h+='<td class="r">'+inp('bonus',x.bonus)+'</td><td class="r">'+inp('superMeta',x.sm)+'</td><td class="r">'+inp('bonusSuper',x.bs)+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+  h+='<div class="nota"><b>Realizado</b> = valor estimado dos serviços que a profissional fez no mês (a mesma base das Comissões). <b>Projeção</b> = ritmo dos dias úteis até agora estendido ao mês (domingos não contam). <b>Bônus</b>: valor pago ao bater a meta; <b>bônus extra</b>: valor a mais ao bater a super meta. No fechamento da 2ª quinzena ou do mês, o bônus entra sozinho na aba Comissões. Cada profissional vê a própria meta, o progresso e a posição no ranking no painel dela.</div>';
+  el.innerHTML=h;
+}
+function gravarMetasP(m, obj, msg){
+  METASP.m=METASP.m||{}; METASP.m[m]=obj;
+  if(DEMO){ renderMetas(); if(msg) toast(msg); return; }
+  var u={m:{}}; u.m[m]=obj; u.atualizadoEm=new Date().toISOString(); u.por=email;
+  db.collection('voox_config').doc('metas_prof').set(u, {merge:true}).then(function(){ if(msg) toast(msg); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
+function salvarMetaProf(inp){
+  var p=inp.dataset.p, k=inp.dataset.k, v=String(inp.value||'').trim()===''?0:parseValor(inp.value);
+  if(isNaN(v)||v<0){ toast('Valor inválido.','err'); return; }
+  var m=MT.mes, obj=JSON.parse(JSON.stringify(((METASP.m||{})[m])||{})), x=obj[p]||{};
+  x[k]=Math.round(v*100)/100; obj[p]=x;
+  gravarMetasP(m, obj, 'Meta de '+nomeProf(p)+' salva.');
+}
+function copiarMetas(){
+  var m=MT.mes, ant=((METASP.m||{})[addMes(m,-1)])||{};
+  if(!Object.keys(ant).length){ toast('O mês anterior não tem metas.','err'); return; }
+  if(Object.keys(((METASP.m||{})[m])||{}).length && !confirm('Substituir as metas de '+mesLabel(m)+' pelas de '+mesLabel(addMes(m,-1))+'?')) return;
+  gravarMetasP(m, JSON.parse(JSON.stringify(ant)), 'Metas copiadas de '+mesLabel(addMes(m,-1))+'.');
 }
 
 // ---------------------------------------------------------------- reativação
@@ -4054,6 +4164,7 @@ if(DEMO){
   nivel='admin'; logado=true; nome='Demo'; email='demo';
   dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
+  (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
   document.getElementById('msg-txt').value=mensagem;
   aplicarUI(); renderReativ(); renderAniv(); renderMsgs();
