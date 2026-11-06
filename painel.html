@@ -68,6 +68,18 @@ html[data-theme="light"] .logomini{background-image:var(--logoV-preto)}
 .auth-card p{font-size:12.5px;color:var(--muted);margin:4px 0 20px}
 .gbtn{width:100%;padding:12px;background:var(--primary-strong);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px}
 .gbtn svg{width:18px;height:18px;background:#fff;border-radius:3px;padding:1px}
+.gbtn:disabled{opacity:.6}
+.auth-form{display:flex;flex-direction:column;gap:9px;text-align:left}
+.auth-form input[type=email],.auth-form input[type=password],.auth-form input[type=text]{width:100%;height:42px;font-size:14px}
+.auth-senha{position:relative}
+.auth-senha input{padding-right:40px}
+.auth-olho{position:absolute;right:6px;top:7px;width:30px;height:28px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px}
+.auth-lembrar{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);cursor:pointer;margin:2px 0}
+.auth-lembrar input{width:auto;height:auto;margin:0}
+.auth-erro{font-size:12.5px;color:var(--red);min-height:0}
+.auth-erro:empty{display:none}
+.auth-link{background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;margin-top:2px}
+.auth-link:hover{color:var(--text)}
 .auth-card .luabtn{margin:16px auto 0}
 
 /* casca + menu lateral (igual Logística) */
@@ -464,6 +476,50 @@ html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
 html[data-theme="dark"] .fi-painel{background:#151517}
 html[data-theme="light"] .fi-painel{background:#f7f1e9}
 body.sem-rolar{overflow:hidden}
+#cfged{display:none}
+#cfged.on{display:block}
+.cf-busca{flex:1;min-width:200px;max-width:320px;height:36px}
+.cf-lista{display:flex;flex-direction:column;gap:8px;max-width:920px}
+.cf-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:11px 14px;cursor:pointer;color:var(--text);font-family:inherit;box-shadow:var(--shadow)}
+.cf-row:hover{border-color:var(--primary)}
+.cf-row.novo{border-left:4px solid var(--amber)}
+.cf-row.bloq{opacity:.6}
+.cf-av{width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--primary-strong);color:#fff}
+.cf-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.cf-nome{font-size:14px;font-weight:600}
+.cf-email{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cf-res{font-size:12px;color:var(--muted);margin-top:3px}
+.cf-tags{flex-shrink:0}
+.p-amb{color:var(--amber);border-color:var(--amber)}
+.cf-painel{display:flex;flex-direction:column}
+.cf-nomeinp{width:100%;font-size:18px;font-weight:700;background:transparent;border:1px solid transparent;border-radius:8px;padding:3px 6px;margin:2px 0 0 -6px;color:var(--text)}
+.cf-nomeinp:hover{border-color:var(--border)}
+html[data-theme] .cf-nomeinp{background:transparent;box-shadow:none}
+html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--primary)}
+.cf-eminp{width:100%;margin-top:6px}
+.cf-sec{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:0 14px;margin-top:14px}
+.sect+.cf-sec{margin-top:0}
+.cf-lin{display:flex;align-items:center;gap:12px;padding:11px 0}
+.cf-txt{flex:1;min-width:0;font-size:13.5px;font-weight:600}
+.cf-txt small{display:block;font-size:11.5px;color:var(--muted);font-weight:400;margin-top:2px;line-height:1.45}
+.sw{width:42px;height:24px;flex:0 0 42px;border-radius:12px;background:var(--border);border:none;position:relative;cursor:pointer;padding:0}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw.on{background:var(--green)}
+.sw.on::after{left:21px}
+.sw:disabled{opacity:.45;cursor:not-allowed}
+.cf-niveis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cf-niv{text-align:left;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;color:var(--text);cursor:pointer;font-family:inherit}
+.cf-niv b{display:block;font-size:13.5px}
+.cf-niv small{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.cf-niv.on{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);background:rgba(188,130,64,.10)}
+.cf-niv:disabled{cursor:not-allowed;opacity:.6}
+.cf-grp{margin:0 0 10px}
+.cf-abas{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.cf-aba{font-size:12.5px;padding:6px 11px;border-radius:20px;border:1px dashed var(--border);background:none;color:var(--muted);cursor:pointer;font-family:inherit}
+.cf-aba.on{border:1px solid var(--primary);color:var(--text);background:rgba(188,130,64,.10)}
+.cf-pe{position:sticky;bottom:-30px;margin:18px -18px -30px;padding:12px 18px 16px;display:flex;gap:8px;align-items:center;background:inherit;border-top:1px solid var(--border)}
+.cf-st{flex:1;font-size:12px;color:var(--muted)}
+@media (max-width:560px){.cf-niveis{grid-template-columns:1fr}.cf-row{flex-wrap:wrap}.cf-tags{margin-left:48px}}
 .fi-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .fi-nome{font-size:19px;font-weight:700;margin-top:4px}
 .fi-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 12px}
@@ -503,10 +559,14 @@ body.sem-rolar{overflow:hidden}
     <div class="logoimg" role="img" aria-label="Voox 1956"></div>
     <h1>Painel da casa</h1>
     <p id="authMsg">Indicadores e clientes para chamar de volta</p>
-    <button class="gbtn" onclick="login()">
-      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
-      Entrar com Google
-    </button>
+    <form class="auth-form" onsubmit="login();return false" autocomplete="on">
+      <input id="authEmail" type="email" placeholder="E-mail" autocomplete="username" required>
+      <div class="auth-senha"><input id="authSenha" type="password" placeholder="Senha" autocomplete="current-password" required><button type="button" class="auth-olho" onclick="var i=document.getElementById('authSenha');i.type=i.type==='password'?'text':'password'" title="Mostrar senha">◉</button></div>
+      <label class="auth-lembrar"><input type="checkbox" id="authLembrar" checked> Manter conectado neste aparelho</label>
+      <div class="auth-erro" id="authErro"></div>
+      <button class="gbtn" id="authBtn" type="submit">Entrar</button>
+      <button type="button" class="auth-link" onclick="esqueciSenha()">Esqueci a senha</button>
+    </form>
     <button class="luabtn" onclick="toggleTema()" title="Alternar tema" data-lua>☾</button>
   </div>
 </div>
@@ -530,7 +590,6 @@ body.sem-rolar{overflow:hidden}
     <button class="navbtn gestao-only" data-p="serv" onclick="nav('serv')"><span class="side-ico">✂</span><span class="lbl">Serviços feitos</span></button>
     <button class="navbtn gestao-only" data-p="sat" onclick="nav('sat')"><span class="side-ico">☆</span><span class="lbl">Satisfação</span></button>
     <button class="navbtn gestao-only" data-p="vendas" onclick="nav('vendas')"><span class="side-ico">▤</span><span class="lbl">Mês a mês</span></button>
-    <button class="navbtn gestao-only" data-p="acessos" onclick="nav('acessos')"><span class="side-ico">⚿</span><span class="lbl">Acessos</span></button>
     <div class="side-sec lbl gestao-only">Financeiro</div>
     <button class="navbtn gestao-only" data-p="fin" onclick="nav('fin')"><span class="side-ico">$</span><span class="lbl">Dashboard</span></button>
     <button class="navbtn gestao-only" data-p="lanc" onclick="nav('lanc')"><span class="side-ico">±</span><span class="lbl">Lançamentos</span></button>
@@ -548,12 +607,15 @@ body.sem-rolar{overflow:hidden}
     <button class="navbtn" data-p="reativ" onclick="nav('reativ')"><span class="side-ico">↺</span><span class="lbl">Reativação</span><span class="cnt" id="cntReativ" style="display:none">0</span></button>
     <button class="navbtn" data-p="oport" onclick="nav('oport')"><span class="side-ico">✦</span><span class="lbl">Oportunidades</span></button>
     <button class="navbtn" data-p="aniv" onclick="nav('aniv')"><span class="side-ico">✿</span><span class="lbl">Aniversariantes</span><span class="cnt" id="cntAniv" style="display:none">0</span></button>
+    <div class="side-sec lbl admin-only">Admin</div>
+    <button class="navbtn admin-only" data-p="config" onclick="nav('config')"><span class="side-ico">⚙</span><span class="lbl">Configurações</span><span class="cnt" id="cntCfg" style="display:none">0</span></button>
     <div class="side-foot">
       <div class="uline">
         <div class="uav" id="uavatar">?</div>
         <div class="lbl" style="min-width:0"><div class="uname" id="uname">—</div><div class="urole" id="urole">—</div></div>
       </div>
       <div style="display:flex;gap:6px;padding:0 2px">
+        <button class="btn btn-sm btn-ghost" onclick="trocarSenha()" style="flex:1" title="Recebe um e-mail para criar uma senha nova">Trocar senha</button>
         <button class="btn btn-sm btn-ghost" onclick="logout()" style="flex:1">Sair</button>
       </div>
     </div>
@@ -579,6 +641,7 @@ body.sem-rolar{overflow:hidden}
     <div class="page" id="page-metas"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-semana"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-acessos"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-config"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-falt"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-minha"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-pagar"><div class="empty">Carregando…</div></div>
@@ -701,18 +764,41 @@ function toast(msg, tipo, acao){
 }
 
 // ---------------------------------------------------------------- auth
+function authErroTxt(e){
+  var c=(e&&e.code)||'';
+  if(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-login-credentials') return 'E-mail ou senha incorretos.';
+  if(c==='auth/invalid-email') return 'E-mail inválido.';
+  if(c==='auth/too-many-requests') return 'Muitas tentativas. Espere uns minutos ou use "Esqueci a senha".';
+  if(c==='auth/user-disabled') return 'Este usuário está desativado.';
+  if(c==='auth/network-request-failed') return 'Sem internet. Tente de novo.';
+  return 'Não foi possível entrar ('+(c||(e&&e.message)||'erro')+').';
+}
 function login(){
   if(!auth){ toast('Ainda carregando — tenta de novo.','err'); return; }
-  var p=new firebase.auth.GoogleAuthProvider();
-  p.setCustomParameters({ prompt: 'select_account' });
-  auth.signInWithPopup(p).catch(function(e){
-    var c=e.code||'';
-    if(c==='auth/popup-blocked' || c==='auth/cancelled-popup-request' || c==='auth/popup-closed-by-user' || c==='auth/operation-not-supported-in-this-environment'){
-      auth.signInWithRedirect(p).catch(function(e2){ toast('Login: '+(e2.code||e2.message),'err'); });
-    } else {
-      toast('Login: '+(c||e.message),'err');
-    }
-  });
+  var em=(document.getElementById('authEmail').value||'').trim().toLowerCase(), pw=document.getElementById('authSenha').value||'';
+  var er=document.getElementById('authErro'), bt=document.getElementById('authBtn');
+  er.textContent='';
+  if(!em||!pw){ er.textContent='Preencha e-mail e senha.'; return; }
+  var P=firebase.auth.Auth.Persistence, lembrar=document.getElementById('authLembrar').checked;
+  bt.disabled=true; bt.textContent='Entrando…';
+  auth.setPersistence(lembrar?P.LOCAL:P.SESSION).then(function(){ return auth.signInWithEmailAndPassword(em, pw); })
+    .then(function(){ document.getElementById('authSenha').value=''; })
+    .catch(function(e){ er.textContent=authErroTxt(e); })
+    .then(function(){ bt.disabled=false; bt.textContent='Entrar'; });
+}
+function esqueciSenha(){
+  var em=(document.getElementById('authEmail').value||'').trim().toLowerCase(), er=document.getElementById('authErro');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ er.textContent='Digite seu e-mail acima e clique de novo em "Esqueci a senha".'; return; }
+  if(!auth) return;
+  auth.languageCode='pt-BR';
+  auth.sendPasswordResetEmail(em).then(function(){ er.textContent=''; toast('Se o e-mail estiver cadastrado, chega um link para criar uma senha nova. Confira o spam.'); })
+    .catch(function(e){ er.textContent=e.code==='auth/invalid-email'?'E-mail inválido.':authErroTxt(e); });
+}
+function trocarSenha(){
+  if(DEMO){ toast('Na versão real chega um e-mail com o link para trocar a senha.'); return; }
+  if(!email || !auth) return;
+  auth.languageCode='pt-BR';
+  auth.sendPasswordResetEmail(email).then(function(){ toast('Enviamos um link para '+email+' — abra e crie a senha nova.'); }).catch(function(e){ toast('Não enviou: '+(e.code||e.message),'err'); });
 }
 function logout(){ if(DEMO){ location.href=location.pathname; return; } auth.signOut(); }
 
@@ -748,36 +834,36 @@ function assinar(){
       renderClientes();
     }, function(err){ document.getElementById('page-cli').innerHTML='<div class="card empty">Sem permissão para ler os clientes ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
     FIN.meses={}; FIN.carregando={}; SERV.meses={}; SERV.carregando={}; SERV.semDado={};
-    unsubs.push(db.collection('voox_fin_cfg').doc('geral').onSnapshot(function(snap){
+    if(temFin()) unsubs.push(db.collection('voox_fin_cfg').doc('geral').onSnapshot(function(snap){
       FIN.cfg = snap.exists ? snap.data() : null;
       if(viewAtual==='fin') renderFin();
       if(viewAtual==='cgs') renderCgs();
       if(viewAtual==='lanc') atualizarLancCfg();
     }, function(err){ document.getElementById('page-fin').innerHTML='<div class="card empty">Sem permissão para ler o financeiro ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; toast('Financeiro: '+(err.code||err.message),'err'); }));
-    unsubs.push(db.collection('voox_fin_resumo').doc('geral').onSnapshot(function(snap){
+    if(temFin()) unsubs.push(db.collection('voox_fin_resumo').doc('geral').onSnapshot(function(snap){
       FIN.resumo = snap.exists ? ((snap.data()||{}).m||{}) : {};
       if(viewAtual==='fin') renderFin();
       if(viewAtual==='cgs') renderCgs();
       if(viewAtual==='lanc') renderExtrato();
       if(viewAtual==='pagar') renderPagar();
     }, function(err){ toast('Financeiro (totais): '+(err.code||err.message),'err'); }));
-    unsubs.push(db.collection('voox_fin_cfg').doc('comissoes').onSnapshot(function(snap){
+    if(temFin()) unsubs.push(db.collection('voox_fin_cfg').doc('comissoes').onSnapshot(function(snap){
       COMCFG=Object.assign({pct:{}, serv:{}, conta:'bradesco', cg:'folha-salarial-profissionais', zelo:false}, snap.exists?snap.data():{});
       renderCom(); renderMarg();
     }, function(err){ toast('Comissões: '+(err.code||err.message),'err'); }));
-    unsubs.push(db.collection('voox_fin_cfg').doc('comissoes_zelo').onSnapshot(function(snap){
+    if(temFin()) unsubs.push(db.collection('voox_fin_cfg').doc('comissoes_zelo').onSnapshot(function(snap){
       COMZ=snap.exists?Object.assign({profs:{}, atualizadoEm:''}, snap.data()):{profs:{}, atualizadoEm:''}; renderCom(); renderMarg();
     }, function(err){ toast('Comissões do Zelo: '+(err.code||err.message),'err'); }));
     unsubs.push(db.collection('voox_config').doc('metas_prof').onSnapshot(function(snap){
       METASP=snap.exists?Object.assign({m:{}}, snap.data()):{m:{}}; renderMetas(); renderCom();
     }, function(err){ toast('Metas da equipe: '+(err.code||err.message),'err'); }));
-    unsubs.push(db.collection('voox_fin_cfg').doc('custos').onSnapshot(function(snap){
+    if(temFin()) unsubs.push(db.collection('voox_fin_cfg').doc('custos').onSnapshot(function(snap){
       CUSTOS=snap.exists?((snap.data()||{}).c||{}):{}; renderMarg();
     }, function(err){ toast('Custos: '+(err.code||err.message),'err'); }));
-    unsubs.push(db.collection('voox_fin_comissoes').limit(120).onSnapshot(function(snap){
+    if(temFin()) unsubs.push(db.collection('voox_fin_comissoes').limit(120).onSnapshot(function(snap){
       FECH={}; snap.forEach(function(d){ FECH[d.id]=d.data(); }); renderCom();
     }, function(err){ toast('Fechamentos: '+(err.code||err.message),'err'); }));
-    unsubs.push(db.collection('voox_fin_pagar').limit(1500).onSnapshot(function(snap){
+    if(temFin()) unsubs.push(db.collection('voox_fin_pagar').limit(1500).onSnapshot(function(snap){
       PAGAR={}; snap.forEach(function(d){ PAGAR[d.id]=d.data(); }); renderPagar();
     }, function(err){ document.getElementById('page-pagar').innerHTML='<div class="card empty">Sem permissão para ler as contas a pagar ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
     unsubs.push(db.collection('voox_notas').where('data','>=',addDias(hojeISO(),-400)).limit(5000).onSnapshot(function(snap){
@@ -791,8 +877,12 @@ function assinar(){
     setFalt(snap.exists?snap.data():null); renderFalt(); renderConfirm();
   }, function(err){ document.getElementById('page-falt').innerHTML='<div class="card empty">Sem permissão para ler as faltosas ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
   if(podePainel()) unsubs.push(db.collection('voox_prof_acesso').limit(200).onSnapshot(function(snap){
-    ACESSOS={}; snap.forEach(function(d){ ACESSOS[d.id]=d.data(); }); renderAcessos();
+    ACESSOS={}; snap.forEach(function(d){ ACESSOS[d.id]=d.data(); }); CFG.acessosOk=true; renderAcessos(); migrarLegado();
   }, function(err){ toast('Acessos: '+(err.code||err.message),'err'); }));
+  if(nivel==='admin') unsubs.push(db.collection('voox_usuarios').limit(300).onSnapshot(function(snap){
+    CFG.users={}; snap.forEach(function(d){ var u=d.data(); u.email=d.id; CFG.users[d.id]=u; }); CFG.ok=true;
+    renderCfg(); migrarLegado();
+  }, function(err){ var el=document.getElementById('page-config'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler os acessos ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
   unsubs.push(db.collection('voox_vagas').where('data','>=',hojeISO()).limit(6).onSnapshot(function(snap){
     VAGAS={}; snap.forEach(function(d){ VAGAS[d.id]=d.data(); }); renderVagas();
   }, function(err){ document.getElementById('page-vagas').innerHTML='<div class="card empty">Sem permissão para ler os horários vagos ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
@@ -920,6 +1010,7 @@ var TITULOS = {
   metas:  ['Metas da equipe', 'Meta, progresso, ranking e bônus de cada profissional'],
   semana: ['Resumo da semana', 'A semana em uma página — para olhar toda segunda'],
   acessos:['Acesso das profissionais', 'Quem pode ver o próprio painel'],
+  config: ['Configurações', 'Quem entra no painel e o que cada pessoa vê'],
   falt:   ['Faltosas', 'Clientes que costumam faltar — peça sinal ou confirme antes'],
   minha:  ['Meu painel', 'Sua agenda, seus serviços e o que as clientes disseram'],
   pagar:  ['Contas a pagar', 'Vencimentos e saldo projetado das contas'],
@@ -949,8 +1040,18 @@ function aplicarUI(){
     Array.prototype.forEach.call(document.querySelectorAll('.gestao-only'), function(el){ el.style.display = podePainel() ? '' : 'none'; });
     var ehProf=nivel==='prof';
     Array.prototype.forEach.call(document.querySelectorAll('#sidebar .navbtn, #sidebar .side-sec'), function(el){ if(ehProf) el.style.display = el.classList.contains('prof-only') ? '' : 'none'; else if(el.classList.contains('prof-only')) el.style.display='none'; });
+    if(!ehProf){
+      var sec=null, vis=0;
+      Array.prototype.forEach.call(document.querySelectorAll('#sidebar .navbtn, #sidebar .side-sec'), function(el){
+        if(el.classList.contains('side-sec')){ if(sec) sec.style.display=vis?'':'none'; sec=el; vis=0; return; }
+        if(el.classList.contains('prof-only')) return;
+        var ok=podeVer(el.getAttribute('data-p')); el.style.display=ok?'':'none'; if(ok) vis++;
+      });
+      if(sec) sec.style.display=vis?'':'none';
+    }
+    contarCfg();
     var hash=(location.hash||'').replace('#','');
-    nav(ehProf ? 'minha' : TITULOS[hash] ? hash : (viewAtual || (podePainel() ? 'painel' : 'reativ')));
+    nav(ehProf ? 'minha' : TITULOS[hash] ? hash : (viewAtual || primeiraAba()));
   } else {
     ov.style.display='flex'; app.style.display='none';
   }
@@ -960,7 +1061,7 @@ function nav(v){
   if(nivel==='prof') v='minha';
   else if(v==='minha' && !PROF.preview) v='painel';
   if(v!=='minha') PROF.preview=false;
-  if(SO_GESTAO[v] && !podePainel()) v='reativ';
+  if(!podeVer(v)) v=primeiraAba();
   viewAtual=v;
   Array.prototype.forEach.call(document.querySelectorAll('.page'), function(p){ p.classList.toggle('on', p.id==='page-'+v); });
   Array.prototype.forEach.call(document.querySelectorAll('.navbtn[data-p]'), function(b){ b.classList.toggle('on', b.getAttribute('data-p')===v); });
@@ -986,6 +1087,7 @@ function nav(v){
   if(v==='semana') renderSemana();
   if(v==='metas') renderMetas();
   if(v==='acessos') renderAcessos();
+  if(v==='config') renderCfg();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
@@ -3817,7 +3919,7 @@ function renderMinha(){
   if(viewAtual!=='minha') return;
   var el=document.getElementById('page-minha'), D=PROF.doc;
   document.getElementById('freshTxt').textContent=D&&D.atualizadoEm?'Atualizado '+dataBR(D.atualizadoEm)+' às '+D.atualizadoEm.slice(11,16):'—'; document.getElementById('fresh').classList.remove('velho');
-  var topo = PROF.preview ? '<div class="alert a-info">◇ Você está vendo o painel como '+esc(nomeProf(D&&D.prof||''))+' vê. <button class="btn btn-sm btn-ghost" onclick="PROF.preview=false;nav(\'acessos\')">Voltar</button></div>' : '';
+  var topo = PROF.preview ? '<div class="alert a-info">◇ Você está vendo o painel como '+esc(nomeProf(D&&D.prof||''))+' vê. <button class="btn btn-sm btn-ghost" onclick="PROF.preview=false;nav(\'config\')">Voltar</button></div>' : '';
   if(!D){ el.innerHTML=topo+'<div class="card empty">Carregando…</div>'; return; }
   if(D.vazio){ el.innerHTML=topo+'<div class="card empty">Seu painel ainda está sendo montado — ele é atualizado às 6h, 12h e 18h.</div>'; return; }
   var ms=Object.keys(D.meses||{}).sort().reverse(); if(!PROF.mes || ms.indexOf(PROF.mes)<0) PROF.mes=ms[0];
@@ -4155,6 +4257,350 @@ function dadosDemo(){
   });
 }
 
+
+// ================================================================ CONFIGURAÇÕES (só admin): quem entra e o que vê
+// voox_usuarios/{email} -> {nome, email, ativo, nivel:'admin'|'gerente'|'equipe'|'prof', fin, ocultas:[abas], prof, slug,
+//                           pedidoEm, criadoEm, criadoPor, alteradoPor, alteradoEm}
+// Quem tenta entrar sem cadastro cria o próprio pedido (ativo:false, sem nível) e aparece em "Esperando liberação".
+// Profissional: o app mantém voox_prof_acesso/{email} em dia (o robô e a regra do painel dela leem de lá).
+var FIXOS = ['joaorjt@gmail.com','jonathanthome123@gmail.com'];   // admins fixos na regra: ninguém fica trancado fora
+var USR = { fin:true, ocultas:[], doc:null };
+var CFG = { users:{}, ok:false, filtro:'todos', busca:'', ed:null, orig:null, draft:null, salvando:false, migrou:false, acessosOk:false, novo:false };
+var NIVEIS = [
+  ['admin','Administração','Tudo, inclusive esta tela de configurações'],
+  ['gerente','Gerência','Gestão e clientes; o financeiro só se você ligar'],
+  ['equipe','Recepção','Só as abas de clientes: confirmações, reativação…'],
+  ['prof','Profissional','Só o painel dela: agenda, serviços, meta e notas']
+];
+var CFG_ABAS = [
+  {g:'Gestão', gestao:true, abas:[['painel','Painel'],['semana','Resumo da semana'],['prof','Profissionais'],['metas','Metas da equipe'],['agenda','Agenda'],['serv','Serviços feitos'],['sat','Satisfação'],['vendas','Mês a mês']]},
+  {g:'Financeiro', gestao:true, fin:true, abas:[['fin','Dashboard'],['lanc','Lançamentos'],['pagar','Contas a pagar'],['com','Comissões'],['marg','Margem por serviço'],['conc','Conferência Zelo'],['cgs','Contas gerenciais']]},
+  {g:'Clientes', abas:[['cli','Clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['oport','Oportunidades'],['aniv','Aniversariantes']]}
+];
+var FIN_ABAS = {}; CFG_ABAS[1].abas.forEach(function(a){ FIN_ABAS[a[0]]=1; });
+function nivelNome(n){ var x=NIVEIS.filter(function(v){ return v[0]===n; })[0]; return x?x[1]:'—'; }
+function temFin(){ return nivel==='admin' || (nivel==='gerente' && USR.fin!==false); }
+function podeVer(v){
+  if(v==='config') return nivel==='admin';
+  if(v==='minha') return nivel==='prof' || PROF.preview;
+  if(nivel==='admin') return true;
+  if(nivel==='prof') return false;
+  if(SO_GESTAO[v] && !podePainel()) return false;
+  if(FIN_ABAS[v] && !temFin()) return false;
+  return (USR.ocultas||[]).indexOf(v)<0;
+}
+function primeiraAba(){
+  var b=Array.prototype.filter.call(document.querySelectorAll('#sidebar .navbtn[data-p]'), function(x){ return podeVer(x.getAttribute('data-p')); })[0];
+  return b ? b.getAttribute('data-p') : 'reativ';
+}
+// abas que a pessoa pode ter (pelo nível), para os botões de mostrar/esconder
+function abasDoNivel(nv, fin){
+  var L=[];
+  CFG_ABAS.forEach(function(g){
+    if(nv==='equipe' && g.gestao) return;
+    if(g.fin && !(nv==='gerente' && fin!==false)) return;
+    var a=g.abas.filter(function(x){ return !(x[2] && nv==='equipe'); });
+    if(a.length) L.push({g:g.g, abas:a});
+  });
+  return L;
+}
+
+// ---- login: cadastro novo primeiro; sem cadastro, a lista antiga (USUARIOS / voox_prof_acesso) continua valendo
+function entrarComo(em, u){
+  nivel=u.nivel; nome=u.nome||nomeProf(u.prof||'')||em; email=em; logado=true;
+  USR={fin:u.fin!==false, ocultas:Array.isArray(u.ocultas)?u.ocultas:[], doc:u._doc?u:null};
+  if(nivel==='prof'){ pararListeners(); assinarProf(u.slug||slugProf(u.prof)); }
+  else assinar();
+  if(u._doc) vigiarProprio(em, u);
+  aplicarUI();
+}
+function vigiarProprio(em, u0){
+  var nv0=u0.nivel, prim=true;
+  unsubs.push(db.collection('voox_usuarios').doc(em).onSnapshot(function(s){
+    if(prim){ prim=false; return; }
+    var u=s.exists?s.data():null;
+    if(!u || u.ativo!==true){ negarAcesso(em, u?'bloqueada':'removida'); return; }
+    if(u.nivel!==nv0 || (u.nivel==='prof' && (u.slug||'')!==(u0.slug||''))){ location.reload(); return; }
+    USR.fin=u.fin!==false; USR.ocultas=Array.isArray(u.ocultas)?u.ocultas:[]; nome=u.nome||nome;
+    if(nivel==='gerente' && !USR.fin){ location.reload(); return; }
+    aplicarUI();
+  }, function(){}));
+}
+function negarAcesso(em, tipo){
+  var m = tipo==='pedido' ? 'Pedido de acesso enviado para <b>'+esc(em)+'</b>. Assim que liberarem, é só entrar de novo.'
+        : tipo==='pendente' ? 'O acesso de <b>'+esc(em)+'</b> ainda está esperando liberação.'
+        : tipo==='bloqueada' ? 'A conta <b>'+esc(em)+'</b> está bloqueada neste painel.'
+        : 'O usuário <b>'+esc(em)+'</b> existe, mas ainda não está vinculado a este painel. Peça à administração para cadastrar em Configurações.';
+  pararListeners();
+  document.getElementById('authMsg').innerHTML=m;
+  nivel='publico'; logado=false; aplicarUI();
+  if(auth) auth.signOut();
+}
+function loginGoogle_(user){
+  var em=(user.email||'').toLowerCase();
+  function legado(criarPedido){
+    if(USUARIOS[em]){ entrarComo(em, {nivel:USUARIOS[em].nivel, nome:USUARIOS[em].nome}); return; }
+    db.collection('voox_prof_acesso').doc(em).get().then(function(p){
+      if(p.exists){ var a=p.data(); entrarComo(em, {nivel:'prof', nome:a.nome||nomeProf(a.prof), prof:a.prof, slug:a.slug}); return; }
+      negarAcesso(em, 'sem');
+    }).catch(function(e){ console.warn('acesso:', e); negarAcesso(em, 'sem'); });
+  }
+  db.collection('voox_usuarios').doc(em).get().then(function(s){
+    if(!s.exists){ legado(true); return; }
+    var u=s.data(); u._doc=true;
+    if(u.ativo!==true || !u.nivel){ negarAcesso(em, u.nivel?'bloqueada':'pendente'); return; }
+    if(!u.nome) u.nome=user.displayName||em.split('@')[0];
+    entrarComo(em, u);
+  }).catch(function(e){ console.warn('voox_usuarios:', e); legado(false); });   // regra nova ainda não publicada
+}
+
+// ---- tela
+function profsConhecidas(){
+  var o={};
+  Object.keys(COMZ.profs||{}).forEach(function(p){ if(!(COMZ.profs[p]||{}).naoRecebe) o[p]=1; });
+  Object.keys(dias).forEach(function(m){ var x=dias[m].dias||{}; Object.keys(x).forEach(function(d){ (x[d].p||[]).forEach(function(q){ if(q.n && q.n!=='—' && q.n!=='CASA') o[q.n]=1; }); }); });
+  Object.keys(CFG.users).forEach(function(e){ var u=CFG.users[e]; if(u.prof) o[u.prof]=1; });
+  return Object.keys(o).sort();
+}
+function cfgNome(u){ return (u.nome||'').trim() || (u.nivel==='prof'&&u.prof?nomeProf(u.prof):'') || String(u.email||'').split('@')[0] || '(sem nome)'; }
+function cfgPendente(u){ return u.ativo!==true && !u.nivel; }
+function cfgResumo(u){
+  if(cfgPendente(u)) return 'Pediu acesso'+(u.pedidoEm&&u.pedidoEm.toDate?' em '+dataHoraTs(u.pedidoEm):'');
+  if(u.nivel==='admin') return 'Tudo, inclusive as configurações';
+  if(u.nivel==='prof') return 'Painel de '+(u.prof?nomeProf(u.prof):'— escolha a profissional');
+  var oc=(u.ocultas||[]).length, base=u.nivel==='gerente' ? 'Gestão e clientes'+(u.fin===false?', sem financeiro':' + financeiro') : 'Abas de clientes';
+  return base+(oc?' · '+oc+' aba(s) escondida(s)':'');
+}
+function dataHoraTs(v){ try{ var d=v&&v.toDate?v.toDate():(typeof v==='string'?new Date(v):null); if(!d||isNaN(d)) return ''; return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function contarCfg(){
+  var n=Object.keys(CFG.users).filter(function(e){ return cfgPendente(CFG.users[e]); }).length, b=document.getElementById('cntCfg');
+  if(b){ b.textContent=n; b.style.display=n&&nivel==='admin'?'':'none'; }
+}
+function setCfgFiltro(f){ CFG.filtro=f; renderCfg(); }
+function renderCfg(){
+  contarCfg();
+  if(viewAtual!=='config') return;
+  var el=document.getElementById('page-config');
+  if(!CFG.ok){ el.innerHTML='<div class="card empty">Carregando as pessoas…</div>'; return; }
+  var U=Object.keys(CFG.users).map(function(e){ return CFG.users[e]; }), q=CFG.busca.toLowerCase();
+  var nPend=U.filter(cfgPendente).length;
+  var h='<div class="fbar"><input type="search" id="cf-busca" class="cf-busca" placeholder="Buscar por nome ou e-mail" value="'+esc(CFG.busca)+'" oninput="CFG.busca=this.value;renderCfgLista()">';
+  h+='<div class="seg">'+[['todos','Todos']].concat(nPend?[['pend','Esperando liberação <b>'+nPend+'</b>']]:[]).concat([['admin','Administração'],['gerente','Gerência'],['equipe','Recepção'],['prof','Profissionais'],['bloq','Bloqueados']]).map(function(f){ return '<button class="'+(CFG.filtro===f[0]?'on':'')+'" onclick="setCfgFiltro(\''+f[0]+'\')">'+f[1]+'</button>'; }).join('')+'</div>';
+  h+='<span style="flex:1"></span><button class="btn" onclick="novaPessoa()">+ Adicionar pessoa</button></div>';
+  h+='<div class="nota" style="margin:0 0 12px"><b>Como dar acesso:</b> 1) crie o usuário (e-mail e senha) no Firebase, em <b>Authentication › Users › Adicionar usuário</b>; 2) aqui, clique em <b>+ Adicionar pessoa</b> com o <b>mesmo e-mail</b> e escolha o nível. A pessoa entra em <b>voox1956.com.br/painel</b> com esse e-mail e senha. Mudanças de nível, abas ou bloqueio valem na hora para quem estiver com o painel aberto.</div>';
+  h+='<div id="cf-lista" class="cf-lista"></div>';
+  el.innerHTML=h; renderCfgLista();
+}
+function renderCfgLista(){
+  var box=document.getElementById('cf-lista'); if(!box) return;
+  var q=CFG.busca.trim().toLowerCase(), f=CFG.filtro;
+  var L=Object.keys(CFG.users).map(function(e){ return CFG.users[e]; }).filter(function(u){
+    if(f==='pend' && !cfgPendente(u)) return false;
+    if(f==='bloq' && !(u.ativo!==true && u.nivel)) return false;
+    if(['admin','gerente','equipe','prof'].indexOf(f)>=0 && (u.nivel!==f || u.ativo!==true)) return false;
+    if(q && (cfgNome(u)+' '+u.email+' '+(u.prof||'')).toLowerCase().indexOf(q)<0) return false;
+    return true;
+  }).sort(function(a,b){
+    var pa=cfgPendente(a)?0:1, pb=cfgPendente(b)?0:1; if(pa!==pb) return pa-pb;
+    var o={admin:0,gerente:1,equipe:2,prof:3}, na=o[a.nivel]==null?9:o[a.nivel], nb=o[b.nivel]==null?9:o[b.nivel]; if(na!==nb) return na-nb;
+    return cfgNome(a).localeCompare(cfgNome(b),'pt-BR');
+  });
+  if(!L.length){ box.innerHTML='<div class="card empty">'+(Object.keys(CFG.users).length?'Ninguém com esse filtro.':'Nenhuma pessoa cadastrada ainda.')+'</div>'; return; }
+  box.innerHTML=L.map(function(u){
+    var pend=cfgPendente(u), bloq=!pend && u.ativo!==true, eu=u.email===email, n=cfgNome(u);
+    var tag = pend ? '<span class="pill p-amb">esperando liberação</span>' : bloq ? '<span class="pill p-bad">bloqueado</span>' : '<span class="pill '+(u.nivel==='admin'?'p-ok':'p-mut')+'">'+esc(nivelNome(u.nivel))+'</span>';
+    return '<button class="cf-row'+(pend?' novo':'')+(bloq?' bloq':'')+'" data-e="'+esc(u.email)+'" onclick="abrirPessoa(this.dataset.e)"><span class="cf-av">'+esc(n.charAt(0).toUpperCase())+'</span>'
+      +'<span class="cf-main"><span class="cf-nome">'+esc(n)+(eu?' <small class="p-sem">(você)</small>':'')+'</span><span class="cf-email">'+esc(u.email)+'</span><span class="cf-res">'+esc(cfgResumo(u))+'</span></span>'
+      +'<span class="cf-tags">'+tag+'</span></button>';
+  }).join('');
+}
+
+// ---- adicionar
+function novaPessoa(){
+  CFG.ed='__novo__'; CFG.novo=true;
+  CFG.orig={nome:'', email:'', ativo:true, nivel:'equipe', fin:true, ocultas:[], prof:''};
+  CFG.draft=JSON.parse(JSON.stringify(CFG.orig)); abrirGaveta(); renderPessoa();
+  setTimeout(function(){ var i=document.getElementById('cf-em'); if(i) i.focus(); }, 50);
+}
+// ---- editor
+function abrirGaveta(){
+  if(!document.getElementById('cfged')){ var d=document.createElement('div'); d.id='cfged'; d.innerHTML='<div class="fi-fundo" onclick="fecharPessoa()"></div><aside class="fi-painel cf-painel" id="cf-painel"></aside>'; document.body.appendChild(d); }
+  document.getElementById('cfged').classList.add('on'); document.body.classList.add('sem-rolar');
+}
+function abrirPessoa(em){
+  var u=CFG.users[em]; if(!u) return;
+  CFG.ed=em; CFG.novo=false;
+  CFG.orig={nome:(u.nome||'').trim(), email:em, ativo:u.ativo===true, nivel:u.nivel||'', fin:u.fin!==false, ocultas:(Array.isArray(u.ocultas)?u.ocultas:[]).slice().sort(), prof:u.prof||''};
+  CFG.draft=JSON.parse(JSON.stringify(CFG.orig));
+  abrirGaveta(); renderPessoa();
+}
+function fecharPessoa(forcar){
+  if(CFG.salvando) return;
+  var n=Object.keys(cfgMudancas()).length;
+  if(!forcar && n && !CFG.novo && !confirm('Há '+n+' alteração(ões) sem salvar. Fechar mesmo assim?')) return;
+  var g=document.getElementById('cfged'); if(g) g.classList.remove('on'); document.body.classList.remove('sem-rolar');
+  CFG.ed=null; CFG.orig=null; CFG.draft=null; CFG.novo=false;
+}
+document.addEventListener('keydown', function(ev){ if(ev.key==='Escape' && CFG.ed) fecharPessoa(); });
+function cfgMudancas(){
+  var m={}, d=CFG.draft, o=CFG.orig; if(!d||!o) return m;
+  ['nome','ativo','nivel','fin','ocultas','prof'].forEach(function(k){ if(JSON.stringify(d[k])!==JSON.stringify(o[k])) m[k]=d[k]; });
+  return m;
+}
+function cfgTravado(){ var e=CFG.draft&&CFG.draft.email; return !CFG.novo && (e===email || FIXOS.indexOf(e)>=0); }
+function sw(campo, on, desab){ return '<button class="sw'+(on?' on':'')+'" role="switch" aria-checked="'+(on?'true':'false')+'"'+(desab?' disabled':'')+' onclick="cfgToggle(\''+campo+'\')"></button>'; }
+function renderPessoa(){
+  var box=document.getElementById('cf-painel'); if(!box||!CFG.draft) return;
+  var d=CFG.draft, u=CFG.users[CFG.ed]||{}, trav=cfgTravado(), eu=d.email===email, fixo=FIXOS.indexOf(d.email)>=0;
+  var h='<div class="fi-topo"><div style="flex:1;min-width:0"><div class="klabel" style="margin:0">'+(CFG.novo?'Nova pessoa':'Acesso da pessoa')+'</div>';
+  h+='<input class="cf-nomeinp" id="cf-nome" placeholder="Nome" value="'+esc(d.nome)+'" oninput="CFG.draft.nome=this.value.trim();cfgBotao()">';
+  if(CFG.novo) h+='<div class="khint" style="margin-top:6px">Use o mesmo e-mail do usuário criado em Firebase › Authentication.</div><input class="cf-eminp" id="cf-em" type="email" placeholder="e-mail do usuário criado no Firebase" value="'+esc(d.email)+'" oninput="CFG.draft.email=this.value.trim().toLowerCase();cfgBotao()">';
+  else h+='<div class="cf-email">'+esc(d.email)+'</div>';
+  if(!CFG.novo){
+    var r=[]; if(u.pedidoEm) r.push('pediu acesso em '+dataHoraTs(u.pedidoEm)); if(u.alteradoPor) r.push('alterado por '+u.alteradoPor+(u.alteradoEm?' em '+dataHoraTs(u.alteradoEm):''));
+    if(r.length) h+='<div class="khint" style="margin-top:4px">'+esc(r.join(' · '))+'</div>';
+  }
+  h+='</div><button class="ibtn" onclick="fecharPessoa()" title="Fechar (Esc)" style="font-size:16px">✕</button></div>';
+  // conta
+  h+='<div class="cf-sec"><div class="cf-lin"><div class="cf-txt">Liberada<small>'+(fixo?'Administrador fixo — garante que o painel nunca fique sem ninguém.':eu?'Você não pode bloquear a própria conta.':'Desligado, a pessoa não entra no painel.')+'</small></div>'+sw('ativo', d.ativo, trav)+'</div></div>';
+  // nível
+  h+='<div class="sect" style="margin-top:14px">Nível</div><div class="cf-niveis">'+NIVEIS.map(function(n){
+    var on=d.nivel===n[0];
+    return '<button class="cf-niv'+(on?' on':'')+'"'+(trav?' disabled':'')+' onclick="cfgNivel(\''+n[0]+'\')"><b>'+n[1]+'</b><small>'+n[2]+'</small></button>';
+  }).join('')+'</div>';
+  if(trav && !CFG.novo) h+='<div class="khint" style="margin-top:6px">'+(eu?'Você não pode mudar o próprio nível, para não ficar sem acesso a esta tela.':'Administrador fixo.')+'</div>';
+  if(!d.nivel) h+='<div class="alert a-warn" style="margin-top:10px">Escolha o nível e ligue <b>Liberada</b> para dar o acesso.</div>';
+  // profissional
+  if(d.nivel==='prof'){
+    var P=profsConhecidas();
+    h+='<div class="sect" style="margin-top:14px">Qual profissional</div><div class="cf-sec"><div class="cf-lin"><select id="cf-prof" onchange="CFG.draft.prof=this.value;if(!CFG.draft.nome&&this.value){CFG.draft.nome=nomeProf(this.value);document.getElementById(\'cf-nome\').value=CFG.draft.nome;}cfgBotao()" style="flex:1"><option value="">— escolha —</option>'
+      +P.map(function(p){ return '<option value="'+esc(p)+'"'+(d.prof===p?' selected':'')+'>'+esc(nomeProf(p))+' · '+esc(p)+'</option>'; }).join('')+'</select>'
+      +(d.prof?'<button class="btn btn-sm btn-ghost" data-p="'+esc(d.prof)+'" onclick="fecharPessoa(true);verComo(this.dataset.p)">Ver como ela</button>':'')+'</div>'
+      +'<div class="khint" style="padding:0 0 10px">Ela vê só o painel dela: agenda, serviços do mês, comissão prevista, meta, notas e clientes para chamar. O painel é montado pelo robô — aparece na próxima rodada depois de liberar.</div></div>';
+  }
+  // gerência: financeiro
+  if(d.nivel==='gerente'){
+    h+='<div class="sect" style="margin-top:14px">Permissões</div><div class="cf-sec"><div class="cf-lin"><div class="cf-txt">Financeiro<small>Dashboard, lançamentos, contas a pagar, comissões, margem, conferência e contas gerenciais. Desligado, o banco também bloqueia a leitura.</small></div>'+sw('fin', d.fin, false)+'</div></div>';
+  }
+  // abas
+  if(d.nivel==='gerente' || d.nivel==='equipe'){
+    h+='<div class="sect" style="margin-top:14px">Abas que aparecem <small>toque para esconder ou mostrar</small></div>';
+    abasDoNivel(d.nivel, d.fin).forEach(function(g){
+      h+='<div class="cf-grp"><div class="klabel">'+esc(g.g)+'</div><div class="cf-abas">'+g.abas.map(function(a){ var vis=d.ocultas.indexOf(a[0])<0;
+        return '<button class="cf-aba'+(vis?' on':'')+'" onclick="cfgAba(\''+a[0]+'\')">'+(vis?'✓ ':'')+esc(a[1])+'</button>'; }).join('')+'</div></div>';
+    });
+    h+='<div class="khint">Esconder uma aba organiza a tela da pessoa. O que é sigilo de verdade é o nível e a chave do Financeiro, que o banco também confere.</div>';
+  }
+  if(d.nivel==='admin' && !trav) h+='<div class="alert a-warn" style="margin-top:12px">Administração vê e altera tudo, inclusive o financeiro e esta tela de acessos.</div>';
+  // rodapé
+  h+='<div class="cf-pe"><span class="cf-st" id="cf-st"></span>';
+  if(!CFG.novo && !trav) h+='<button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="removerPessoa()">Remover</button>';
+  h+='<button class="btn" id="cf-salvar" onclick="salvarPessoa()">Salvar</button></div>';
+  box.innerHTML=h; cfgBotao();
+}
+function cfgSt(t, erro){ var s=document.getElementById('cf-st'); if(s){ s.textContent=t; s.style.color=erro?'var(--red)':'var(--muted)'; } }
+function cfgBotao(){
+  var b=document.getElementById('cf-salvar'); if(!b) return;
+  var n=Object.keys(cfgMudancas()).length;
+  if(CFG.novo){ b.disabled=CFG.salvando; b.textContent='Cadastrar'; return; }
+  b.disabled=!n||CFG.salvando; b.textContent=n?'Salvar ('+n+')':'Salvar';
+}
+function cfgToggle(k){
+  if(!CFG.draft||CFG.salvando) return;
+  if(k==='ativo' && cfgTravado()) return;
+  CFG.draft[k]=!CFG.draft[k]; renderPessoa();
+}
+function cfgNivel(n){
+  if(!CFG.draft||cfgTravado()) return;
+  CFG.draft.nivel=n;
+  if(cfgPendente(CFG.users[CFG.ed]||{}) && !CFG.draft.ativo) CFG.draft.ativo=true;   // liberando um pedido: já liga
+  renderPessoa();
+}
+function cfgAba(a){ var o=CFG.draft.ocultas, i=o.indexOf(a); if(i>=0) o.splice(i,1); else o.push(a); o.sort(); renderPessoa(); }
+
+function docPessoa(d){
+  var x={nome:d.nome||'', email:d.email, ativo:!!d.ativo, nivel:d.nivel||'', fin:d.fin!==false, ocultas:(d.nivel==='gerente'||d.nivel==='equipe')?d.ocultas:[]};
+  if(d.nivel==='prof'){ x.prof=d.prof||''; x.slug=d.prof?slugProf(d.prof):''; }
+  else { x.prof=''; x.slug=''; }
+  return x;
+}
+function sincProfAcesso(d, eraProf){
+  // o robô e a regra do painel da profissional leem voox_prof_acesso
+  var ref=db.collection('voox_prof_acesso').doc(d.email);
+  if(d.nivel==='prof' && d.ativo && d.prof) return ref.set({prof:d.prof, slug:slugProf(d.prof), nome:d.nome||nomeProf(d.prof), criadoEm:new Date().toISOString(), por:email});
+  if(eraProf || ACESSOS[d.email]) return ref.delete();
+  return Promise.resolve();
+}
+function salvarPessoa(){
+  var d=CFG.draft; if(!d||CFG.salvando) return;
+  if(CFG.novo){
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)){ cfgSt('E-mail inválido.', true); return; }
+    if(CFG.users[d.email]){ cfgSt('Esse e-mail já está cadastrado.', true); abrirPessoa(d.email); return; }
+    if(!d.nivel){ cfgSt('Escolha o nível.', true); return; }
+  } else if(!Object.keys(cfgMudancas()).length) return;
+  if(d.nivel==='prof' && d.ativo && !d.prof){ cfgSt('Escolha qual profissional ela é.', true); return; }
+  if(d.email===email && (!d.ativo || d.nivel!=='admin')){ cfgSt('Você não pode tirar o próprio acesso de administração.', true); return; }
+  if(d.nivel==='admin' && CFG.orig.nivel!=='admin' && !confirm('Dar nível Administração para '+(d.nome||d.email)+'?\n\nAdministração vê e altera tudo, inclusive o financeiro e esta tela.')) return;
+  if(!CFG.novo && CFG.orig.ativo && !d.ativo && !confirm('Bloquear '+(d.nome||d.email)+'? A pessoa deixa de entrar no painel na hora.')) return;
+  var x=docPessoa(d), eraProf=CFG.orig.nivel==='prof', novo=CFG.novo, em=d.email;
+  x.alteradoPor=email; x.alteradoEm=DEMO?new Date().toISOString():firebase.firestore.FieldValue.serverTimestamp();
+  if(novo){ x.criadoEm=x.alteradoEm; x.criadoPor=email; }
+  if(DEMO){
+    CFG.users[em]=Object.assign({}, CFG.users[em]||{}, x, {alteradoEm:new Date().toISOString()});
+    if(x.nivel==='prof'&&x.ativo&&x.prof) ACESSOS[em]={prof:x.prof, slug:x.slug, nome:x.nome}; else delete ACESSOS[em];
+    renderCfg(); abrirPessoa(em); cfgSt('Salvo (demonstração).'); toast('Acesso de '+(x.nome||em)+' salvo.'); return;
+  }
+  CFG.salvando=true; cfgBotao(); cfgSt('Salvando…');
+  db.collection('voox_usuarios').doc(em).set(x, {merge:true}).then(function(){
+    return sincProfAcesso(Object.assign({}, d), eraProf).catch(function(e){ toast('Acesso salvo, mas o painel da profissional não atualizou: '+(e.code||e.message),'err'); });
+  }).then(function(){
+    CFG.salvando=false;
+    if(CFG.ed===em || CFG.novo){ CFG.users[em]=Object.assign({}, CFG.users[em]||{}, x, {alteradoEm:{toDate:function(){ return new Date(); }}}); abrirPessoa(em); cfgSt('Salvo. Vale na hora para a pessoa.'); }
+    toast('Acesso de '+(x.nome||em)+' salvo.');
+  }).catch(function(e){
+    CFG.salvando=false; cfgBotao();
+    cfgSt(e.code==='permission-denied'?'O banco recusou: só a administração altera acessos (confira as regras do Firestore).':'Não salvou ('+(e.code||e.message)+').', true);
+  });
+}
+function removerPessoa(){
+  var d=CFG.draft; if(!d||cfgTravado()) return;
+  var leg=!!USUARIOS[d.email];
+  if(!confirm((leg?'Bloquear ':'Remover ')+(d.nome||d.email)+'?'+(leg?'\n\nEsse e-mail está na lista antiga do painel, então ele fica cadastrado como bloqueado.':'\n\nA pessoa deixa de entrar. Se tentar de novo, aparece em "Esperando liberação".'))) return;
+  if(DEMO){ if(leg) CFG.users[d.email].ativo=false; else delete CFG.users[d.email]; delete ACESSOS[d.email]; fecharPessoa(true); renderCfg(); toast('Removido (demonstração).'); return; }
+  var ref=db.collection('voox_usuarios').doc(d.email);
+  var p= leg ? ref.set({ativo:false, alteradoPor:email, alteradoEm:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true}) : ref.delete();
+  p.then(function(){ return (ACESSOS[d.email]||CFG.orig.nivel==='prof') ? db.collection('voox_prof_acesso').doc(d.email).delete() : null; })
+   .then(function(){ fecharPessoa(true); toast(leg?'Acesso bloqueado.':'Pessoa removida.'); })
+   .catch(function(e){ cfgSt('Não removeu ('+(e.code||e.message)+').', true); });
+}
+
+// ---- primeira vez: traz para cá quem já tinha acesso pela lista antiga e pelo "Acesso das profissionais"
+function migrarLegado(){
+  if(DEMO || CFG.migrou || !CFG.ok || !CFG.acessosOk || nivel!=='admin') return;
+  CFG.migrou=true;
+  var b=db.batch(), n=0, ts=firebase.firestore.FieldValue.serverTimestamp();
+  Object.keys(USUARIOS).forEach(function(e){ if(CFG.users[e]) return; var u=USUARIOS[e];
+    b.set(db.collection('voox_usuarios').doc(e), {nome:u.nome, email:e, ativo:true, nivel:u.nivel, fin:true, ocultas:[], prof:'', slug:'', criadoEm:ts, criadoPor:'lista antiga', alteradoPor:email, alteradoEm:ts}); n++; });
+  Object.keys(ACESSOS).forEach(function(e){ if(CFG.users[e]||USUARIOS[e]) return; var a=ACESSOS[e];
+    b.set(db.collection('voox_usuarios').doc(e), {nome:a.nome||nomeProf(a.prof), email:e, ativo:true, nivel:'prof', fin:true, ocultas:[], prof:a.prof||'', slug:a.slug||slugProf(a.prof), criadoEm:ts, criadoPor:'acesso das profissionais', alteradoPor:email, alteradoEm:ts}); n++; });
+  if(!n) return;
+  b.commit().then(function(){ toast(n+' acesso(s) que já existiam foram trazidos para Configurações.'); }).catch(function(e){ CFG.migrou=false; toast('Não trouxe os acessos antigos: '+(e.code||e.message),'err'); });
+}
+function dadosDemoCfg(){
+  var t=new Date().toISOString();
+  CFG.users={
+    'demo':{nome:'Demo', email:'demo', ativo:true, nivel:'admin'},
+    'joaorjt@gmail.com':{nome:'João', email:'joaorjt@gmail.com', ativo:true, nivel:'admin', alteradoPor:'lista antiga', alteradoEm:t},
+    'jonathanthome123@gmail.com':{nome:'Jonathan', email:'jonathanthome123@gmail.com', ativo:true, nivel:'admin'},
+    'admvoox1@gmail.com':{nome:'Gerência', email:'admvoox1@gmail.com', ativo:true, nivel:'gerente', fin:true, ocultas:[]},
+    'vooxrecepcao@gmail.com':{nome:'Recepção', email:'vooxrecepcao@gmail.com', ativo:true, nivel:'equipe', ocultas:['oport']},
+    'gisele.dep@gmail.com':{nome:'Gisele', email:'gisele.dep@gmail.com', ativo:true, nivel:'prof', prof:'GISELE (DEP)', slug:'gisele-dep'},
+    'carol.voox@gmail.com':{nome:'Carol Souza', email:'carol.voox@gmail.com', ativo:false, pedidoEm:t},
+    'ex.recepcao@gmail.com':{nome:'Ex-recepção', email:'ex.recepcao@gmail.com', ativo:false, nivel:'equipe'}
+  };
+  CFG.ok=true; CFG.acessosOk=true;
+}
+
 // ---------------------------------------------------------------- start
 (function(){ var on=true; try{ on=(localStorage.getItem('voox_painel_pin')!=='0'); }catch(e){} if(on) document.getElementById('sidebar').classList.add('pin'); })();
 aplicarModo(modoAtual());
@@ -4166,37 +4612,16 @@ if(DEMO){
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
+  dadosDemoCfg();
+  (function(){ var mm=location.search.match(/[?&]como=([\w.@-]+)/); if(!mm) return; var u=CFG.users[mm[1]]; if(!u) return; nivel=u.nivel; nome=u.nome; USR={fin:u.fin!==false, ocultas:u.ocultas||[]}; })();
   document.getElementById('msg-txt').value=mensagem;
   aplicarUI(); renderReativ(); renderAniv(); renderMsgs();
 } else {
   firebase.initializeApp(firebaseConfig);
   auth=firebase.auth(); db=firebase.firestore();
-  auth.getRedirectResult().catch(function(e){ toast('Login: '+(e.code||e.message),'err'); });
   auth.onAuthStateChanged(function(user){
-    var u = user ? USUARIOS[(user.email||'').toLowerCase()] : null;
-    if(user && !u){
-      var em=(user.email||'').toLowerCase();
-      db.collection('voox_prof_acesso').doc(em).get().then(function(s){
-        if(!s.exists) throw {code:'sem-acesso'};
-        var a=s.data(); nivel='prof'; nome=a.nome||nomeProf(a.prof); email=em; logado=true;
-        pararListeners(); assinarProf(a.slug||slugProf(a.prof)); aplicarUI();
-      }).catch(function(){
-        pararListeners();
-        document.getElementById('authMsg').innerHTML='A conta <b>'+esc(user.email)+'</b> não tem acesso a este painel. Peça ao João para liberar.';
-        nivel='publico'; logado=false; aplicarUI(); auth.signOut();
-      });
-      return;
-    }
-    if(false){
-      pararListeners();
-      document.getElementById('authMsg').innerHTML='A conta <b>'+esc(user.email)+'</b> não tem acesso a este painel. Peça ao João para liberar.';
-      nivel='publico'; logado=false; aplicarUI();
-      auth.signOut();
-      return;
-    }
-    if(u){ nivel=u.nivel; nome=u.nome; email=(user.email||'').toLowerCase(); logado=true; assinar(); }
-    else { nivel='publico'; logado=false; pararListeners(); }
-    aplicarUI();
+    if(user){ loginGoogle_(user); return; }
+    nivel='publico'; logado=false; pararListeners(); aplicarUI();
   });
 }
 </script>
