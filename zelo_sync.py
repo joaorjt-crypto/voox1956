@@ -597,22 +597,30 @@ def gravar_mensagens_do_dia(z, db, d, fones):
         ags = z.agendamentos(dia, dia, "AGENDADO,AGUARDANDO",
                              "dataHora,agendamentoConfirmado,cliente(id,nome),servico(nome),profissional(nomeAgenda)")
         por = _agrupar_por_cliente(ags, dia.isoformat())
+        existentes = {doc.id: (doc.to_dict() or {}) for doc in col.where("data", "==", dia.isoformat()).stream()}
+        for k, v in existentes.items():
+            if v.get("cel") and v.get("cliente"):
+                fones.c.setdefault(str(v["cliente"]), v["cel"])
         vivos = set()
         for cid, x in por.items():
             nome = limpa_nome(x["nomeZelo"])
             doc_id = f"{dia.isoformat()}_{cid}"
             vivos.add(doc_id)
-            batch.set(col.document(doc_id), {
-                "data": dia.isoformat(), "cliente": cid, "nome": nome,
-                "primeiro": nome.split(" ")[0].capitalize() if nome else "", "cel": fones(cid),
-                "itens": x["itens"], "confZelo": x["confZelo"], "ativo": True, "atualizadoEm": agora}, merge=True)
-            ops += 1; total += 1
+            total += 1
+            novo = {"data": dia.isoformat(), "cliente": cid, "nome": nome,
+                    "primeiro": nome.split(" ")[0].capitalize() if nome else "", "cel": fones(cid),
+                    "itens": x["itens"], "confZelo": x["confZelo"], "ativo": True}
+            velho = existentes.get(doc_id)
+            if velho and all(velho.get(k) == v for k, v in novo.items()):
+                continue      # nada mudou: não gasta gravação
+            batch.set(col.document(doc_id), dict(novo, atualizadoEm=agora), merge=True)
+            ops += 1
             if ops >= 400:
                 batch.commit(); batch, ops = db.batch(), 0
         # quem desmarcou no Zelo some da lista
-        for doc in col.where("data", "==", dia.isoformat()).stream():
-            if doc.id not in vivos and (doc.to_dict() or {}).get("ativo"):
-                batch.set(doc.reference, {"ativo": False, "atualizadoEm": agora}, merge=True); ops += 1
+        for k, v in existentes.items():
+            if k not in vivos and v.get("ativo"):
+                batch.set(col.document(k), {"ativo": False, "atualizadoEm": agora}, merge=True); ops += 1
     batch.commit()
     log(f"Confirmações: {total} clientes em {', '.join(x.strftime('%d/%m') for x in dias_conf)}")
 
@@ -627,6 +635,10 @@ def gravar_mensagens_do_dia(z, db, d, fones):
                     if (a.get("dataHora") or "")[:10] < hoje.isoformat()})[-1:] + [hoje.isoformat()]
     batch, ops, total = db.batch(), 0, 0
     for data_iso in datas:
+        existentes = {doc.id: (doc.to_dict() or {}) for doc in col.where("data", "==", data_iso).stream()}
+        for k, v in existentes.items():
+            if v.get("cel") and v.get("cliente"):
+                fones.c.setdefault(str(v["cliente"]), v["cel"])
         for cid, x in _agrupar_por_cliente(d["pagos"], data_iso).items():
             if EH_CRIANCA.search(x["nomeZelo"]):
                 continue
@@ -634,16 +646,20 @@ def gravar_mensagens_do_dia(z, db, d, fones):
             doc_id = f"{data_iso}_{cid}"
             tk = token_nota(doc_id)
             primeiro = nome.split(" ")[0].capitalize() if nome else ""
-            batch.set(col.document(doc_id), {
-                "data": data_iso, "cliente": cid, "nome": nome, "primeiro": primeiro, "cel": fones(cid),
-                "itens": x["itens"], "tk": tk, "ativo": True, "atualizadoEm": agora}, merge=True)
+            total += 1
+            novo = {"data": data_iso, "cliente": cid, "nome": nome, "primeiro": primeiro, "cel": fones(cid),
+                    "itens": x["itens"], "tk": tk, "ativo": True}
+            velho = existentes.get(doc_id)
+            if velho and all(velho.get(k) == v for k, v in novo.items()) and velho.get("notaOk") == link_google:
+                continue      # nada mudou: não gasta gravação
+            batch.set(col.document(doc_id), dict(novo, atualizadoEm=agora, notaOk=link_google), merge=True)
             # ficha da nota de satisfação (a cliente responde pelo link; o robô nunca mexe na nota)
             batch.set(col_notas.document(tk), {
                 "data": data_iso, "pid": doc_id, "c": cid, "nm": nome, "n": primeiro,
                 "p": sorted({i["prof"] for i in x["itens"] if i.get("prof")}),
                 "s": sorted({i["servico"] for i in x["itens"] if i.get("servico")}),
                 "g": link_google}, merge=True)
-            ops += 2; total += 1
+            ops += 2
             if ops >= 400:
                 batch.commit(); batch, ops = db.batch(), 0
     batch.commit()
@@ -1080,7 +1096,7 @@ def _hm(m):
     return f"{m // 60:02d}:{m % 60:02d}"
 
 
-def montar_vagas(z, d, dia, fones):
+def montar_vagas(z, d, dia, fones, cands_antigas=None):
     hoje = d["hoje"]
     h = (d.get("horario") or [{}] * 7)[dia.weekday()] or {}
     abre, fecha = h.get("ini") or 8 * 60, h.get("fim") or 20 * 60
@@ -1126,6 +1142,10 @@ def montar_vagas(z, d, dia, fones):
             gaps.append({"i": _hm(cur), "f": _hm(fecha), "min": fecha - cur, "borda": True})
         gaps = [g for g in gaps if g["min"] >= GAP_MIN]
         cands = []
+        if gaps and cands_antigas is not None:
+            lista = [c for c in cands_antigas.get(p, []) if str(c.get("id")) not in marcadas]
+            profs.append({"p": p, "gaps": gaps, "cands": lista})
+            continue
         if gaps:
             for cid, x in hist.items():
                 if not x["com"].get(p) or cid in marcadas or EH_CRIANCA.search(x["nome"]) or EXCLUIR_NOMES.search(x["nome"]):
@@ -1157,7 +1177,7 @@ def montar_vagas(z, d, dia, fones):
     return profs
 
 
-def gravar_vagas(z, db, d, fones):
+def gravar_vagas(z, db, d, fones, rapido=False):
     hoje = d["hoje"]
     col = db.collection("voox_vagas")
     dias = [hoje] + proximos_dias_abertos(hoje, d.get("horario"))
@@ -1165,7 +1185,11 @@ def gravar_vagas(z, db, d, fones):
         h = (d.get("horario") or [{}] * 7)[dia.weekday()] or {}
         if h and not h.get("aberto", True):
             continue
-        profs = montar_vagas(z, d, dia, fones)
+        antigas = None
+        if rapido:
+            snap = col.document(dia.isoformat()).get()
+            antigas = {pp.get("p"): pp.get("cands") or [] for pp in ((snap.to_dict() or {}).get("profs") or [])} if snap.exists else {}
+        profs = montar_vagas(z, d, dia, fones, antigas)
         col.document(dia.isoformat()).set({"data": dia.isoformat(), "profs": profs,
                                            "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes")}, merge=True)
         log(f"Horários vagos {dia.strftime('%d/%m')}: {sum(1 for p in profs if p['gaps'])} profissionais com buraco, "
@@ -1310,6 +1334,18 @@ def gravar_paineis_prof(z, db, d):
     notas = [x.to_dict() for x in db.collection("voox_notas").where("data", ">=", corte).stream()]
     vagas = [x.to_dict() for x in db.collection("voox_vagas").where("data", ">=", hoje.isoformat()).stream()]
     agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
+    # metas do mês: realizado de todas (para o ranking) pela mesma base do painel
+    metas = (((db.collection("voox_config").document("metas_prof").get().to_dict() or {}).get("m") or {}).get(m0) or {})
+    real = defaultdict(float)
+    sd0, pd0 = serv[m0].get("sd") or [], serv[m0].get("pd") or []
+    for t in serv[m0].get("it") or []:
+        a = t.split(",")
+        if len(a) >= 6 and int(a[3]) < len(pd0):
+            real[pd0[int(a[3])]] += float(a[4])
+    pcts = sorted(((real.get(p, 0) / float(x["meta"]), p) for p, x in metas.items() if x.get("meta")), reverse=True)
+    posicao = {p: i + 1 for i, (_, p) in enumerate(pcts)}
+    restam = sum(1 for i in range(1, 32) if (hoje + dt.timedelta(days=i)).month == hoje.month
+                 and (hoje + dt.timedelta(days=i)).weekday() != 6)
     for p in profs:
         meses = {}
         for m, doc in serv.items():
@@ -1341,10 +1377,54 @@ def gravar_paineis_prof(z, db, d):
             for pp in v.get("profs") or []:
                 if pp.get("p") == p and pp.get("gaps"):
                     vg.append({"data": v.get("data"), "gaps": pp["gaps"], "cands": pp.get("cands") or []})
+        mt = metas.get(p) or {}
+        meta = {"m": m0, "meta": float(mt.get("meta") or 0), "real": round(real.get(p, 0), 2), "bonus": float(mt.get("bonus") or 0),
+                "superMeta": float(mt.get("superMeta") or 0), "bonusSuper": float(mt.get("bonusSuper") or 0),
+                "pos": posicao.get(p, 0), "de": len(pcts), "restam": restam}
         db.collection("voox_prof").document(slug_prof(p)).set({
             "prof": p, "atualizadoEm": agora, "meses": meses, "agenda": agenda, "notas": nts,
-            "vagas": sorted(vg, key=lambda o: o["data"])})
+            "vagas": sorted(vg, key=lambda o: o["data"]), "meta": meta})
     log(f"Painel das profissionais: {len(profs)} atualizado(s)")
+
+
+# ---------------------------------------------------------------- modo rápido (a cada 15 min no horário de funcionamento)
+
+def main_rapido():
+    """só o que muda durante o dia: faturamento de hoje, confirmações, pós-atendimento e horários vagos"""
+    user, pwd = os.environ.get("ZELO_USER"), os.environ.get("ZELO_PASS")
+    if not user or not pwd:
+        sys.exit("Faltam os secrets ZELO_USER / ZELO_PASS")
+    z = Zelo(user, pwd)
+    z.login()
+    hoje = dt.datetime.now(TZ).date()
+    d = {"hoje": hoje, "horario": z.horario(), "precos": z.catalogo()}
+    d["pagos"] = z.agendamentos(hoje - dt.timedelta(days=5), hoje, STATUS_PAGO,
+                                "dataHora,agendamentoMobile,cliente(id,nome),servico(id,nome),profissional(id,nomeAgenda)")
+    d["futuros"] = z.agendamentos(hoje, hoje + dt.timedelta(days=30), STATUS_FUTURO, "dataHora,status,cliente(id)")
+    if DRY:
+        log(f"--rapido --dry-run: {len(d['pagos'])} atendimentos em 5 dias, {len(d['futuros'])} marcados em 30 dias")
+        return
+    db = firestore_client()
+    agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
+    m0 = hoje.replace(day=1)
+    # faturamento do mês atual (gráfico) e o dia de hoje (painel)
+    try:
+        db.collection("voox_painel").document("resumo").set({
+            "atualizadoEm": agora, "hoje": hoje.isoformat(), "meses": {m0.strftime("%Y-%m"): z.resumo_vendas(m0, hoje)}}, merge=True)
+        dia = montar_mes(z, hoje, hoje, d["precos"])
+        db.collection("voox_dias").document(dia["mes"]).set({"dias": dia["dias"], "atualizadoEm": agora}, merge=True)
+        log(f"Hoje: R$ {(dia['dias'].get(hoje.strftime('%d')) or {}).get('fat', 0):,.2f}")
+    except Exception as e:
+        log(f"Faturamento de hoje falhou: {e}")
+    fones = Fones(z, {})
+    Fones.LIMITE_NOVOS = 40
+    for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
+                      ("Horários vagos", lambda: gravar_vagas(z, db, d, fones, rapido=True))):
+        try:
+            fn()
+        except Exception as e:
+            log(f"{etapa} falhou: {e}")
+    log(f"Rápido: fim em {(time.time() - INICIO):.0f}s · {fones.novos} telefones buscados")
 
 
 # ---------------------------------------------------------------- main
@@ -1434,4 +1514,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--rapido" in sys.argv:
+        main_rapido()
+    else:
+        main()
