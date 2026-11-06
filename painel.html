@@ -454,6 +454,32 @@ html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
 .ag-it{font-size:13px;padding:5px 0;border-bottom:1px solid var(--border)}
 .ag-it.vg-c{display:flex;justify-content:space-between;align-items:center;gap:8px}
 @media(max-width:600px){.minha-ola{font-size:16px}}
+/* ficha da cliente */
+.cli-lk{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(176,125,76,.45);text-underline-offset:3px}
+.cli-lk:hover{color:var(--primary);text-decoration-color:var(--primary)}
+#ficha{display:none}
+#ficha.on{display:block}
+.fi-fundo{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70}
+.fi-painel{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);z-index:71;overflow:auto;padding:18px 18px 30px;background:var(--bg,#111);border-left:1px solid var(--border);box-shadow:-20px 0 50px rgba(0,0,0,.35)}
+html[data-theme="dark"] .fi-painel{background:#151517}
+html[data-theme="light"] .fi-painel{background:#f7f1e9}
+body.sem-rolar{overflow:hidden}
+.fi-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.fi-nome{font-size:19px;font-weight:700;margin-top:4px}
+.fi-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 12px}
+.fi-tags .btn{margin-left:auto}
+.fi-k{grid-template-columns:1fr 1fr!important}
+.fi-k .kval{font-size:19px}
+.fi-pref{display:grid;gap:8px;margin-top:12px}
+.fi-pref .pill{margin:3px 4px 0 0;display:inline-block}
+.fi-nota{font-size:12.5px;padding:4px 0}
+.fi-hist{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.fi-vis{display:grid;grid-template-columns:78px 1fr;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12.5px}
+.fi-vis:last-child{border-bottom:none}
+.fi-d{display:flex;flex-direction:column}
+.fi-d small{color:var(--muted)}
+.fi-s>div{display:flex;gap:6px;align-items:baseline}
+.fi-v{margin-left:auto;color:var(--muted);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -702,6 +728,7 @@ function assinar(){
       snap.forEach(function(d){ if(d.id==='meta') cliMeta=d.data(); else partes.push([d.id, d.data().itens||[]]); });
       partes.sort(function(a,b){ return a[0].localeCompare(b[0]); });
       cliLista=[].concat.apply([], partes.map(function(p){ return p[1]; }));
+      if(FICHA.nome) setTimeout(renderFicha, 0);
       renderClientes();
     }, function(err){ document.getElementById('page-cli').innerHTML='<div class="card empty">Sem permissão para ler os clientes ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
     FIN.meses={}; FIN.carregando={}; SERV.meses={}; SERV.carregando={}; SERV.semDado={};
@@ -1484,7 +1511,7 @@ function renderAniv(){
   h+='<div class="rlist">';
   lista.forEach(function(a){
     var env=a.enviadoAno===ano, hj=a.dia===hojeDM;
-    h+='<div class="rrow" style="--c:'+(env?'var(--green)':hj?'var(--primary)':'var(--amber)')+'"><div><div class="nm">'+esc(a.nome)+'</div><div class="info">Aniversário '+esc(a.dia||'—')+(hj?' · <b>hoje</b>':'')+(a.cel?'':' · sem celular válido no Zelo')+'</div>';
+    h+='<div class="rrow" style="--c:'+(env?'var(--green)':hj?'var(--primary)':'var(--amber)')+'"><div><div class="nm">'+lkCli(a.id,a.nome)+'</div><div class="info">Aniversário '+esc(a.dia||'—')+(hj?' · <b>hoje</b>':'')+(a.cel?'':' · sem celular válido no Zelo')+'</div>';
     if(env) h+='<div class="tags"><span class="pill p-ok">Mensagem enviada</span>'+(a.enviadoPor?'<span class="pill p-mut">por '+esc(a.enviadoPor.split('@')[0])+'</span>':'')+'</div>';
     h+='</div><div class="acts">'+(a.cel?'<button class="btn btn-sm '+(env?'btn-ghost':'btn-wa')+'" onclick="enviarAniv(\''+a.id+'\')">'+(env?'Reenviar':'WhatsApp')+'</button>':'')+'</div></div>';
   });
@@ -1602,7 +1629,7 @@ function renderConfirm(){
     if(c.status==='desmarcou') tags+='<span class="pill p-bad">Desmarcou — liberar no Zelo</span>';
     if(!c.cel) tags+='<span class="pill p-mut">sem celular válido</span>';
     if(FALTMAP[c.cliente]) tags+='<span class="pill p-bad" title="Faltou '+FALTMAP[c.cliente].f+' vez(es) nos últimos 6 meses">⚠ costuma faltar ('+FALTMAP[c.cliente].f+'×)</span>';
-    h+='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+esc(c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>'+(tags?'<div class="tags">'+tags+'</div>':'')+'</div><div class="acts">';
+    h+='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+lkCli(c.cliente,c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>'+(tags?'<div class="tags">'+tags+'</div>':'')+'</div><div class="acts">';
     if(c.cel) h+='<button class="btn btn-sm '+(c.status?'btn-ghost':'btn-wa')+'" onclick="enviarConf(\''+c.id+'\')">'+(c.status?'Reenviar':'WhatsApp')+'</button>';
     if(c.status!=='confirmou') h+='<button class="btn btn-sm btn-ghost" onclick="respConf(\''+c.id+'\',\'confirmou\')">Confirmou</button>';
     if(c.status!=='desmarcou') h+='<button class="btn btn-sm btn-ghost" onclick="respConf(\''+c.id+'\',\'desmarcou\')">Desmarcou</button>';
@@ -1643,7 +1670,7 @@ function renderPos(){
   var env=L.filter(function(c){ return c.enviado; }).length;
   h+='<div class="sect">'+n0(L.length)+' clientes atendidas <small>'+env+' mensagem(ns) enviada(s)</small></div><div class="rlist">';
   L.forEach(function(c){
-    h+='<div class="rrow" style="--c:'+(c.enviado?'var(--green)':'var(--amber)')+'"><div><div class="nm">'+esc(c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>';
+    h+='<div class="rrow" style="--c:'+(c.enviado?'var(--green)':'var(--amber)')+'"><div><div class="nm">'+lkCli(c.cliente,c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>';
     if(c.enviado||!c.cel) h+='<div class="tags">'+(c.enviado?'<span class="pill p-ok">Mensagem enviada</span>':'')+(c.enviadoPor?'<span class="pill p-mut">por '+esc(c.enviadoPor.split('@')[0])+'</span>':'')+(!c.cel?'<span class="pill p-mut">sem celular válido</span>':'')+'</div>';
     h+='</div><div class="acts">'+(c.cel?'<button class="btn btn-sm '+(c.enviado?'btn-ghost':'btn-wa')+'" onclick="enviarPos(\''+c.id+'\')">'+(c.enviado?'Reenviar':'WhatsApp')+'</button>':'')+'</div></div>';
   });
@@ -1699,7 +1726,7 @@ function renderOport(){
     var info='Faz '+esc((o.servicos||[]).join(', ').toLowerCase())+' · '+n0(o.n)+' serviços em 120 dias · última visita '+dataBR(o.ult);
     var extra='';
     if(campAtual==='sug'){ var s=o.sug[0]; extra='<div class="sug-txt">Sugestão: <b>'+esc(s.s.toLowerCase())+'</b> — '+s.p+'% das clientes que fazem '+esc(s.a.toLowerCase())+' também fazem'+(o.sug[1]?' <span class="p-sem">· ou '+esc(o.sug[1].s.toLowerCase())+' ('+o.sug[1].p+'%)</span>':'')+'</div>'; }
-    h+='<div class="rrow" style="--c:var(--purple)"><div><div class="nm">'+esc(o.nome)+'</div><div class="info">'+info+'</div>'+extra+'</div>';
+    h+='<div class="rrow" style="--c:var(--purple)"><div><div class="nm">'+lkCli(o.id,o.nome)+'</div><div class="info">'+info+'</div>'+extra+'</div>';
     h+='<div class="acts">'+(o.cel?'<button class="btn btn-sm btn-wa" onclick="enviarOport(\''+o.id+'\')">WhatsApp</button>':'<span class="pill p-mut">sem celular</span>')+'<button class="btn btn-sm btn-ghost" onclick="dispensarOport(\''+o.id+'\')" title="Não oferecer esta campanha para ela">Não oferecer</button></div></div>';
   });
   h+='</div>'+(L.length>limite?'<div class="more"><button class="btn btn-sm btn-ghost" onclick="limite+=60;renderOport()">Mostrar mais ('+(L.length-limite)+')</button></div>':'');
@@ -1845,7 +1872,7 @@ function resultadosOport(){
   lista.sort(function(a,b){ return b.r.d.localeCompare(a.r.d); });
   h+='<div class="sect">Quem fez <small>'+n0(lista.length)+'</small></div><div class="rlist">';
   if(!lista.length) h+='<div class="card empty">Ainda ninguém — o robô confere 3 vezes por dia se quem recebeu a mensagem fez o serviço oferecido.</div>';
-  lista.slice(0,80).forEach(function(x){ h+='<div class="rrow" style="--c:var(--green)"><div><div class="nm">'+esc(x.nome)+'</div><div class="info">'+esc(nomeCamp(x.k))+' · mensagem em '+dataBR(x.env)+' · fez <b>'+esc((x.r.s||'').toLowerCase())+'</b> em '+dataBR(x.r.d)+' ('+(nDias(x.env,x.r.d)-1)+' dias depois)</div></div><div class="acts"><span class="pill p-ok">'+brl(x.r.v||0)+'</span></div></div>'; });
+  lista.slice(0,80).forEach(function(x){ h+='<div class="rrow" style="--c:var(--green)"><div><div class="nm">'+lkCli('',x.nome)+'</div><div class="info">'+esc(nomeCamp(x.k))+' · mensagem em '+dataBR(x.env)+' · fez <b>'+esc((x.r.s||'').toLowerCase())+'</b> em '+dataBR(x.r.d)+' ('+(nDias(x.env,x.r.d)-1)+' dias depois)</div></div><div class="acts"><span class="pill p-ok">'+brl(x.r.v||0)+'</span></div></div>'; });
   h+='</div><div class="nota">Conta como "fez" quando a cliente realiza um serviço do tipo oferecido (ou o serviço sugerido) até 90 dias depois da mensagem. O valor é o preço de tabela desses serviços. A conferência é feita pelo robô, que olha os atendimentos pagos dos últimos 120 dias.</div>';
   return h;
 }
@@ -1960,7 +1987,7 @@ function renderTabelaCli(){
   if(!L.length) h+='<tr><td colspan="10" class="empty">'+(cliAba==='sumidas'?'Nenhuma cliente recorrente sumida.':'Nenhuma cliente encontrada.')+'</td></tr>';
   L.slice(0, cliLim).forEach(function(c,i){
     var atraso = c.iv && c.dias > 2*c.iv && c.q>=2;
-    h+='<tr><td class="r" style="color:var(--muted)">'+(i+1)+'</td><td>'+esc(c.n)+'</td><td class="r" style="font-weight:600">'+brl(c.v)+'</td><td class="r">'+n0(c.q)+'</td><td class="r">'+brl(c.pv)+'</td>';
+    h+='<tr><td class="r" style="color:var(--muted)">'+(i+1)+'</td><td>'+lkCli(c.i,c.n)+'</td><td class="r" style="font-weight:600">'+brl(c.v)+'</td><td class="r">'+n0(c.q)+'</td><td class="r">'+brl(c.pv)+'</td>';
     h+='<td class="r">'+dataBR(c.u)+' <small class="'+(atraso?'down':'p-sem')+'">('+c.dias+'d)</small></td><td class="r">'+(c.iv?'a cada '+c.iv+'d':'—')+'</td><td>'+esc((c.s||'').toLowerCase())+'</td><td>'+esc(c.r||'')+'</td>';
     h+='<td class="r">'+(c.c?'<a class="btn btn-sm btn-ghost" href="https://wa.me/55'+c.c+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'</td></tr>';
   });
@@ -2945,7 +2972,7 @@ function servCarregar(meses){
     SERV.carregando[m]=db.collection('voox_servicos').doc(m).onSnapshot(function(s){
       if(s.exists){ SERV.meses[m]=parseServDoc(s.data(), m); delete SERV.semDado[m]; }
       else { delete SERV.meses[m]; SERV.semDado[m]=1; }
-      clearTimeout(SERV._t); SERV._t=setTimeout(function(){ if(viewAtual==='serv') renderServ(true); if(viewAtual==='com') renderCom(); if(viewAtual==='marg') renderMarg(); }, 60);
+      clearTimeout(SERV._t); SERV._t=setTimeout(function(){ if(viewAtual==='serv') renderServ(true); if(FICHA.nome) renderFicha(); if(viewAtual==='com') renderCom(); if(viewAtual==='marg') renderMarg(); }, 60);
     }, function(err){ toast('Serviços: '+(err.code||err.message),'err'); });
     unsubs.push(SERV.carregando[m]);
   });
@@ -3025,7 +3052,7 @@ function detalheServ(x){
   if(!g){
     h+='<th>Data</th><th>Cliente</th><th>Profissional</th><th class="r">Valor (est.)</th><th class="r">Qtd</th></tr></thead><tbody>';
     var it=x.it.slice().sort(function(a,b){ return b.d.localeCompare(a.d) || a.c.localeCompare(b.c); });
-    it.slice(0,SERV.limDet).forEach(function(o){ h+='<tr><td>'+dataBRc(o.d)+'</td><td>'+esc(o.c)+'</td><td>'+esc(o.p)+'</td><td class="r">'+brl2(o.v)+'</td><td class="r">'+n0(o.q)+'</td></tr>'; });
+    it.slice(0,SERV.limDet).forEach(function(o){ h+='<tr><td>'+dataBRc(o.d)+'</td><td>'+lkCli('',o.c)+'</td><td>'+esc(o.p)+'</td><td class="r">'+brl2(o.v)+'</td><td class="r">'+n0(o.q)+'</td></tr>'; });
     if(it.length>SERV.limDet) h+='<tr><td colspan="5" class="more"><button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();SERV.limDet+=300;renderListaServ()">Mostrar mais ('+(it.length-SERV.limDet)+')</button></td></tr>';
   } else {
     var rot={d:'Dia',m:'Mês',c:'Cliente',p:'Profissional'}[g], por={};
@@ -3218,7 +3245,7 @@ function renderCom(){
     h+='<td class="r" style="font-weight:700">'+brl2(x.comF+a)+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
     if(ab){
       h+='<tr class="sv-det"><td colspan="9"><div class="sv-panel"><div class="tscroll" style="max-height:380px"><table class="tdet"><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">Regra</th><th class="r">Comissão</th></tr></thead><tbody>';
-      x.it.slice().sort(function(a,b){ return a.d.localeCompare(b.d); }).forEach(function(i){ h+='<tr><td>'+dataBRc(i.d)+'</td><td>'+esc(i.c)+'</td><td>'+esc(i.s.toLowerCase())+(i.q>1?' ×'+i.q:'')+'</td><td class="r">'+brl2(i.v)+'</td><td class="r">'+(i.fonte?esc(i.regra):'<span class="down">sem %</span>')+'</td><td class="r">'+brl2(i.comF)+'</td></tr>'; });
+      x.it.slice().sort(function(a,b){ return a.d.localeCompare(b.d); }).forEach(function(i){ h+='<tr><td>'+dataBRc(i.d)+'</td><td>'+lkCli('',i.c)+'</td><td>'+esc(i.s.toLowerCase())+(i.q>1?' ×'+i.q:'')+'</td><td class="r">'+brl2(i.v)+'</td><td class="r">'+(i.fonte?esc(i.regra):'<span class="down">sem %</span>')+'</td><td class="r">'+brl2(i.comF)+'</td></tr>'; });
       h+='</tbody></table></div></div></td></tr>';
     }
   });
@@ -3577,7 +3604,7 @@ function renderVagas(){
       h+='<div class="rlist" style="margin-top:8px">';
       C.forEach(function(c){
         var cx=ch[c.id], cor=cx?'var(--green)':'var(--amber)';
-        h+='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+esc(c.n)+'</div><div class="info">'+esc((c.s||'').toLowerCase())+' com ela '+c.vezes+'× · última vez há '+c.dias+' dias'+(c.iv?' · costuma vir a cada '+c.iv+' dias':'')+'</div>'+(cx?'<div class="tags"><span class="pill p-ok">Chamada por '+esc((cx.por||'').split('@')[0])+'</span></div>':'')+'</div><div class="acts">';
+        h+='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+lkCli(c.id,c.n)+'</div><div class="info">'+esc((c.s||'').toLowerCase())+' com ela '+c.vezes+'× · última vez há '+c.dias+' dias'+(c.iv?' · costuma vir a cada '+c.iv+' dias':'')+'</div>'+(cx?'<div class="tags"><span class="pill p-ok">Chamada por '+esc((cx.por||'').split('@')[0])+'</span></div>':'')+'</div><div class="acts">';
         if(c.cel) h+='<button class="btn btn-sm '+(cx?'btn-ghost':'btn-wa')+'" data-p="'+esc(p.p)+'" onclick="chamarVaga(\''+c.id+'\',this.dataset.p)">'+(cx?'Reenviar':'WhatsApp')+'</button>';
         else h+='<span class="pill p-mut">sem celular</span>';
         h+='</div></div>';
@@ -3642,7 +3669,7 @@ function renderSat(){
 }
 function itemNota(x, atencao){
   var cli=atencao && cliLista.filter(function(c){ return c.i===x.c; })[0];
-  return '<div class="rrow" style="--c:'+corNota(x.nota)+'"><div><div class="nm"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+esc(x.nm||x.n||'')+' <small class="p-sem">'+dataBRc(x.data)+'</small></div><div class="info">'+esc((x.s||[]).join(', ').toLowerCase())+' · '+esc((x.p||[]).map(nomeProf).join(', '))+'</div>'+(x.comentario?'<div class="coment">“'+esc(x.comentario)+'”</div>':'')+'</div><div class="acts">'+(cli&&cli.c?'<a class="btn btn-sm btn-wa" href="https://wa.me/55'+cli.c+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'</div></div>';
+  return '<div class="rrow" style="--c:'+corNota(x.nota)+'"><div><div class="nm"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+lkCli(x.c,x.nm||x.n||'')+' <small class="p-sem">'+dataBRc(x.data)+'</small></div><div class="info">'+esc((x.s||[]).join(', ').toLowerCase())+' · '+esc((x.p||[]).map(nomeProf).join(', '))+'</div>'+(x.comentario?'<div class="coment">“'+esc(x.comentario)+'”</div>':'')+'</div><div class="acts">'+(cli&&cli.c?'<a class="btn btn-sm btn-wa" href="https://wa.me/55'+cli.c+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'</div></div>';
 }
 
 // ---- demo
@@ -3690,7 +3717,7 @@ function renderFalt(){
   if(!L.length) h+='<div class="card empty">Ninguém com faltas frequentes nos últimos 6 meses.</div>';
   L.forEach(function(o){
     var pr=o.prox && o.prox.slice(0,10)>=hoje, taxa=o.f/(o.f+o.a);
-    h+='<div class="rrow" style="--c:'+(pr?'var(--red)':'var(--amber)')+'"><div><div class="nm">'+esc(o.n)+'</div><div class="info">Faltou <b>'+o.f+'×</b>'+(o.cx?' · cancelou '+o.cx+'×':'')+' · veio '+o.a+'× · '+pct(taxa)+' dos horários sem aparecer · última falta '+dataBR(o.uf)+(o.s?' · '+esc(o.s.toLowerCase()):'')+'</div>';
+    h+='<div class="rrow" style="--c:'+(pr?'var(--red)':'var(--amber)')+'"><div><div class="nm">'+lkCli(o.i,o.n)+'</div><div class="info">Faltou <b>'+o.f+'×</b>'+(o.cx?' · cancelou '+o.cx+'×':'')+' · veio '+o.a+'× · '+pct(taxa)+' dos horários sem aparecer · última falta '+dataBR(o.uf)+(o.s?' · '+esc(o.s.toLowerCase()):'')+'</div>';
     if(pr) h+='<div class="tags"><span class="pill p-bad">Tem horário '+esc(quandoProx(o.prox))+'</span></div>';
     h+='</div><div class="acts">'+(o.c?'<button class="btn btn-sm '+(pr?'btn-wa':'btn-ghost')+'" onclick="enviarFalt(\''+o.i+'\')">'+(pr?'Pedir sinal':'WhatsApp')+'</button>':'<span class="pill p-mut">sem celular</span>')+'</div></div>';
   });
@@ -3848,6 +3875,69 @@ function demoProfDoc(p){
     vagas:[{data:addDias(h,1), gaps:[{i:'13:30',f:'15:00',min:90}], cands:[{n:'LAVINIA LEITE',primeiro:'Lavinia',cel:'51999990009',s:'DEPILAÇÃO VIRILHA',dias:33}]}]};
 }
 
+
+// ================================================================ FICHA DA CLIENTE (clique no nome)
+var FICHA = { id:'', nome:'' };
+function lkCli(id, nome){ return podePainel() ? '<span class="cli-lk" data-id="'+esc(id||'')+'" data-n="'+esc(nome||'')+'" title="Ver histórico">'+esc(nome)+'</span>' : esc(nome); }
+document.addEventListener('click', function(ev){
+  var el=ev.target.closest && ev.target.closest('.cli-lk'); if(!el) return;
+  ev.preventDefault(); ev.stopPropagation(); abrirFicha(el.dataset.id, el.dataset.n);
+});
+function abrirFicha(id, nome){
+  FICHA.id=String(id||''); FICHA.nome=String(nome||'').trim().toUpperCase();
+  var c=fichaCli(); if(c){ FICHA.id=c.i; FICHA.nome=c.n; }
+  if(!document.getElementById('ficha')){ var d=document.createElement('div'); d.id='ficha'; d.innerHTML='<div class="fi-fundo" onclick="fecharFicha()"></div><aside class="fi-painel" id="fi-painel"></aside>'; document.body.appendChild(d); }
+  document.getElementById('ficha').classList.add('on'); document.body.classList.add('sem-rolar');
+  if(c){ prepararVisitas(); var ms={}; (c._v||[]).forEach(function(v){ ms[v.d.slice(0,7)]=1; }); servCarregar(Object.keys(ms)); }
+  renderFicha();
+}
+function fecharFicha(){ var f=document.getElementById('ficha'); if(f) f.classList.remove('on'); document.body.classList.remove('sem-rolar'); FICHA.id=''; FICHA.nome=''; }
+document.addEventListener('keydown', function(ev){ if(ev.key==='Escape' && FICHA.nome) fecharFicha(); });
+function fichaCli(){
+  if(FICHA.id){ var a=cliLista.filter(function(c){ return c.i===FICHA.id; })[0]; if(a) return a; }
+  return FICHA.nome ? cliLista.filter(function(c){ return c.n===FICHA.nome; })[0] : null;
+}
+function renderFicha(){
+  var box=document.getElementById('fi-painel'); if(!box || !FICHA.nome) return;
+  var c=fichaCli(), hoje=hojeISO();
+  var h='<div class="fi-topo"><div><div class="klabel" style="margin:0">Ficha da cliente</div><div class="fi-nome">'+esc(c?c.n:FICHA.nome)+'</div></div><button class="ibtn" onclick="fecharFicha()" title="Fechar (Esc)" style="font-size:16px">✕</button></div>';
+  if(!c){ box.innerHTML=h+'<div class="card empty">Não encontrei atendimentos desta cliente nos últimos 24 meses.</div>'; return; }
+  prepararVisitas();
+  var V=(c._v||[]).slice().sort(function(a,b){ return b.d.localeCompare(a.d); });
+  // detalhe de cada dia (todos os serviços) a partir de Serviços feitos, quando já carregado
+  var det={}, falta=0;
+  V.forEach(function(v){ var m=v.d.slice(0,7), M=SERV.meses[m]; if(M===undefined){ if(!SERV.semDado[m]) falta++; return; } (M||[]).forEach(function(o){ if(o.c===c.n && o.d===v.d){ (det[v.d]=det[v.d]||[]).push(o); } }); });
+  var tot=V.reduce(function(a,v){ return a+v.v; },0), q=V.length, ult=V[0]&&V[0].d, pri=V.length?V[V.length-1].d:'';
+  var iv=q>1?Math.round((s2d(ult)-s2d(pri))/864e5/(q-1)):null, ds=ult?diasDesde(ult):null;
+  var S={}, P={};
+  V.forEach(function(v){ var L=det[v.d]; if(L) L.forEach(function(o){ S[o.s]=(S[o.s]||0)+o.q; P[o.p]=(P[o.p]||0)+o.q; }); else { if(v.s) S[v.s]=(S[v.s]||0)+1; if(v.p) P[v.p]=(P[v.p]||0)+1; } });
+  function top(o,n){ return Object.keys(o).sort(function(a,b){ return o[b]-o[a]; }).slice(0,n); }
+  var nts=Object.keys(NOTAS).map(function(k){ return NOTAS[k]; }).filter(function(x){ return x.c===c.i && x.nota!=null; });
+  var fa=FALTMAP[c.i], prox=null;
+  Object.keys(confirm_).forEach(function(k){ var x=confirm_[k]; if(x.cliente===c.i && x.ativo && x.data>=hoje && (!prox||x.data<prox.data)) prox=x; });
+  var status = ds==null ? '' : (iv && ds>2*iv && q>=2) ? '<span class="pill p-bad">sumida — não vem há '+ds+' dias</span>' : ds<=90 ? '<span class="pill p-ok">ativa</span>' : '<span class="pill p-mut">não vem há '+ds+' dias</span>';
+  h+='<div class="fi-tags">'+status+(fa?'<span class="pill p-bad">faltou '+fa.f+'× em 6 meses</span>':'')+(prox?'<span class="pill p-blue">horário '+esc(quandoData(prox.data))+' '+esc(((prox.itens||[])[0]||{}).hora||'')+'</span>':'')+(c.c?'<a class="btn btn-sm btn-wa" href="https://wa.me/55'+c.c+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'</div>';
+  h+='<div class="grid kpis fi-k">';
+  h+='<div class="card"><div class="klabel">Visitas (24 meses)</div><div class="kval">'+n0(q)+'</div><div class="khint">desde '+(pri?dataBRc(pri):'—')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Valor (est.)</div><div class="kval">'+brl(tot)+'</div><div class="khint">'+(q?brl(tot/q)+' por visita':'—')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Última visita</div><div class="kval" style="font-size:17px">'+(ult?dataBRc(ult):'—')+'</div><div class="khint">'+(ds!=null?'há '+ds+' dias':'')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Costuma vir</div><div class="kval" style="font-size:17px">'+(iv?'a cada '+iv+'d':'—')+'</div><div class="khint">'+(nts.length?'nota média '+(nts.reduce(function(a,x){ return a+x.nota; },0)/nts.length).toFixed(1).replace('.',','):'sem nota de satisfação')+'</div></div></div>';
+  h+='<div class="fi-pref"><div><span class="klabel">Serviços que mais faz</span><div>'+top(S,4).map(function(s){ return '<span class="pill p-mut">'+esc(s.toLowerCase())+' · '+S[s]+'</span>'; }).join(' ')+'</div></div>';
+  h+='<div><span class="klabel">Com quem</span><div>'+top(P,3).map(function(p){ return '<span class="pill p-mut">'+esc(nomeProf(p))+' · '+P[p]+'</span>'; }).join(' ')+'</div></div></div>';
+  if(nts.length) h+='<div class="sect" style="margin-top:14px">Notas de satisfação</div>'+nts.sort(function(a,b){ return b.data.localeCompare(a.data); }).slice(0,5).map(function(x){ return '<div class="fi-nota"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+dataBRc(x.data)+(x.comentario?' · <i>“'+esc(x.comentario)+'”</i>':'')+'</div>'; }).join('');
+  h+='<div class="sect" style="margin-top:14px">Histórico de atendimentos <small>'+n0(q)+' visita(s)'+(falta?' · carregando detalhes…':'')+'</small></div><div class="fi-hist">';
+  V.forEach(function(v){
+    var L=det[v.d], w=['dom','seg','ter','qua','qui','sex','sáb'][s2d(v.d).getDay()];
+    h+='<div class="fi-vis"><div class="fi-d"><b>'+dataBRc(v.d)+'</b><small>'+w+'</small></div><div class="fi-s">';
+    if(L && L.length) h+=L.map(function(o){ return '<div>'+esc(o.s.toLowerCase())+(o.q>1?' ×'+o.q:'')+' <span class="p-sem">· '+esc(nomeProf(o.p))+'</span><span class="fi-v">'+brl(o.v)+'</span></div>'; }).join('');
+    else h+='<div>'+esc((v.s||'').toLowerCase())+' <span class="p-sem">· '+esc(nomeProf(v.p))+'</span><span class="fi-v">'+brl(v.v)+'</span></div>';
+    h+='</div></div>';
+  });
+  if(!V.length) h+='<div class="empty">Sem visitas registradas.</div>';
+  h+='</div><div class="nota">Atendimentos pagos dos últimos 24 meses, vindos do Zelo pelo robô. Valores estimados pelo preço de tabela ajustado ao faturamento do mês.</div>';
+  box.innerHTML=h;
+}
+
 // ---------------------------------------------------------------- reativação
 var COR_ESTADO = { enviar:'var(--amber)', aguardando:'var(--blue)', voltaram:'var(--green)', descartadas:'var(--muted)' };
 
@@ -3907,7 +3997,7 @@ function renderLista(){
     if(filtro==='aguardando'){ var de=diasDesde(c.enviadoEm); tags+='<span class="pill '+(de>=7?'p-bad':'p-blue')+'">Enviada há '+de+(de===1?' dia':' dias')+'</span>'; if(c.enviadoPor) tags+='<span class="pill p-mut">por '+esc((c.enviadoPor||'').split('@')[0])+'</span>'; }
     if(filtro==='voltaram') tags+='<span class="pill p-ok">'+(c.voltouTipo==='agendou'?'Agendou':c.voltouTipo==='manual'?'Marcado à mão':'Voltou')+' em '+dataBR(c.voltouEm)+'</span>'+(c.enviado?'<span class="pill p-mut">após mensagem</span>':'')+(c.retornoAtend?'<span class="pill p-ok">'+brl(c.retornoValor||0)+' em '+c.retornoAtend+' atend.</span>':'');
     if(c.ciclos) tags+='<span class="pill p-mut">'+(c.ciclos+1)+'ª vez na lista</span>';
-    h+='<div class="rrow" style="--c:'+COR_ESTADO[filtro]+'"><div><div class="nm">'+esc(c.nome)+'</div>';
+    h+='<div class="rrow" style="--c:'+COR_ESTADO[filtro]+'"><div><div class="nm">'+lkCli(c.id,c.nome)+'</div>';
     h+='<div class="info">'+esc(c.servico)+' · última visita '+dataBR(c.ult)+' ('+d+' dias) · '+n0(c.n)+' serviços em 120 dias · costuma vir a cada '+c.intervalo+' dias</div>';
     if(tags) h+='<div class="tags">'+tags+'</div>';
     h+='</div><div class="acts">';
