@@ -1200,16 +1200,33 @@ def gravar_vagas(z, db, d, fones, rapido=False):
 
 # ---------------------------------------------------------------- comissão de cada profissional por serviço (cadastro de Usuários do Zelo)
 
-def gravar_comissoes_zelo(z, db):
-    usuarios, page = [], 1
-    while page < 20:
-        c = z.get("/api/usuarios/vinculos", {"apenasComAcessoSistema": "false", "apenasInativos": "false",
+def _vinculos(z, inativos):
+    lista, page = [], 1
+    while page < 40:
+        c = z.get("/api/usuarios/vinculos", {"apenasComAcessoSistema": "false", "apenasInativos": "true" if inativos else "false",
                                              "fields": "id,nomeAgenda,apelido,profissional,ativo", "page": page,
                                              "q": "", "rpp": 100})["content"]
-        usuarios += c.get("resultList") or []
+        lista += c.get("resultList") or []
         if not c.get("more"):
             break
         page += 1
+    return lista
+
+
+def gravar_comissoes_zelo(z, db):
+    usuarios = _vinculos(z, False)
+    # Profissional marcada como inativa no Zelo, mas que ainda aparece nos serviços dos últimos 13 meses:
+    # também precisa do cadastro de comissão (ex.: vínculo desligado e ela segue atendendo).
+    ativos = {(u.get("nomeAgenda") or "").strip() for u in usuarios}
+    recentes = set()
+    for doc in db.collection("voox_servicos").select(["pd"]).stream():
+        recentes.update(n.strip() for n in ((doc.to_dict() or {}).get("pd") or []))
+    extras = [u for u in _vinculos(z, True)
+              if u.get("profissional") and (u.get("nomeAgenda") or "").strip() in recentes
+              and (u.get("nomeAgenda") or "").strip() not in ativos]
+    if extras:
+        log("Comissões do Zelo: inativas no Zelo mas com serviços recentes: " + ", ".join(u.get("nomeAgenda") or "" for u in extras))
+    usuarios += extras
     profs, n_serv = {}, 0
     for u in usuarios:
         if not u.get("profissional"):
