@@ -99,7 +99,7 @@ html[data-theme="light"] .side:hover:not(.pin){box-shadow:14px 0 40px rgba(60,40
 .side-logo{padding:0 6px 16px;overflow:hidden;cursor:pointer}
 .side-logo .logoimg,.side-logo .brand-cap{display:none}
 .side-logo .logo-mini{display:flex;align-items:center;justify-content:center;width:auto;flex:none;padding-left:4px}
-.side:hover .side-logo,.side.pin .side-logo{display:grid;grid-template-columns:max-content;justify-content:start}
+.side:hover .side-logo,.side.pin .side-logo{display:grid;grid-template-columns:max-content;justify-content:center}
 .side:hover .side-logo .logoimg,.side.pin .side-logo .logoimg{display:block;width:112px;height:44px;justify-self:center;background-position:center}
 .side:hover .side-logo .logo-mini,.side.pin .side-logo .logo-mini{display:none}
 .side:hover .side-logo .brand-cap,.side.pin .side-logo .brand-cap{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px;padding-left:2px;margin-right:-.14em}
@@ -131,6 +131,27 @@ h1{font-size:21px;font-weight:700;letter-spacing:-.4px}
 .h1sub{font-size:12px;color:var(--muted);margin-top:2px}
 .fresh{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
 .fresh .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.robo-box{position:relative}
+.robo-btn.on{border-color:var(--primary);color:var(--primary)}
+.robo-gira{display:inline-block;animation:robogira 1.1s linear infinite}
+@keyframes robogira{to{transform:rotate(360deg)}}
+.robo-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:320px;max-width:86vw;background:var(--card-2,var(--card));border:1px solid var(--border);border-radius:13px;padding:8px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+html[data-theme="dark"] .robo-menu{background:#1c1c1f}
+html[data-theme="light"] .robo-menu{background:#fbf7f1}
+.robo-menu.on{display:block}
+.robo-op{display:block;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:10px;padding:9px 10px;color:var(--text);cursor:pointer;font-family:inherit}
+.robo-op:hover{border-color:var(--primary);background:rgba(188,130,64,.08)}
+.robo-op b{display:block;font-size:13px}
+.robo-op small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.robo-nota,.robo-st{font-size:11.5px;color:var(--muted);padding:8px 10px 4px;line-height:1.5}
+.robo-st{color:var(--text);font-size:12.5px}
+.robo-st a,.robo-lk{color:var(--primary)}
+.robo-lk{display:block;font-size:12px;padding:2px 10px 6px}
+.cf-robo{max-width:920px}
+.cf-passos{font-size:12.5px;color:var(--muted);line-height:1.6;margin:6px 0 10px 18px;padding:0}
+.cf-passos b,.cf-passos i{color:var(--text)}
+.cf-robo-f{display:flex;gap:8px;flex-wrap:wrap}
+.cf-robo-f input{flex:1;min-width:180px;height:36px}
 .fresh.velho{color:var(--red)} .fresh.velho .dot{background:var(--red)}
 .luabtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
 .luabtn:hover{border-color:var(--primary)}
@@ -626,6 +647,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div class="topbar">
       <div><h1 id="ptitle">Painel</h1><div class="h1sub" id="psub">—</div></div>
       <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+        <div class="robo-box gestao-only" id="roboBox"><button class="btn btn-sm btn-ghost robo-btn" id="roboBtn" onclick="menuRobo(event)" title="Atualiza faturamento de hoje, confirmações, pós-atendimento e horários vagos (1 a 2 min)">↻ Atualizar agora</button><div class="robo-menu" id="roboMenu"></div></div>
         <div class="fresh" id="fresh"><span class="dot"></span><span id="freshTxt">Carregando…</span></div>
         <button class="luabtn" onclick="toggleTema()" title="Alternar tema" data-lua>☾</button>
       </div>
@@ -879,6 +901,10 @@ function assinar(){
   if(podePainel()) unsubs.push(db.collection('voox_prof_acesso').limit(200).onSnapshot(function(snap){
     ACESSOS={}; snap.forEach(function(d){ ACESSOS[d.id]=d.data(); }); CFG.acessosOk=true; renderAcessos(); migrarLegado();
   }, function(err){ toast('Acessos: '+(err.code||err.message),'err'); }));
+  if(podePainel()) unsubs.push(db.collection('voox_segredos').doc('github').onSnapshot(function(snap){
+    var g=snap.exists?snap.data():{}; var novo=!ROBO.carregado; ROBO.token=g.token||''; ROBO.repo=g.repo||ROBO.repo; ROBO.carregado=true;
+    botaoRobo(); if(novo) verRoboRodando(); if(viewAtual==='config') renderCfg();
+  }, function(err){ console.warn('robô:', err.code||err.message); }));
   if(nivel==='admin') unsubs.push(db.collection('voox_usuarios').limit(300).onSnapshot(function(snap){
     CFG.users={}; snap.forEach(function(d){ var u=d.data(); u.email=d.id; CFG.users[d.id]=u; }); CFG.ok=true;
     renderCfg(); migrarLegado();
@@ -4388,7 +4414,7 @@ function renderCfg(){
   h+='<div class="seg">'+[['todos','Todos']].concat(nPend?[['pend','Esperando liberação <b>'+nPend+'</b>']]:[]).concat([['admin','Administração'],['gerente','Gerência'],['equipe','Recepção'],['prof','Profissionais'],['bloq','Bloqueados']]).map(function(f){ return '<button class="'+(CFG.filtro===f[0]?'on':'')+'" onclick="setCfgFiltro(\''+f[0]+'\')">'+f[1]+'</button>'; }).join('')+'</div>';
   h+='<span style="flex:1"></span><button class="btn" onclick="novaPessoa()">+ Adicionar pessoa</button></div>';
   h+='<div class="nota" style="margin:0 0 12px"><b>Como dar acesso:</b> 1) crie o usuário (e-mail e senha) no Firebase, em <b>Authentication › Users › Adicionar usuário</b>; 2) aqui, clique em <b>+ Adicionar pessoa</b> com o <b>mesmo e-mail</b> e escolha o nível. A pessoa entra em <b>voox1956.com.br/painel</b> com esse e-mail e senha. Mudanças de nível, abas ou bloqueio valem na hora para quem estiver com o painel aberto.</div>';
-  h+='<div id="cf-lista" class="cf-lista"></div>';
+  h+='<div id="cf-lista" class="cf-lista"></div><div class="sect" style="margin-top:22px">Robô</div>'+cardRobo();
   el.innerHTML=h; renderCfgLista();
 }
 function renderCfgLista(){
@@ -4601,6 +4627,131 @@ function dadosDemoCfg(){
   CFG.ok=true; CFG.acessosOk=true;
 }
 
+
+// ================================================================ BOTÃO "ATUALIZAR AGORA" (dispara o robô no GitHub Actions)
+// voox_segredos/github -> {token, repo}  (só a gestão lê; só a administração grava — o token nunca fica no código do site)
+var ROBO = { token:'', repo:'joaorjt-crypto/voox1956', carregado:false, tipo:'', ini:0, timer:null, run:null, menu:false };
+var ROBO_WF = { rapido:{arq:'zelo-rapido.yml', nome:'Atualização rápida', desc:'Faturamento de hoje, confirmações, pós-atendimento e horários vagos', tempo:'1 a 2 min'},
+                completo:{arq:'zelo-sync.yml', nome:'Atualização completa', desc:'Tudo: clientes, serviços, comissões, oportunidades, painéis das profissionais', tempo:'15 a 25 min'} };
+function ghFetch(caminho, opt){
+  opt=opt||{};
+  return fetch('https://api.github.com/repos/'+ROBO.repo+caminho, {method:opt.method||'GET', body:opt.body?JSON.stringify(opt.body):undefined,
+    headers:{'Authorization':'Bearer '+ROBO.token, 'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'}})
+    .then(function(r){
+      if(r.status===204) return {};
+      return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok){ var e=new Error(j.message||('HTTP '+r.status)); e.status=r.status; throw e; } return j; });
+    });
+}
+function ghErro(e){
+  if(e.status===401) return 'o token do GitHub expirou ou está errado (Configurações › Robô)';
+  if(e.status===403) return 'o token não tem permissão de Actions neste repositório';
+  if(e.status===404) return 'não achei o robô no repositório '+ROBO.repo;
+  if(e.status===422) return 'o robô não aceita disparo manual (falta workflow_dispatch no .yml)';
+  return e.message||'erro';
+}
+function ultimaRodada(tipo){
+  return ghFetch('/actions/workflows/'+ROBO_WF[tipo].arq+'/runs?per_page=1').then(function(j){ return (j.workflow_runs||[])[0]||null; });
+}
+function botaoRobo(){
+  var b=document.getElementById('roboBtn'); if(!b) return;
+  if(ROBO.tipo){ var s=Math.round((Date.now()-ROBO.ini)/1000); b.innerHTML='<span class="robo-gira">↻</span> Atualizando… '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); b.classList.add('on'); }
+  else { b.innerHTML='↻ Atualizar agora'; b.classList.remove('on'); }
+}
+function menuRobo(ev){
+  if(ev) ev.stopPropagation();
+  var m=document.getElementById('roboMenu'); if(!m) return;
+  if(ROBO.menu){ fecharMenuRobo(); return; }
+  ROBO.menu=true;
+  var h='';
+  if(ROBO.tipo){
+    h+='<div class="robo-st"><b>'+ROBO_WF[ROBO.tipo].nome+'</b> rodando'+(ROBO.run&&ROBO.run.status==='queued'?' (na fila do GitHub)':'')+'. Os dados da tela se atualizam sozinhos quando terminar.</div>';
+    if(ROBO.run&&ROBO.run.html_url) h+='<a class="robo-lk" href="'+esc(ROBO.run.html_url)+'" target="_blank" rel="noopener">Ver no GitHub ↗</a>';
+  } else if(!ROBO.token && !DEMO){
+    h+='<div class="robo-st">'+(nivel==='admin'?'Falta ligar o botão ao GitHub. <a href="#config" onclick="fecharMenuRobo();nav(\'config\')">Abrir Configurações › Robô</a>':'O botão ainda não foi configurado. Peça à administração.')+'</div>';
+  } else { ROBO.menu=false; dispararRobo('rapido'); return; }
+  m.innerHTML=h; m.classList.add('on');
+}
+function fecharMenuRobo(){ ROBO.menu=false; var m=document.getElementById('roboMenu'); if(m) m.classList.remove('on'); }
+document.addEventListener('click', function(ev){ if(ROBO.menu && !(ev.target.closest && ev.target.closest('#roboBox'))) fecharMenuRobo(); });
+function dispararRobo(tipo){
+  fecharMenuRobo();
+  if(ROBO.tipo){ toast('O robô já está rodando.'); return; }
+  if(DEMO){ ROBO.tipo=tipo; ROBO.ini=Date.now(); botaoRobo(); ROBO.timer=setInterval(botaoRobo,1000); setTimeout(function(){ fimRobo('success'); }, 5000); toast(ROBO_WF[tipo].nome+' iniciada (demonstração).'); return; }
+  var antes=null;
+  ultimaRodada(tipo).then(function(r){
+    if(r && (r.status==='queued'||r.status==='in_progress')){ acompanharRobo(tipo, r); throw {jaRodando:true}; }
+    antes=r?r.id:null;
+    return ghFetch('/actions/workflows/'+ROBO_WF[tipo].arq+'/dispatches', {method:'POST', body:{ref:'main'}});
+  }).then(function(){
+    toast(ROBO_WF[tipo].nome+' pedida. Leva '+ROBO_WF[tipo].tempo+'.');
+    ROBO.tipo=tipo; ROBO.ini=Date.now(); ROBO.run=null; botaoRobo();
+    clearInterval(ROBO.timer); ROBO.timer=setInterval(botaoRobo,1000);
+    var tent=0;
+    (function achar(){   // o GitHub leva alguns segundos para criar a rodada
+      ultimaRodada(tipo).then(function(r){
+        if(r && r.id!==antes){ acompanharRobo(tipo, r); return; }
+        if(++tent<12) setTimeout(achar, 4000); else acompanharRobo(tipo, null);
+      }).catch(function(){ if(++tent<12) setTimeout(achar, 4000); });
+    })();
+  }).catch(function(e){ if(e && e.jaRodando){ toast('Já tem uma '+ROBO_WF[tipo].nome.toLowerCase()+' rodando — acompanhando.'); return; } toast('Não deu para chamar o robô: '+ghErro(e),'err'); });
+}
+function acompanharRobo(tipo, run){
+  ROBO.tipo=tipo; ROBO.run=run; if(!ROBO.ini) ROBO.ini=run&&run.created_at?new Date(run.created_at).getTime():Date.now();
+  clearInterval(ROBO.timer); ROBO.timer=setInterval(botaoRobo,1000); botaoRobo();
+  var limite=Date.now()+45*60e3;
+  (function olhar(){
+    if(!ROBO.tipo) return;
+    var p = run ? ghFetch('/actions/runs/'+run.id) : ultimaRodada(tipo);
+    p.then(function(r){
+      if(r){ run=r; ROBO.run=r; }
+      if(r && r.status==='completed'){ fimRobo(r.conclusion, r.html_url); return; }
+      if(Date.now()>limite){ fimRobo('timeout'); return; }
+      setTimeout(olhar, 15000);
+    }).catch(function(){ if(Date.now()>limite) fimRobo('timeout'); else setTimeout(olhar, 20000); });
+  })();
+}
+function fimRobo(conc, url){
+  var t=ROBO.tipo; clearInterval(ROBO.timer); ROBO.tipo=''; ROBO.ini=0; ROBO.run=null; botaoRobo();
+  var n=(ROBO_WF[t]||{}).nome||'Atualização';
+  if(conc==='success') toast(n+' terminou — dados atualizados.');
+  else if(conc==='cancelled') toast(n+' foi cancelada no GitHub (outra rodada pode ter tomado o lugar).','err');
+  else if(conc==='timeout') toast('Parei de acompanhar o robô — confira em Actions no GitHub.','err');
+  else toast(n+' deu erro no GitHub.','err', url?{label:'Ver', fn:function(){ window.open(url,'_blank','noopener'); }}:null);
+}
+// ao abrir o painel: se já tem uma rodada manual em andamento, mostra
+function verRoboRodando(){
+  if(!ROBO.token || ROBO.tipo || DEMO) return;
+  ['rapido'].forEach(function(t){
+    ultimaRodada(t).then(function(r){ if(r && !ROBO.tipo && (r.status==='queued'||r.status==='in_progress') && r.event==='workflow_dispatch'){ ROBO.ini=0; acompanharRobo(t, r); } }).catch(function(){});
+  });
+}
+// ---- Configurações › Robô (só admin)
+function cardRobo(){
+  var fim=ROBO.token?ROBO.token.slice(-4):'';
+  var h='<div class="card cf-robo"><div class="fbar" style="margin:0 0 8px"><div><div class="klabel" style="margin:0">Robô do Zelo · botão "Atualizar agora"</div><div class="khint" style="margin-top:3px">'+(ROBO.token?'<span class="up">● ligado</span> · token terminando em …'+esc(fim)+' · repositório '+esc(ROBO.repo):'<span style="color:var(--amber)">● desligado</span> — cole um token do GitHub para o botão funcionar')+'</div></div><span style="flex:1"></span>'
+    +(ROBO.token?'<button class="btn btn-sm btn-ghost" onclick="testarRobo()">Testar</button>':'')+'<button class="btn btn-sm btn-ghost" onclick="var d=document.getElementById(\'cf-robo-ed\');d.style.display=d.style.display===\'none\'?\'\':\'none\'">'+(ROBO.token?'Trocar token':'Configurar')+'</button></div>';
+  h+='<div id="cf-robo-ed" style="display:'+(ROBO.token?'none':'')+'"><ol class="cf-passos"><li>No GitHub: foto do perfil › <b>Settings</b> › <b>Developer settings</b> › <b>Personal access tokens</b> › <b>Fine-grained tokens</b> › <b>Generate new token</b>.</li>'
+    +'<li>Nome: <i>Painel Voox</i>. Expiração: 1 ano (anote para renovar). <b>Repository access</b>: <i>Only select repositories</i> → o repositório do robô.</li>'
+    +'<li><b>Permissions › Repository permissions › Actions</b>: <i>Read and write</i>. Nada mais. Gere e copie o token.</li>'
+    +'<li>Cole aqui embaixo e salve. Ele fica guardado no banco, só a gestão consegue ler.</li></ol>'
+    +'<div class="cf-robo-f"><input id="cf-gh-tok" type="password" placeholder="github_pat_…" autocomplete="off"><input id="cf-gh-repo" type="text" value="'+esc(ROBO.repo)+'" placeholder="usuário/repositório"><button class="btn btn-sm" onclick="salvarRobo()">Salvar</button></div></div></div>';
+  return h;
+}
+function salvarRobo(){
+  var t=String(document.getElementById('cf-gh-tok').value||'').trim(), r=String(document.getElementById('cf-gh-repo').value||'').trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,'');
+  if(!/^[\w.-]+\/[\w.-]+$/.test(r)){ toast('Repositório no formato usuário/repositório.','err'); return; }
+  if(!t && !ROBO.token){ toast('Cole o token.','err'); return; }
+  var d={repo:r, alteradoPor:email, alteradoEm:new Date().toISOString()}; if(t) d.token=t;
+  if(DEMO){ Object.assign(ROBO,d); renderCfg(); toast('Salvo (demonstração).'); return; }
+  db.collection('voox_segredos').doc('github').set(d,{merge:true}).then(function(){ toast('Botão do robô configurado.'); setTimeout(testarRobo, 600); })
+    .catch(function(e){ toast('Não salvou: '+(e.code==='permission-denied'?'publique as regras novas do Firestore':(e.code||e.message)),'err'); });
+}
+function testarRobo(){
+  if(DEMO){ toast('Na versão real eu confiro o acesso ao GitHub.'); return; }
+  ultimaRodada('rapido').then(function(){ toast('Tudo certo: o painel consegue chamar o robô.'); })
+    .catch(function(e){ toast('Teste falhou: '+ghErro(e),'err'); });
+}
+
 // ---------------------------------------------------------------- start
 (function(){ var on=true; try{ on=(localStorage.getItem('voox_painel_pin')!=='0'); }catch(e){} if(on) document.getElementById('sidebar').classList.add('pin'); })();
 aplicarModo(modoAtual());
@@ -4612,7 +4763,7 @@ if(DEMO){
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
-  dadosDemoCfg();
+  dadosDemoCfg(); ROBO.token='demo1234';
   (function(){ var mm=location.search.match(/[?&]como=([\w.@-]+)/); if(!mm) return; var u=CFG.users[mm[1]]; if(!u) return; nivel=u.nivel; nome=u.nome; USR={fin:u.fin!==false, ocultas:u.ocultas||[]}; })();
   document.getElementById('msg-txt').value=mensagem;
   aplicarUI(); renderReativ(); renderAniv(); renderMsgs();
