@@ -534,6 +534,13 @@ body.sem-rolar{overflow:hidden}
 .pq-l small{color:var(--muted);text-align:right}
 .pq-b{height:9px;background:var(--border);border-radius:5px;overflow:hidden}
 .pq-b i{display:block;height:100%;border-radius:5px}
+.dup-l{display:flex;flex-direction:column;gap:10px}
+.dup-g{padding:10px 14px}
+.dup-g.alta{border-left:3px solid var(--amber)}
+.dup-h{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.dup-t{width:100%;border-collapse:collapse;font-size:12.5px}
+.dup-t td{padding:5px 6px;border-top:1px solid var(--border);white-space:nowrap}
+.dup-t td:nth-child(2){white-space:normal;min-width:180px}
 .ag-an{font-size:11.5px;color:var(--amber);margin:1px 0 4px 44px}
 @media (max-width:560px){.pac-f{grid-template-columns:1fr}}
 #cfged{display:none}
@@ -660,6 +667,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <button class="navbtn gestao-only" data-p="cgs" onclick="nav('cgs')"><span class="side-ico">≡</span><span class="lbl">Contas gerenciais</span></button>
     <div class="side-sec lbl">Clientes</div>
     <button class="navbtn gestao-only" data-p="cli" onclick="nav('cli')"><span class="side-ico">☷</span><span class="lbl">Clientes</span></button>
+    <button class="navbtn gestao-only" data-p="base" onclick="nav('base')"><span class="side-ico">⊞</span><span class="lbl">Base de clientes</span></button>
     <button class="navbtn" data-p="conf" onclick="nav('conf')"><span class="side-ico">☎</span><span class="lbl">Confirmações</span><span class="cnt" id="cntConf" style="display:none">0</span></button>
     <button class="navbtn" data-p="falt" onclick="nav('falt')"><span class="side-ico">⚠</span><span class="lbl">Faltosas</span><span class="cnt" id="cntFalt" style="display:none">0</span></button>
     <button class="navbtn" data-p="vagas" onclick="nav('vagas')"><span class="side-ico">◷</span><span class="lbl">Horários vagos</span></button>
@@ -706,6 +714,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div class="page" id="page-acessos"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-config"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-falt"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-base"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-pac"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-indic"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-minha"><div class="empty">Carregando…</div></div>
@@ -1088,6 +1097,7 @@ var TITULOS = {
   semana: ['Resumo da semana', 'A semana em uma página — para olhar toda segunda'],
   acessos:['Acesso das profissionais', 'Quem pode ver o próprio painel'],
   config: ['Configurações', 'Quem entra no painel e o que cada pessoa vê'],
+  base:   ['Base de clientes', 'Todos os cadastros do Zelo, Excel e possíveis duplicidades'],
   pac:    ['Pacotes', 'Sessões compradas, quanto falta e quem renovar'],
   indic:  ['Indique uma amiga', 'Códigos de indicação, amigas que vieram e prêmios'],
   falt:   ['Faltosas', 'Clientes que costumam faltar — peça sinal ou confirme antes'],
@@ -1106,7 +1116,7 @@ var TITULOS = {
   lanc:   ['Lançamentos', 'Entradas e saídas do Caixa, Bradesco e Banrisul'],
   cgs:    ['Contas gerenciais', 'Categorias de despesa e receita e saldo inicial das contas']
 };
-var SO_GESTAO = {metas:1, semana:1, acessos:1, painel:1, vendas:1, prof:1, agenda:1, cli:1, serv:1, pagar:1, com:1, marg:1, conc:1, sat:1, fin:1, lanc:1, cgs:1};
+var SO_GESTAO = {base:1, metas:1, semana:1, acessos:1, painel:1, vendas:1, prof:1, agenda:1, cli:1, serv:1, pagar:1, com:1, marg:1, conc:1, sat:1, fin:1, lanc:1, cgs:1};
 function renderAtual(){ if(viewAtual==='painel') renderPainel(); if(viewAtual==='prof') renderProf(); if(viewAtual==='agenda') renderAgenda(); if(viewAtual==='com') renderCom(); if(viewAtual==='conc') renderConc(); }
 
 function aplicarUI(){
@@ -1168,6 +1178,7 @@ function nav(v){
   if(v==='acessos') renderAcessos();
   if(v==='config') renderCfg();
   if(v==='pac') renderPac();
+  if(v==='base') renderBase();
   if(v==='indic') renderIndic();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
@@ -4374,7 +4385,7 @@ var NIVEIS = [
 var CFG_ABAS = [
   {g:'Gestão', gestao:true, abas:[['painel','Painel'],['semana','Resumo da semana'],['prof','Profissionais'],['metas','Metas da equipe'],['agenda','Agenda'],['serv','Serviços feitos'],['sat','Satisfação'],['vendas','Mês a mês']]},
   {g:'Financeiro', gestao:true, fin:true, abas:[['fin','Dashboard'],['lanc','Lançamentos'],['pagar','Contas a pagar'],['com','Comissões'],['marg','Margem por serviço'],['conc','Conferência Zelo'],['cgs','Contas gerenciais']]},
-  {g:'Clientes', abas:[['cli','Clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga']]}
+  {g:'Clientes', abas:[['cli','Clientes',1],['base','Base de clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga']]}
 ];
 var FIN_ABAS = {}; CFG_ABAS[1].abas.forEach(function(a){ FIN_ABAS[a[0]]=1; });
 function nivelNome(n){ var x=NIVEIS.filter(function(v){ return v[0]===n; })[0]; return x?x[1]:'—'; }
@@ -5309,6 +5320,155 @@ function dadosDemoPesq(){
   var gost=['Atendimento muito carinhoso','Ambiente lindo e cheiroso','O café é ótimo','A Carla é maravilhosa',''], melh=['Pontualidade nos horários','Nada, tudo perfeito','Mais opções de horário no sábado','Wi-fi mais rápido'];
   for(var i=0;i<34;i++){ var c=L[i%L.length]||{}, q1=i===5?2:i%7===0?3:i%3===0?4:5;
     PESQ['d'+i]={data:addDias(h,-(i%25)), hora:(9+i%9)+':'+(i%2?'30':'00'), ci:i%6===0?'':String(c.i), cn:i%6===0?'':c.n, p:[ps[i%4]], s:['MANICURE'], q1:q1, q2:i===5?'Ruim':i%4===0?'Bom':'Ótimo', q3:i===5?'Não':i%9===0?'Parcialmente':'Sim', q4:i%5===0?'Bom':'Ótimo', q5:i%3===0?'Não experimentei':'Ótimo', q6:i%4===0?'Mais caro que esperava':'Sim, justo', q7:i%6===0?'Mais caro que esperava':'Sim, justo', q8:i%6===0?'A escova está um pouco cara':'', q9:gost[i%5], q10:melh[i%4]}; }
+}
+
+
+// ================================================================ BASE DE CLIENTES: varredura, Excel e possíveis duplicidades
+// voox_base/meta + voox_base/pNN {c:['id|nome|apelido|celular|fixo|email|nascimento|cpf|sexo|vip|marketing|codigo']} — robô, 1x/dia
+var BASE={L:[], meta:null, ok:false, carregando:false, erro:'', dup:null, filtro:'todas', busca:'', aba:'dup', conf:'todas', lim:200, ign:{}};
+var DDD_OK=/^(1[1-9]|2[12478]|3[1-578]|4[1-9]|5[1345]|6[1-9]|7[134579]|8[1-9]|9[1-9])$/;
+function baseNome(n){ return String(n||'').replace(/\*.*$/,'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim(); }
+function baseCel(c){
+  c=String(c||'').replace(/\D/g,''); if(c.length>=12 && c.slice(0,2)==='55') c=c.slice(2);
+  var ok = (c.length===11 && c[2]==='9' || c.length===10) && DDD_OK.test(c.slice(0,2)) && !/^(\d)\1+$/.test(c.slice(2));
+  return {d:c, ok:ok, k:c.length>=10 ? c.slice(0,2)+c.slice(-8) : ''};   // chave: DDD + 8 últimos (casa com e sem o 9)
+}
+function lev(a,b){ if(a===b) return 0; if(Math.abs(a.length-b.length)>2) return 9; var p=[],i,j; for(j=0;j<=b.length;j++) p[j]=j; for(i=1;i<=a.length;i++){ var q=[i]; for(j=1;j<=b.length;j++) q[j]=Math.min(p[j]+1,q[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=q; } return p[b.length]; }
+function nomeParecido(a,b){
+  if(!a||!b) return false; if(a===b) return true;
+  var x=a.split(' '), y=b.split(' ');
+  if(x[0]!==y[0]) return lev(a,b)<=2 && a.length>=8;
+  if(a.indexOf(b)===0 || b.indexOf(a)===0) return true;               // "ANA SILVA" x "ANA SILVA SOUZA"
+  if(x.length>1 && y.length>1 && x[x.length-1]===y[y.length-1]) return true;  // mesmo primeiro e último nome
+  return lev(a,b)<=2;
+}
+function carregarBase(forcar){
+  if(BASE.carregando || (BASE.ok && !forcar)) return;
+  if(DEMO){ dadosDemoBase(); renderBase(); return; }
+  BASE.carregando=true; BASE.erro=''; renderBase();
+  db.collection('voox_base').doc('meta').get().then(function(m){
+    if(!m.exists) throw {msg:'A base ainda não foi lida pelo robô. Rode o robô completo uma vez em Actions.'};
+    BASE.meta=m.data(); var refs=[]; for(var i=0;i<(BASE.meta.partes||0);i++) refs.push(db.collection('voox_base').doc('p'+String(i).padStart(2,'0')).get());
+    return Promise.all(refs);
+  }).then(function(snaps){
+    var L=[]; snaps.forEach(function(s){ ((s.exists&&s.data().c)||[]).forEach(function(t){ L.push(t); }); });
+    montarBase(L);
+  }).catch(function(e){ BASE.erro=e.msg||('Não carregou ('+(e.code||e.message)+')'); }).then(function(){ BASE.carregando=false; renderBase(); });
+}
+function montarBase(L){
+  var vis={}; (cliLista||[]).forEach(function(c){ vis[String(c.i)]=c; });
+  BASE.L=L.map(function(t){
+    var a=t.split('|'), c=baseCel(a[3]), v=vis[a[0]]||null;
+    return {i:a[0], n:a[1]||'', ap:a[2]||'', cel:c.d, celOk:c.ok, ck:c.k, fx:a[4]||'', em:a[5]||'', nasc:a[6]||'', cpf:a[7]||'', sx:a[8]||'', vip:a[9]==='1', mkt:a[10]==='1', cod:a[11]||'',
+      nk:baseNome(a[1]), u:v?v.u:'', q:v?(v.vs?v.vs.length:(v.q||0)):0, val:v?(v.vs?v.vs.reduce(function(s,x){ return s+(+String(x).split(',')[1]||0); },0):(v.v||0)):0};
+  });
+  BASE.ok=true; BASE.dup=null;
+  try{ BASE.ign=JSON.parse(localStorage.getItem('voox_dup_ign')||'{}'); }catch(e){ BASE.ign={}; }
+}
+function acharDuplicidades(){
+  if(BASE.dup) return BASE.dup;
+  var L=BASE.L, pai={}, mE={}, fE={};
+  function f(x){ while(pai[x]!==x){ pai[x]=pai[pai[x]]; x=pai[x]; } return x; }
+  L.forEach(function(o){ pai[o.i]=o.i; });
+  function une(a,b,mot,alta){ var ra=f(a.i), rb=f(b.i); if(ra!==rb) pai[ra]=rb; [a,b].forEach(function(o){ (mE[o.i]=mE[o.i]||{})[mot]=1; if(alta) fE[o.i]=1; }); }
+  function grupos(chave){ var g={}; L.forEach(function(o){ var k=chave(o); if(k) (g[k]=g[k]||[]).push(o); }); return Object.keys(g).map(function(k){ return g[k]; }).filter(function(a){ return a.length>1 && a.length<=8; }); }
+  grupos(function(o){ return o.cpf.length===11?o.cpf:''; }).forEach(function(a){ for(var i=1;i<a.length;i++) une(a[0],a[i],'mesmo CPF',1); });
+  grupos(function(o){ return o.em.indexOf('@')>0?o.em:''; }).forEach(function(a){ for(var i=1;i<a.length;i++) une(a[0],a[i],'mesmo e-mail',1); });
+  grupos(function(o){ return o.ck; }).forEach(function(a){
+    for(var i=0;i<a.length;i++) for(var j=i+1;j<a.length;j++){ if(nomeParecido(a[i].nk,a[j].nk)){ var pn=a[i].nk.split(' ')[0]===a[j].nk.split(' ')[0]; une(a[i],a[j], a[i].nk===a[j].nk?'mesmo nome e celular':pn?'mesmo celular e nome parecido':'mesmo celular, primeiro nome parecido', pn?1:0); } }
+  });
+  grupos(function(o){ return o.nk.split(' ').length>=2?o.nk:''; }).forEach(function(a){
+    for(var i=1;i<a.length;i++){ var x=a[0], y=a[i], semTel=!x.ck||!y.ck, nasc=x.nasc&&x.nasc===y.nasc;
+      if(nasc) une(x,y,'mesmo nome e nascimento',1); else une(x,y, semTel?'mesmo nome (um sem celular)':'mesmo nome, celulares diferentes', semTel && x.nk.split(' ').length>=3); }
+  });
+  var por={}; L.forEach(function(o){ if(mE[o.i]) (por[f(o.i)]=por[f(o.i)]||[]).push(o); });
+  var G=Object.keys(por).filter(function(r){ return por[r].length>1; }).map(function(r){
+    var m=por[r].slice().sort(function(a,b){ return (b.q-a.q) || String(b.u).localeCompare(String(a.u)) || (b.celOk-a.celOk); });
+    var mot={}, alta=false; m.forEach(function(o){ Object.keys(mE[o.i]||{}).forEach(function(k){ mot[k]=1; }); if(fE[o.i]) alta=true; });
+    return {id:m.map(function(o){ return o.i; }).sort().join('-'), m:m, mot:Object.keys(mot), alta:alta};
+  }).sort(function(a,b){ return (b.alta-a.alta) || (b.m.reduce(function(s,o){ return s+o.q; },0)-a.m.reduce(function(s,o){ return s+o.q; },0)); });
+  BASE.dup=G; return G;
+}
+function ignorarDup(id){ BASE.ign[id]=1; try{ localStorage.setItem('voox_dup_ign', JSON.stringify(BASE.ign)); }catch(e){} renderBase(); toast('Marcado como não duplicado (neste computador).','',{label:'Desfazer', fn:function(){ delete BASE.ign[id]; try{ localStorage.setItem('voox_dup_ign', JSON.stringify(BASE.ign)); }catch(e){} renderBase(); }}); }
+function baseFiltrada(){
+  var q=baseNome(BASE.busca), dig=String(BASE.busca).replace(/\D/g,''), f=BASE.filtro, lim=addDias(hojeISO(),-730);
+  return BASE.L.filter(function(o){
+    if(f==='ativas' && !(o.u && o.u>=lim)) return false;
+    if(f==='inativas' && (o.u && o.u>=lim)) return false;
+    if(f==='semcel' && o.cel) return false;
+    if(f==='celinv' && !(o.cel && !o.celOk)) return false;
+    if(f==='nasc' && !o.nasc) return false;
+    if(f==='mkt' && !o.mkt) return false;
+    if(q && o.nk.indexOf(q)<0 && !(dig.length>=4 && o.cel.indexOf(dig)>=0)) return false;
+    return true;
+  });
+}
+function setBaseAba(a){ BASE.aba=a; BASE.lim=200; renderBase(); }
+function setBaseFiltro(f){ BASE.filtro=f; BASE.lim=200; renderBase(); }
+function renderBase(){
+  if(viewAtual!=='base') return;
+  frescor();
+  var el=document.getElementById('page-base');
+  if(!BASE.ok){
+    if(!BASE.carregando && !BASE.erro){ carregarBase(); return; }
+    el.innerHTML='<div class="card empty">'+(BASE.erro?esc(BASE.erro)+'<br><button class="btn btn-sm" style="margin-top:10px" onclick="carregarBase(true)">Tentar de novo</button>':'Carregando a base completa do Zelo…')+'</div>'; return;
+  }
+  var L=BASE.L, lim=addDias(hojeISO(),-730), n=L.length;
+  var at=L.filter(function(o){ return o.u && o.u>=lim; }).length, semcel=L.filter(function(o){ return !o.cel; }).length, inv=L.filter(function(o){ return o.cel && !o.celOk; }).length;
+  var G=acharDuplicidades().filter(function(g){ return !BASE.ign[g.id]; }), Ga=G.filter(function(g){ return g.alta; });
+  var h='<div class="grid kpis k4">';
+  h+='<div class="card"><div class="klabel">Cadastros no Zelo</div><div class="kval">'+n0(n)+'</div><div class="khint">'+n0(at)+' vieram nos últimos 24 meses ('+pct(n?at/n:0)+')</div></div>';
+  h+='<div class="card"><div class="klabel">Possíveis duplicidades</div><div class="kval" style="color:var(--amber)">'+n0(G.length)+'</div><div class="khint">'+n0(Ga.length)+' com indício forte · '+n0(G.reduce(function(s,g){ return s+g.m.length; },0))+' cadastros envolvidos</div></div>';
+  h+='<div class="card"><div class="klabel">Sem celular</div><div class="kval">'+n0(semcel)+'</div><div class="khint">'+n0(inv)+' com celular inválido (DDD ou tamanho errado)</div></div>';
+  h+='<div class="card"><div class="klabel">Dados completos</div><div class="kval">'+pct(n?L.filter(function(o){ return o.nasc; }).length/n:0)+'</div><div class="khint">têm data de nascimento · '+n0(L.filter(function(o){ return o.em; }).length)+' com e-mail</div></div></div>';
+  h+='<div class="fbar"><div class="seg">'+[['dup','Possíveis duplicidades'],['lista','Todos os cadastros']].map(function(x){ return '<button class="'+(BASE.aba===x[0]?'on':'')+'" onclick="setBaseAba(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div>';
+  h+='<span style="flex:1"></span><span class="khint">Base lida do Zelo em '+(BASE.meta&&BASE.meta.atualizadoEm?dataBR(BASE.meta.atualizadoEm)+' às '+String(BASE.meta.atualizadoEm).slice(11,16):'—')+'</span><button class="btn btn-sm btn-ghost" onclick="carregarBase(true)">↻</button><button class="btn btn-sm" onclick="excelBase()">Baixar Excel</button></div>';
+  if(BASE.aba==='dup'){
+    var Gf=G.filter(function(g){ return BASE.conf==='todas' || (BASE.conf==='alta'?g.alta:!g.alta); });
+    h+='<div class="fbar"><div class="seg">'+[['todas','Todas '+G.length],['alta','Indício forte '+Ga.length],['media','Conferir '+(G.length-Ga.length)]].map(function(x){ return '<button class="'+(BASE.conf===x[0]?'on':'')+'" onclick="BASE.conf=\''+x[0]+'\';BASE.lim=200;renderBase()">'+x[1]+'</button>'; }).join('')+'</div></div>';
+    h+='<div class="nota" style="margin:0 0 10px"><b>Indício forte:</b> mesmo CPF, mesmo e-mail, mesmo celular com nome igual ou parecido, ou mesmo nome e data de nascimento. <b>Conferir:</b> mesmo nome com celulares diferentes — pode ser homônima. O primeiro de cada grupo (★) é o que tem mais visitas: normalmente é o que fica. A junção é feita no Zelo, em Clientes.</div>';
+    h+='<div class="dup-l">'+Gf.slice(0,BASE.lim).map(function(g){
+      return '<div class="card dup-g'+(g.alta?' alta':'')+'"><div class="dup-h">'+g.mot.map(function(m){ return '<span class="pill '+(g.alta?'p-amb':'p-mut')+'">'+esc(m)+'</span>'; }).join(' ')+'<span style="flex:1"></span><button class="btn btn-sm btn-ghost" onclick="ignorarDup(\''+g.id+'\')">Não é duplicado</button></div>'
+        +'<table class="dup-t"><tbody>'+g.m.map(function(o,j){ return '<tr><td style="width:18px">'+(j===0?'★':'')+'</td><td><b>'+lkCli(o.i,o.n)+'</b>'+(o.ap?' <small class="p-sem">('+esc(o.ap)+')</small>':'')+'</td><td>'+(o.cel?fmtCel(o.cel)+(o.celOk?'':' <span class="pill p-bad">inválido</span>'):'<span class="p-sem">sem celular</span>')+'</td><td>'+esc(o.em||'')+'</td><td>'+(o.nasc?dataBRc(o.nasc):'')+'</td><td class="r">'+(o.q?n0(o.q)+' visita(s)':'<span class="p-sem">sem visita 24m</span>')+'</td><td class="r">'+(o.u?'última '+dataBRc(o.u):'')+'</td><td class="r p-sem">cód. '+esc(o.cod||o.i)+'</td></tr>'; }).join('')+'</tbody></table></div>';
+    }).join('')+'</div>';
+    if(Gf.length>BASE.lim) h+='<button class="btn btn-ghost" style="margin-top:10px" onclick="BASE.lim+=200;renderBase()">Mostrar mais ('+n0(Gf.length-BASE.lim)+')</button>';
+    if(!Gf.length) h+='<div class="card empty">Nenhuma possível duplicidade com esse filtro.</div>';
+  } else {
+    var F=baseFiltrada();
+    h+='<div class="fbar"><input type="search" class="cf-busca" placeholder="Buscar nome ou celular" value="'+esc(BASE.busca)+'" oninput="BASE.busca=this.value;clearTimeout(BASE.t);BASE.t=setTimeout(renderBase,250)"><div class="seg seg-wrap">'
+      +[['todas','Todas'],['ativas','Vieram em 24 meses'],['inativas','Sem visita em 24 meses'],['semcel','Sem celular'],['celinv','Celular inválido'],['nasc','Com nascimento'],['mkt','Aceitam marketing']].map(function(x){ return '<button class="'+(BASE.filtro===x[0]?'on':'')+'" onclick="setBaseFiltro(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div></div>';
+    h+='<div class="khint" style="margin:0 0 8px">'+n0(F.length)+' cadastro(s) · o Excel baixa exatamente esta lista + a aba de duplicidades</div>';
+    h+='<div class="tw"><div class="tscroll" style="max-height:640px"><table><thead><tr><th>Nome</th><th>Celular</th><th>Fixo</th><th>E-mail</th><th>Nascimento</th><th class="r">Visitas 24m</th><th class="r">Última visita</th><th class="r">Código</th></tr></thead><tbody>'
+      +F.slice(0,BASE.lim).map(function(o){ return '<tr><td>'+lkCli(o.i,o.n)+(o.vip?' <span class="pill p-ok">VIP</span>':'')+'</td><td>'+(o.cel?fmtCel(o.cel)+(o.celOk?'':' <span class="pill p-bad">inválido</span>'):'')+'</td><td>'+esc(o.fx)+'</td><td>'+esc(o.em)+'</td><td>'+(o.nasc?dataBRc(o.nasc):'')+'</td><td class="r">'+(o.q||'')+'</td><td class="r">'+(o.u?dataBRc(o.u):'')+'</td><td class="r p-sem">'+esc(o.cod||o.i)+'</td></tr>'; }).join('')
+      +'</tbody></table></div></div>';
+    if(F.length>BASE.lim) h+='<button class="btn btn-ghost" style="margin-top:10px" onclick="BASE.lim+=500;renderBase()">Mostrar mais ('+n0(F.length-BASE.lim)+')</button>';
+  }
+  el.innerHTML=h;
+}
+function excelBase(){
+  if(!BASE.ok) return;
+  var F=BASE.aba==='lista'?baseFiltrada():BASE.L, G=acharDuplicidades().filter(function(g){ return !BASE.ign[g.id]; });
+  toast('Gerando o Excel…');
+  carregarSheetJS().then(function(){
+    var dupDe={}; G.forEach(function(g,i){ g.m.forEach(function(o){ dupDe[o.i]=i+1; }); });
+    var A=[['Código Zelo','ID','Nome','Apelido','Celular','Celular válido','Telefone fixo','E-mail','Nascimento','CPF','Sexo','VIP','Aceita marketing','Visitas 24m','Valor 24m (est.)','Última visita','Grupo de duplicidade']];
+    F.forEach(function(o){ A.push([o.cod, o.i, o.n, o.ap, o.cel?fmtCel(o.cel):'', o.cel?(o.celOk?'sim':'não'):'', o.fx, o.em, o.nasc?s2d(o.nasc):'', o.cpf, o.sx, o.vip?'sim':'', o.mkt?'sim':'', o.q||'', Math.round(o.val)||'', o.u?s2d(o.u):'', dupDe[o.i]||'']); });
+    var B=[['Grupo','Força','Motivo','Sugestão','Código Zelo','ID','Nome','Celular','E-mail','Nascimento','Visitas 24m','Última visita']];
+    G.forEach(function(g,i){ g.m.forEach(function(o,j){ B.push([i+1, g.alta?'forte':'conferir', g.mot.join(' · '), j===0?'manter (mais visitas)':'juntar no principal', o.cod, o.i, o.n, o.cel?fmtCel(o.cel):'', o.em, o.nasc?s2d(o.nasc):'', o.q||'', o.u?s2d(o.u):'']); }); });
+    var wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(A, {cellDates:true, dateNF:'dd/mm/yyyy'}), ws2=XLSX.utils.aoa_to_sheet(B, {cellDates:true, dateNF:'dd/mm/yyyy'});
+    ws['!cols']=[{wch:9},{wch:9},{wch:34},{wch:18},{wch:16},{wch:8},{wch:14},{wch:28},{wch:11},{wch:13},{wch:5},{wch:5},{wch:8},{wch:8},{wch:10},{wch:11},{wch:8}]; ws['!autofilter']={ref:'A1:Q'+A.length};
+    ws2['!cols']=[{wch:7},{wch:9},{wch:34},{wch:20},{wch:9},{wch:9},{wch:34},{wch:16},{wch:26},{wch:11},{wch:8},{wch:11}]; ws2['!autofilter']={ref:'A1:L'+B.length};
+    XLSX.utils.book_append_sheet(wb, ws, 'Clientes'); XLSX.utils.book_append_sheet(wb, ws2, 'Possíveis duplicidades');
+    XLSX.writeFile(wb, 'Base_clientes_Voox_'+hojeISO()+'.xlsx');
+  }).catch(function(e){ toast('Não gerou o Excel: '+(e.message||e),'err'); });
+}
+function dadosDemoBase(){
+  var L=[], i=0;
+  (cliLista||[]).forEach(function(c){ i++; L.push([c.i, c.n, '', c.c||'', '', i%9===0?(c.n.split(' ')[0].toLowerCase()+'@gmail.com'):'', i%4===0?'1985-0'+(1+i%9)+'-1'+(i%9):'', '', 'F', i%30===0?'1':'', i%2?'1':'', String(30000+i)].join('|')); });
+  var extra=[['x1','ANA SILVA','', (cliLista[0]||{}).c||'51999990000'],['x2','BEATRIZ SOUZA*','','51999990001'],['x3','BEATRIZ  SOUZA','','51999990001'],['x4','CAMILA ROCHA','','5199999'],['x5','DÉBORA DIAS','',''],['x6','DEBORA DIAS','','51988887777'],['x7','JULIANA MOURA','','51911112222'],['x8','JULIANA MOURA','','51933334444']];
+  extra.forEach(function(x,j){ L.push([x[0],x[1],x[2],x[3],'', '', '', '', 'F','','', String(31000+j)].join('|')); });
+  for(var k=0;k<400;k++) L.push(['y'+k,'CLIENTE ANTIGA '+k,'','51'+(980000000+k*7),'','','','','F','','',String(20000+k)].join('|'));
+  BASE.meta={atualizadoEm:hojeISO()+'T06:20', total:L.length}; montarBase(L);
 }
 
 // ---------------------------------------------------------------- start
