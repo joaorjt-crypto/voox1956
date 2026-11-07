@@ -545,6 +545,12 @@ body.sem-rolar{overflow:hidden}
 .of-nova input[type=text]{width:100%;height:38px}
 .of-it .an-t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .lk-of{background:none;border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-size:11.5px;padding:2px 8px;cursor:pointer}
+.prev-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.prev-prof{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));column-gap:24px}
+.pp-l{display:grid;grid-template-columns:110px 1fr 86px 28px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
+.pp-l span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp-l b{text-align:right}
+.pp-l small{color:var(--muted);text-align:right}
 .ag-an{font-size:11.5px;color:var(--amber);margin:1px 0 4px 44px}
 @media (max-width:560px){.pac-f{grid-template-columns:1fr}}
 #cfged{display:none}
@@ -962,6 +968,7 @@ function assinar(){
     unsubs.push(db.collection('voox_notas').where('nota','>=',0).limit(4000).onSnapshot(function(snap){
       NOTAS={}; snap.forEach(function(d){ NOTAS[d.id]=d.data(); }); renderSat();
     }, function(err){ document.getElementById('page-sat').innerHTML='<div class="card empty">Sem permissão para ler as notas ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
+    unsubs.push(db.collection('voox_previsao').doc('agenda').onSnapshot(function(snap){ PREV=snap.exists?snap.data():null; if(viewAtual==='painel') renderPainel(); }, function(err){ console.warn('previsão:', err.code||err.message); }));
     unsubs.push(db.collection('voox_config').doc('metas').onSnapshot(function(snap){
       metas = snap.exists ? snap.data() : {}; renderAtual();
     }, function(err){ toast('Metas: '+(err.code||err.message),'err'); }));
@@ -1445,6 +1452,7 @@ function renderPainel(){
   h+='<div class="card agora"><div class="klabel">Projeção de '+MESES[+kAtual.slice(5)-1]+' <span class="pill p-mut">agora</span></div><div class="kval">'+brl(proj)+'</div><div class="khint">'+delta(proj, antMes.fat)+'vs. '+mesLabel(addMes(kAtual,-12))+(dia<7?' · ainda instável':'')+'</div></div>';
   h+='<div class="card agora"><div class="klabel">Agenda · próximos 7 dias <span class="pill p-mut">agora</span></div><div class="kval">'+n0(resumo&&resumo.kpis30?resumo.kpis30.agendados7d:0)+'</div><div class="khint">'+n0(A.on)+' agendamentos online no período</div></div>';
   h+='</div>';
+  h+=cardPrevisao(P);
 
   var N=clientesNovas(P.de,P.ate), NC=clientesNovas(P.cde,P.cate);
   h+='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:13px">';
@@ -5574,6 +5582,46 @@ function dadosDemoOfertas(){
   OFER[L[2].i]={n:L[2].n, itens:[{id:'o3', s:'DRENAGEM LINFATICA', camp:'corporal', canal:'presencial', res:'aceitou', por:'demo', nm:'Carla (cabelo)', em:addDias(h,-5)+'T11:00'}]};
 }
 
+
+// ================================================================ PREVISÃO: valor da agenda à frente (voox_previsao/agenda, robô)
+var PREV=null, PRVP='mes';
+try{ PRVP=localStorage.getItem('voox_prev_per')||'mes'; }catch(e){}
+function setPrevPer(p){ PRVP=p; try{ localStorage.setItem('voox_prev_per',p); }catch(e){} renderPainel(); }
+function cardPrevisao(P){
+  if(!PREV || !PREV.dias) return '';
+  var hoje=hojeISO(), k=hoje.slice(0,7), de=hoje, ate;
+  if(PRVP==='mes') ate=fimMes(k);
+  else if(PRVP==='7') ate=addDias(hoje,6);
+  else if(PRVP==='30') ate=addDias(hoje,29);
+  else if(PRVP==='90') ate=addDias(hoje,89);
+  else { de=P.de>hoje?P.de:hoje; ate=P.ate; }
+  var v=0, q=0, pr={}, sem={};
+  Object.keys(PREV.dias).forEach(function(d){ if(d<de||d>ate) return; var o=PREV.dias[d]; v+=o.v||0; q+=o.q||0;
+    Object.keys(o.p||{}).forEach(function(p){ var x=pr[p]||(pr[p]=[0,0]); x[0]+=o.p[p][0]; x[1]+=o.p[p][1]; });
+    var s=s2d(d), w=addDias(d,-((s.getDay()+6)%7)); sem[w]=(sem[w]||0)+(o.v||0); });
+  var k30=(resumo&&resumo.kpis30)||{}, perdas=(k30.cancelados||0)+(k30.faltas||0), taxa=(k30.atendimentos+perdas)?perdas/(k30.atendimentos+perdas):0;
+  var real=v*(1-taxa), alem=ate>(PREV.ate||'');
+  var h='<div class="card prev-card" style="margin-top:13px"><div class="fbar" style="margin:0 0 10px"><div><div class="klabel" style="margin:0">Previsão pela agenda</div><div class="khint" style="margin-top:3px">valor dos horários já marcados no Zelo, de '+dataBRc(de)+' a '+dataBRc(ate)+'</div></div><span style="flex:1"></span><div class="seg">'
+    +[['mes','Até o fim do mês'],['7','7 dias'],['30','30 dias'],['90','90 dias'],['filtro','Período do filtro']].map(function(x){ return '<button class="'+(PRVP===x[0]?'on':'')+'" onclick="setPrevPer(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div></div>';
+  if(ate<de){ return h+'<div class="khint">O período do filtro já passou — escolha um período que inclua dias à frente.</div></div>'; }
+  h+='<div class="prev-nums"><div><div class="kval">'+brl(v)+'</div><div class="khint">'+n0(q)+' atendimento(s) marcado(s)</div></div>';
+  h+='<div><div class="kval" style="font-size:19px">'+brl(real)+'</div><div class="khint">descontando '+pct(taxa)+' de faltas e cancelamentos (média dos últimos 30 dias)</div></div>';
+  if(PRVP==='mes'){ var cur=((resumo&&resumo.meses)||{})[k]||{fat:0}, mt=(metas||{})[k], meta=mt&&(mt.meta||mt.valor||mt);
+    h+='<div><div class="kval" style="font-size:19px">'+brl((cur.fat||0)+real)+'</div><div class="khint">fechamento provável de '+MESES[+k.slice(5)-1]+': '+brl(cur.fat||0)+' faturado + agenda'+(typeof meta==='number'&&meta?' · '+pct(((cur.fat||0)+real)/meta)+' da meta':'')+'</div></div>'; }
+  h+='</div>';
+  var L=Object.keys(pr).filter(function(p){ return p!=='—'; }).map(function(p){ return {p:p, v:pr[p][0], q:pr[p][1]}; }).sort(function(a,b){ return b.v-a.v; });
+  var mx=L.length?L[0].v:1;
+  if(L.length) h+='<div class="prev-prof">'+L.slice(0,10).map(function(x){ return '<div class="pp-l"><span>'+esc(nomeProf(x.p))+'</span><div class="pq-b"><i style="width:'+(x.v/mx*100).toFixed(1)+'%;background:var(--s1)"></i></div><b>'+brl(x.v)+'</b><small>'+x.q+'</small></div>'; }).join('')+'</div>';
+  var W=Object.keys(sem).sort(); if(W.length>1 && W.length<=14) h+='<div class="khint" style="margin-top:8px">Por semana: '+W.map(function(w){ return dataBR(w)+' '+brl(sem[w]); }).join(' · ')+'</div>';
+  h+='<div class="nota" style="margin-top:8px">Cada horário marcado vale a média real daquele serviço nos últimos 3 meses (mesma base de Serviços feitos) ou, se o serviço é raro, o preço de tabela.'+(PREV.semValor?' '+n0(PREV.semValor)+' horário(s) sem valor conhecido ficaram de fora.':'')+(alem?' A agenda lida vai até '+dataBRc(PREV.ate)+'.':'')+' Clientes costumam marcar em cima da hora: quanto mais longe a data, mais a agenda ainda vai encher. Atualizado '+dataBR(PREV.atualizadoEm)+' às '+String(PREV.atualizadoEm||'').slice(11,16)+'.</div></div>';
+  return h;
+}
+function dadosDemoPrev(){
+  var h=hojeISO(), ps=['ANA (MAN)','CARLA (CAB)','GABI (SOB)','EVA (POD)','DANI (DEP)'], dias={};
+  for(var i=0;i<150;i++){ var d=addDias(h,i), dow=s2d(d).getDay(); if(dow===0) { dias[d]={v:0,q:0,p:{}}; continue; } var f=Math.max(0.05, 1-i/40), q=Math.round((dow===6?55:38)*f), p={}; ps.forEach(function(x,j){ var qq=Math.round(q*[.3,.25,.2,.15,.1][j]); if(qq) p[x]=[qq*[48,95,40,85,60][j],qq]; }); var v=0; Object.keys(p).forEach(function(x){ v+=p[x][0]; }); dias[d]={v:v,q:q,p:p}; }
+  PREV={dias:dias, ate:addDias(h,149), semValor:3, atualizadoEm:h+'T10:30'};
+}
+
 // ---------------------------------------------------------------- start
 (function(){ var on=true; try{ on=(localStorage.getItem('voox_painel_pin')!=='0'); }catch(e){} if(on) document.getElementById('sidebar').classList.add('pin'); })();
 aplicarModo(modoAtual());
@@ -5581,7 +5629,7 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoPrev(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
