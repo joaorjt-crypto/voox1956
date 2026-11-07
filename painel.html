@@ -497,6 +497,39 @@ html[data-theme="light"] .seq-bar{background:rgba(255,255,255,.96)}
 html[data-theme="dark"] .fi-painel{background:#151517}
 html[data-theme="light"] .fi-painel{background:#f7f1e9}
 body.sem-rolar{overflow:hidden}
+.gav{display:none}
+.gav.on{display:block}
+.gav .fi-painel{z-index:73}
+.gav .fi-fundo{z-index:72}
+.an-fix{display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:12px;color:var(--amber)}
+.an-lista{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.an-it{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.an-it.fixa{border-left:3px solid var(--amber)}
+.an-t{font-size:13px;white-space:pre-wrap}
+.an-m{display:flex;gap:10px;align-items:center;font-size:11px;color:var(--muted);margin-top:4px}
+.an-m .lk{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;padding:0}
+.an-nova{margin-top:8px}
+.an-nova textarea{width:100%;min-height:54px;resize:vertical}
+.an-ck{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.an-ck input{width:auto;height:auto}
+.pac-bar{height:7px;border-radius:4px;background:var(--border);margin:7px 0 5px;max-width:420px;overflow:hidden}
+.pac-bar i{display:block;height:100%;border-radius:4px}
+.pac-f{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pac-f label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.pac-f label.full{grid-column:1/-1}
+.pac-f label small{font-size:11px;color:var(--muted)}
+.pac-f label small a{color:var(--primary)}
+.pac-f input,.pac-f select{height:36px;font-size:13.5px}
+.cbusca{position:relative}
+.cbusca input{width:100%;height:36px}
+.cbusca-r{display:flex;flex-direction:column;margin-top:4px;max-height:240px;overflow:auto}
+.cbusca-r button{text-align:left;background:none;border:1px solid transparent;border-radius:8px;padding:7px 9px;color:var(--text);cursor:pointer;font-family:inherit;font-size:13px}
+.cbusca-r button:hover{border-color:var(--primary);background:rgba(188,130,64,.08)}
+.cbusca-r small{color:var(--muted)}
+.ind-cod{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.06em;padding:1px 6px;border:1px dashed var(--primary);border-radius:6px;color:var(--primary)}
+.ind-reg{margin-top:4px}
+.ag-an{font-size:11.5px;color:var(--amber);margin:1px 0 4px 44px}
+@media (max-width:560px){.pac-f{grid-template-columns:1fr}}
 #cfged{display:none}
 #cfged.on{display:block}
 .cf-busca{flex:1;min-width:200px;max-width:320px;height:36px}
@@ -628,6 +661,8 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <button class="navbtn" data-p="reativ" onclick="nav('reativ')"><span class="side-ico">↺</span><span class="lbl">Reativação</span><span class="cnt" id="cntReativ" style="display:none">0</span></button>
     <button class="navbtn" data-p="oport" onclick="nav('oport')"><span class="side-ico">✦</span><span class="lbl">Oportunidades</span></button>
     <button class="navbtn" data-p="aniv" onclick="nav('aniv')"><span class="side-ico">✿</span><span class="lbl">Aniversariantes</span><span class="cnt" id="cntAniv" style="display:none">0</span></button>
+    <button class="navbtn" data-p="pac" onclick="nav('pac')"><span class="side-ico">▤</span><span class="lbl">Pacotes</span><span class="cnt" id="cntPac" style="display:none">0</span></button>
+    <button class="navbtn" data-p="indic" onclick="nav('indic')"><span class="side-ico">❦</span><span class="lbl">Indique uma amiga</span></button>
     <div class="side-sec lbl admin-only">Admin</div>
     <button class="navbtn admin-only" data-p="config" onclick="nav('config')"><span class="side-ico">⚙</span><span class="lbl">Configurações</span><span class="cnt" id="cntCfg" style="display:none">0</span></button>
     <div class="side-foot">
@@ -665,6 +700,8 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div class="page" id="page-acessos"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-config"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-falt"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-pac"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-indic"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-minha"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-pagar"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-com"><div class="empty">Carregando…</div></div>
@@ -895,6 +932,11 @@ function assinar(){
       metas = snap.exists ? snap.data() : {}; renderAtual();
     }, function(err){ toast('Metas: '+(err.code||err.message),'err'); }));
   }
+  unsubs.push(db.collection('voox_anotacoes').limit(5000).onSnapshot(function(snap){ ANOT={}; snap.forEach(function(d){ ANOT[d.id]=d.data(); }); reAnot(); renderAnotUsos(); }, function(err){ console.warn('anotações:', err.code||err.message); }));
+  unsubs.push(db.collection('voox_pacotes').limit(3000).onSnapshot(function(snap){ setPac(snap); renderPac(); if(viewAtual==='conf') renderConfirm(); if(FICHA.nome) renderFicha(); }, function(err){ var el=document.getElementById('page-pac'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler os pacotes ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
+  unsubs.push(db.collection('voox_indic_cod').limit(5000).onSnapshot(function(snap){ INDC={}; snap.forEach(function(d){ INDC[d.id]=d.data(); }); renderIndic(); }, function(err){ console.warn('códigos:', err.code||err.message); }));
+  unsubs.push(db.collection('voox_indicacoes').limit(5000).onSnapshot(function(snap){ INDI={}; snap.forEach(function(d){ INDI[d.id]=d.data(); }); renderIndic(); }, function(err){ var el=document.getElementById('page-indic'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler as indicações ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
+  unsubs.push(db.collection('voox_cli_idx').doc('lista').onSnapshot(function(snap){ setCidx(snap.exists?snap.data():null); }, function(err){ console.warn('índice de clientes:', err.code||err.message); }));
   unsubs.push(db.collection('voox_faltosas').doc('lista').onSnapshot(function(snap){
     setFalt(snap.exists?snap.data():null); renderFalt(); renderConfirm();
   }, function(err){ document.getElementById('page-falt').innerHTML='<div class="card empty">Sem permissão para ler as faltosas ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
@@ -1037,6 +1079,8 @@ var TITULOS = {
   semana: ['Resumo da semana', 'A semana em uma página — para olhar toda segunda'],
   acessos:['Acesso das profissionais', 'Quem pode ver o próprio painel'],
   config: ['Configurações', 'Quem entra no painel e o que cada pessoa vê'],
+  pac:    ['Pacotes', 'Sessões compradas, quanto falta e quem renovar'],
+  indic:  ['Indique uma amiga', 'Códigos de indicação, amigas que vieram e prêmios'],
   falt:   ['Faltosas', 'Clientes que costumam faltar — peça sinal ou confirme antes'],
   minha:  ['Meu painel', 'Sua agenda, seus serviços e o que as clientes disseram'],
   pagar:  ['Contas a pagar', 'Vencimentos e saldo projetado das contas'],
@@ -1114,6 +1158,8 @@ function nav(v){
   if(v==='metas') renderMetas();
   if(v==='acessos') renderAcessos();
   if(v==='config') renderCfg();
+  if(v==='pac') renderPac();
+  if(v==='indic') renderIndic();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
@@ -1738,6 +1784,7 @@ function editorMsg(campo, titulo, ajuda, extra){
 function salvarCampoMsg(campo){
   var upd={}, el=document.getElementById('ed-'+campo); upd[campo]=el.value.trim();
   var lk=document.getElementById('ed-linkAvaliacao'); if(lk) upd.linkAvaliacao=lk.value.trim();
+  Array.prototype.forEach.call(document.querySelectorAll('.ed-extra[data-campo="'+campo+'"]'), function(e){ upd[e.dataset.k]=e.value.trim(); });
   if(upd[campo].length<20){ toast('Mensagem muito curta.','err'); return; }
   if(DEMO){ Object.assign(MSG, upd); toast('Salvo (demonstração).'); renderMsgs(); return; }
   upd.atualizadoEm=new Date().toISOString(); upd.por=email;
@@ -1749,7 +1796,7 @@ function chipsDatas(lista, atual, fn, rot){
   return '<div class="seg seg-pg">'+lista.map(function(x){ return '<button class="'+(x.d===atual?'on':'')+'" onclick="'+fn+'(\''+x.d+'\')">'+rot(x.d)+' <b>'+x.n+'</b></button>'; }).join('')+'</div>';
 }
 function itensTxt(it){ return (it||[]).map(function(i){ return i.hora+' '+i.servico+(i.prof?' ('+i.prof+')':''); }).join(' · '); }
-function renderMsgs(){ renderConfirm(); renderPos(); renderOport(); }
+function renderMsgs(){ renderConfirm(); renderPos(); renderOport(); renderPac(); renderIndic(); }
 
 // -- confirmações
 function renderConfirm(){
@@ -1778,7 +1825,8 @@ function renderConfirm(){
     if(c.status==='desmarcou') tags+='<span class="pill p-bad">Desmarcou — liberar no Zelo</span>';
     if(!c.cel) tags+='<span class="pill p-mut">sem celular válido</span>';
     if(FALTMAP[c.cliente]) tags+='<span class="pill p-bad" title="Faltou '+FALTMAP[c.cliente].f+' vez(es) nos últimos 6 meses">⚠ costuma faltar ('+FALTMAP[c.cliente].f+'×)</span>';
-    h+='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+lkCli(c.cliente,c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>'+(tags?'<div class="tags">'+tags+'</div>':'')+'</div><div class="acts">';
+    tags+=pillPac(String(c.cliente));
+    h+='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+lkCli(c.cliente,c.nome)+'</div><div class="info">'+esc(itensTxt(c.itens))+'</div>'+(tags?'<div class="tags">'+tags+'</div>':'')+anotFix(c.cliente)+'</div><div class="acts">'+btnAnot(c.cliente,c.nome);
     if(c.cel) h+='<button class="btn btn-sm '+(c.status?'btn-ghost':'btn-wa')+'" onclick="enviarConf(\''+c.id+'\')">'+(c.status?'Reenviar':'WhatsApp')+'</button>';
     if(c.status!=='confirmou') h+='<button class="btn btn-sm btn-ghost" onclick="respConf(\''+c.id+'\',\'confirmou\')">Confirmou</button>';
     if(c.status!=='desmarcou') h+='<button class="btn btn-sm btn-ghost" onclick="respConf(\''+c.id+'\',\'desmarcou\')">Desmarcou</button>';
@@ -1934,6 +1982,20 @@ var SEQCFG = {
     livre: function(id){ var c=posat[id]; return c && !c.enviado && c.cel; },
     item: function(id){ var c=posat[id]; return {nome:c.nome, info:itensTxt(c.itens)}; },
     enviar: function(id){ enviarPos(id); }, render: function(){ renderPos(); }
+  },
+  pac: {
+    ctx: function(){ return 'pac'; },
+    pend: function(){ return Object.keys(PAC).filter(function(id){ return SEQCFG.pac.livre(id); }).map(function(id){ return id; }); },
+    livre: function(id){ var p=PAC[id]; if(!p||!p.cel||p.ativo===false) return false; var st=pacInfo(p).st; return (st==='acabando'||st==='acabou'||st==='vencido') && (!p.avisoEm || diasDesde(p.avisoEm)>30); },
+    item: function(id){ var p=PAC[id]; return {nome:p.cn, info:p.nome+' · '+situacaoPac(p)}; },
+    enviar: function(id){ enviarRenov(id); }, render: function(){ renderPac(); }
+  },
+  indic: {
+    ctx: function(){ return 'indic'; },
+    pend: function(){ var L=candidatasIndica(); SEQCFG.indic._m={}; L.forEach(function(c){ SEQCFG.indic._m[c.i]=c; }); return L.map(function(c){ return c.i; }); },
+    livre: function(id){ var c=(SEQCFG.indic._m||{})[id]; if(!c) return false; var k=codigoDe(id); return !(k && INDC[k].conviteEm); },
+    item: function(id){ var c=SEQCFG.indic._m[id]; return {nome:c.n, info:(c.nota?'nota '+c.nota+' · ':'')+c.q+' visita(s) em 12 meses'}; },
+    enviar: function(id){ var c=SEQCFG.indic._m[id]; convidarIndica(c.i, c.n, c.c); }, render: function(){ renderIndic(); }
   },
   aniv: {
     ctx: function(){ return hojeISO().slice(0,4); },
@@ -3969,7 +4031,7 @@ function renderMinha(){
   var ag=D.agenda||[], porDia={}; ag.forEach(function(a){ (porDia[a.d]=porDia[a.d]||[]).push(a); });
   h+='<div class="grid g2"><div><div class="sect">Sua agenda <small>próximos 7 dias</small></div><div class="card">';
   if(!ag.length) h+='<div class="empty">Nenhum horário marcado.</div>';
-  Object.keys(porDia).sort().forEach(function(d){ var q=quandoData(d); h+='<div class="ag-dia">'+esc(q.charAt(0).toUpperCase()+q.slice(1))+' <small class="p-sem">'+porDia[d].length+'</small></div>'+porDia[d].map(function(a){ return '<div class="ag-it"><b>'+a.h+'</b> '+esc(a.c)+' <span class="p-sem">· '+esc((a.s||'').toLowerCase())+'</span></div>'; }).join(''); });
+  Object.keys(porDia).sort().forEach(function(d){ var q=quandoData(d); h+='<div class="ag-dia">'+esc(q.charAt(0).toUpperCase()+q.slice(1))+' <small class="p-sem">'+porDia[d].length+'</small></div>'+porDia[d].map(function(a){ return '<div class="ag-it"><b>'+a.h+'</b> '+esc(a.c)+' <span class="p-sem">· '+esc((a.s||'').toLowerCase())+'</span></div>'+(a.an?'<div class="ag-an">📌 '+esc(a.an)+'</div>':''); }).join(''); });
   h+='</div></div>';
   // vagas
   var vg=D.vagas||[];
@@ -4084,6 +4146,7 @@ function renderFicha(){
   h+='<div class="card"><div class="klabel">Costuma vir</div><div class="kval" style="font-size:17px">'+(iv?'a cada '+iv+'d':'—')+'</div><div class="khint">'+(nts.length?'nota média '+(nts.reduce(function(a,x){ return a+x.nota; },0)/nts.length).toFixed(1).replace('.',','):'sem nota de satisfação')+'</div></div></div>';
   h+='<div class="fi-pref"><div><span class="klabel">Serviços que mais faz</span><div>'+top(S,4).map(function(s){ return '<span class="pill p-mut">'+esc(s.toLowerCase())+' · '+S[s]+'</span>'; }).join(' ')+'</div></div>';
   h+='<div><span class="klabel">Com quem</span><div>'+top(P,3).map(function(p){ return '<span class="pill p-mut">'+esc(nomeProf(p))+' · '+P[p]+'</span>'; }).join(' ')+'</div></div></div>';
+  h+=fichaExtras(c);
   if(nts.length) h+='<div class="sect" style="margin-top:14px">Notas de satisfação</div>'+nts.sort(function(a,b){ return b.data.localeCompare(a.data); }).slice(0,5).map(function(x){ return '<div class="fi-nota"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+dataBRc(x.data)+(x.comentario?' · <i>“'+esc(x.comentario)+'”</i>':'')+'</div>'; }).join('');
   h+='<div class="sect" style="margin-top:14px">Histórico de atendimentos <small>'+n0(q)+' visita(s)'+(falta?' · carregando detalhes…':'')+'</small></div><div class="fi-hist">';
   V.forEach(function(v){
@@ -4301,7 +4364,7 @@ var NIVEIS = [
 var CFG_ABAS = [
   {g:'Gestão', gestao:true, abas:[['painel','Painel'],['semana','Resumo da semana'],['prof','Profissionais'],['metas','Metas da equipe'],['agenda','Agenda'],['serv','Serviços feitos'],['sat','Satisfação'],['vendas','Mês a mês']]},
   {g:'Financeiro', gestao:true, fin:true, abas:[['fin','Dashboard'],['lanc','Lançamentos'],['pagar','Contas a pagar'],['com','Comissões'],['marg','Margem por serviço'],['conc','Conferência Zelo'],['cgs','Contas gerenciais']]},
-  {g:'Clientes', abas:[['cli','Clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['oport','Oportunidades'],['aniv','Aniversariantes']]}
+  {g:'Clientes', abas:[['cli','Clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga']]}
 ];
 var FIN_ABAS = {}; CFG_ABAS[1].abas.forEach(function(a){ FIN_ABAS[a[0]]=1; });
 function nivelNome(n){ var x=NIVEIS.filter(function(v){ return v[0]===n; })[0]; return x?x[1]:'—'; }
@@ -4752,6 +4815,432 @@ function testarRobo(){
     .catch(function(e){ toast('Teste falhou: '+ghErro(e),'err'); });
 }
 
+
+// ================================================================ ANOTAÇÕES · PACOTES · INDIQUE UMA AMIGA
+// voox_anotacoes/{clienteId} -> {n, itens:[{id,t,fixa,por,nm,em}], atualizadoEm}
+// voox_pacotes/{id}          -> {ci,cn,cel,nome,servs[],total,valor,compra,desde,validade,antes,obs,ativo,manual[],auto[],autoEm,avisoEm}
+// voox_indic_cod/{CODIGO}    -> {ci,cn,cel,criadoEm,por,conviteEm}
+// voox_indicacoes/{id}       -> {cod,ici,icn,icel,nome,cel,criadoEm,por,st,veioEm,veioNome,premiadaEm,premiadaPor,obs}
+// voox_cli_idx/lista         -> {c:['id|NOME|cel'], s:[serviços]}  (montado pelo robô; a recepção usa para buscar cliente)
+var ANOT={}, PAC={}, PACMAP={}, INDC={}, INDI={}, CIDX={lista:[], servs:[], ok:false};
+var PACV={filtro:'ativos', busca:'', ed:null}, INDV={filtro:'todas', busca:''};
+MSG_PADRAO.textoPacote='Oi, {nome}! Aqui é da Voox 1956. {situacao} do seu pacote de {pacote}. Quer garantir o próximo com as mesmas condições? É só responder aqui.';
+MSG_PADRAO.textoIndica='Oi, {nome}! Que bom ter você na Voox 1956. Indique uma amiga: ela ganha {premioAmiga} na primeira visita e você ganha {premioVoce} quando ela vier. É só ela dizer o código {codigo} na recepção.';
+MSG_PADRAO.textoIndicaPremio='Oi, {nome}! A {amiga} veio à Voox 1956 com o seu código. Obrigada pela indicação! Seu prêmio ({premioVoce}) já está garantido para o seu próximo horário.';
+function nomeCurto(n){ var p=String(n||'').trim().split(/\s+/)[0]||''; return p.charAt(0)+p.slice(1).toLowerCase(); }
+function chaveTxt(t){ return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim(); }
+function uid8(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function gravar(col, id, dados, merge){
+  if(DEMO) return Promise.resolve();
+  var ref=id?db.collection(col).doc(id):db.collection(col).doc();
+  return ref.set(dados, {merge:merge!==false});
+}
+function falhou(e){ toast('Não salvou: '+(e.code||e.message),'err'); }
+function abrirGav(id, html){
+  var g=document.getElementById(id);
+  if(!g){ g=document.createElement('div'); g.id=id; g.className='gav'; g.innerHTML='<div class="fi-fundo" onclick="fecharGav(\''+id+'\')"></div><aside class="fi-painel"></aside>'; document.body.appendChild(g); }
+  g.querySelector('.fi-painel').innerHTML=html; g.classList.add('on'); document.body.classList.add('sem-rolar');
+}
+function fecharGav(id){ var g=document.getElementById(id); if(g) g.classList.remove('on'); if(!document.querySelector('.gav.on') && !(document.getElementById('ficha')||{classList:{contains:function(){return false;}}}).classList.contains('on')) document.body.classList.remove('sem-rolar'); }
+document.addEventListener('keydown', function(ev){ if(ev.key!=='Escape') return; var g=document.querySelectorAll('.gav.on'); if(g.length) fecharGav(g[g.length-1].id); });
+function gavTopo(rot, titulo){ return '<div class="fi-topo"><div><div class="klabel" style="margin:0">'+rot+'</div><div class="fi-nome">'+titulo+'</div></div><button class="ibtn" onclick="fecharGav(this.closest(\'.gav\').id)" title="Fechar (Esc)" style="font-size:16px">✕</button></div>'; }
+
+// ---------------------------------------------------------------- índice de clientes (busca)
+function cliIdx(){
+  if(CIDX.lista.length) return CIDX.lista;
+  return (cliLista||[]).map(function(c){ return {i:String(c.i), n:c.n, c:c.c||''}; });
+}
+function setCidx(d){
+  CIDX.lista=(d&&d.c||[]).map(function(t){ var a=t.split('|'); return {i:a[0], n:a[1]||'', c:a[2]||''}; });
+  CIDX.servs=(d&&d.s)||[]; CIDX.ok=true;
+}
+function servicosConhecidos(){
+  var o={}; (CIDX.servs||[]).forEach(function(s){ o[s]=1; }); ((cliMeta||{}).sd||[]).forEach(function(s){ if(s) o[s]=1; });
+  return Object.keys(o).sort();
+}
+function buscaCliHTML(idp, onpick){
+  return '<div class="cbusca"><input type="search" id="'+idp+'-q" placeholder="Buscar cliente pelo nome ou celular" autocomplete="off" oninput="buscarCli(\''+idp+'\',\''+onpick+'\')"><div class="cbusca-r" id="'+idp+'-r"></div></div>';
+}
+function buscarCli(idp, onpick){
+  var q=chaveTxt(document.getElementById(idp+'-q').value), dig=q.replace(/\D/g,''), r=document.getElementById(idp+'-r');
+  if(q.length<2){ r.innerHTML=''; return; }
+  var L=cliIdx().filter(function(c){ return (dig.length>=4 && c.c.indexOf(dig)>=0) || chaveTxt(c.n).indexOf(q)>=0; }).slice(0,8);
+  r.innerHTML=L.length?L.map(function(c){ return '<button type="button" data-i="'+esc(c.i)+'" data-n="'+esc(c.n)+'" data-c="'+esc(c.c)+'" onclick="'+onpick+'(this.dataset)">'+esc(c.n)+(c.c?' <small>'+esc(fmtCel(c.c))+'</small>':'')+'</button>'; }).join(''):'<div class="khint" style="padding:6px 8px">Nenhuma cliente com esse nome nos últimos 24 meses.</div>';
+}
+function fmtCel(c){ c=String(c||''); return c.length===11?'('+c.slice(0,2)+') '+c.slice(2,7)+'-'+c.slice(7):c; }
+function limpaCel(c){ c=String(c||'').replace(/\D/g,''); if(c.length===13&&c.slice(0,2)==='55') c=c.slice(2); return c; }
+
+// ================================================================ 1. ANOTAÇÕES
+function anotDe(cid){ var d=ANOT[String(cid||'')]; return ((d&&d.itens)||[]).slice().sort(function(a,b){ return (b.fixa?1:0)-(a.fixa?1:0) || String(b.em).localeCompare(String(a.em)); }); }
+function anotFix(cid){
+  var L=anotDe(cid).filter(function(x){ return x.fixa; }); if(!L.length) return '';
+  return '<div class="an-fix">'+L.map(function(x){ return '<span>📌 '+esc(x.t)+'</span>'; }).join('')+'</div>';
+}
+function btnAnot(cid, nome){
+  if(!cid) return '';
+  var n=anotDe(cid).length;
+  return '<button class="btn btn-sm btn-ghost" data-i="'+esc(cid)+'" data-n="'+esc(nome||'')+'" onclick="abrirAnot(this.dataset.i,this.dataset.n)" title="Anotações da cliente">📝'+(n?' '+n:'')+'</button>';
+}
+function anotBloco(cid, nome){
+  var L=anotDe(cid), h='<div class="an-lista">';
+  if(!L.length) h+='<div class="khint" style="padding:4px 0 8px">Nenhuma anotação ainda.</div>';
+  L.forEach(function(x){
+    var meu=x.por===email || podePainel();
+    h+='<div class="an-it'+(x.fixa?' fixa':'')+'"><div class="an-t">'+(x.fixa?'📌 ':'')+esc(x.t)+'</div><div class="an-m">'+esc(x.nm||x.por||'')+' · '+(x.em?dataBRc(String(x.em).slice(0,10)):'')
+      +'<span style="flex:1"></span><button class="lk" data-c="'+esc(cid)+'" data-id="'+esc(x.id)+'" onclick="fixarAnot(this.dataset.c,this.dataset.id)">'+(x.fixa?'desafixar':'fixar')+'</button>'
+      +(meu?'<button class="lk" style="color:var(--red)" data-c="'+esc(cid)+'" data-id="'+esc(x.id)+'" onclick="apagarAnot(this.dataset.c,this.dataset.id)">apagar</button>':'')+'</div></div>';
+  });
+  h+='</div><div class="an-nova"><textarea id="an-txt-'+esc(cid)+'" rows="2" maxlength="400" placeholder="Ex.: prefere a Karina · sensível a cera quente · gosta de café sem açúcar"></textarea>'
+    +'<div class="fbar" style="margin:6px 0 0"><label class="an-ck"><input type="checkbox" id="an-fix-'+esc(cid)+'" checked> Fixar — aparece na confirmação e na agenda da profissional</label><span style="flex:1"></span>'
+    +'<button class="btn btn-sm" data-c="'+esc(cid)+'" data-n="'+esc(nome||'')+'" onclick="salvarAnot(this.dataset.c,this.dataset.n)">Anotar</button></div></div>';
+  return h;
+}
+function abrirAnot(cid, nome){ ANOT._aberta={c:cid, n:nome}; abrirGav('anotgav', gavTopo('Anotações da cliente', esc(nome))+anotBloco(cid, nome)+'<div class="nota">Use para preferências e cuidados no atendimento. Não anote dados de saúde além do necessário para o serviço.</div>'); }
+function reAnot(){ var a=ANOT._aberta, g=document.getElementById('anotgav'); if(a && g && g.classList.contains('on')) abrirAnot(a.c, a.n); if(FICHA.nome) renderFicha(); }
+function salvarItensAnot(cid, nome, itens, msg){
+  var d={n:nome||((ANOT[cid]||{}).n)||'', itens:itens, atualizadoEm:new Date().toISOString(), por:email};
+  if(DEMO){ ANOT[cid]=d; reAnot(); renderAnotUsos(); if(msg) toast(msg); return; }
+  db.collection('voox_anotacoes').doc(String(cid)).set(d).then(function(){ if(msg) toast(msg); }).catch(falhou);
+}
+function salvarAnot(cid, nome){
+  var ta=document.getElementById('an-txt-'+cid), t=String(ta.value||'').trim(); if(!t){ ta.focus(); return; }
+  var it={id:uid8(), t:t.slice(0,400), fixa:!!document.getElementById('an-fix-'+cid).checked, por:email, nm:nome_logado(), em:new Date().toISOString()};
+  salvarItensAnot(cid, nome, ((ANOT[cid]||{}).itens||[]).concat([it]), 'Anotação salva.');
+}
+function nome_logado(){ return nome||email; }
+function fixarAnot(cid, id){ var L=((ANOT[cid]||{}).itens||[]).map(function(x){ return x.id===id?Object.assign({},x,{fixa:!x.fixa}):x; }); salvarItensAnot(cid, null, L); }
+function apagarAnot(cid, id){ if(!confirm('Apagar esta anotação?')) return; salvarItensAnot(cid, null, ((ANOT[cid]||{}).itens||[]).filter(function(x){ return x.id!==id; }), 'Anotação apagada.'); }
+function renderAnotUsos(){ if(viewAtual==='conf') renderConfirm(); if(viewAtual==='falt') renderFalt(); if(viewAtual==='pac') renderPac(); }
+
+// ================================================================ 2. PACOTES
+function pacUsadas(p){ return (p.antes||0) + (p.auto||[]).length + (p.manual||[]).reduce(function(a,x){ return a+(+x.q||0); },0); }
+function pacInfo(p){
+  var hoje=hojeISO(), us=pacUsadas(p), rest=(p.total||0)-us, venc=p.validade||'', dv=venc?nDias(hoje,venc)-1:null, st;
+  if(p.ativo===false) st='encerrado';
+  else if(rest<=0) st='acabou';
+  else if(venc && venc<hoje) st='vencido';
+  else if(rest<=2 || (dv!=null && dv<=15)) st='acabando';
+  else st='ok';
+  return {us:us, rest:Math.max(0,rest), dv:dv, st:st};
+}
+function setPac(snap){ PAC={}; PACMAP={}; snap.forEach(function(d){ PAC[d.id]=d.data(); }); indexarPac(); }
+function indexarPac(){ PACMAP={}; Object.keys(PAC).forEach(function(id){ var p=PAC[id]; if(p.ativo===false) return; (PACMAP[p.ci]=PACMAP[p.ci]||[]).push(id); }); }
+function pillPac(cid){
+  return (PACMAP[cid]||[]).map(function(id){ var p=PAC[id], I=pacInfo(p); return '<span class="pill '+(I.st==='ok'?'p-blue':'p-amb')+'" title="'+esc(p.nome)+'">pacote '+esc(p.nome)+' · '+I.us+'/'+p.total+'</span>'; }).join('');
+}
+function contarPac(){
+  var n=Object.keys(PAC).filter(function(id){ var s=pacInfo(PAC[id]).st; return (s==='acabando'||s==='acabou'||s==='vencido') && !PAC[id].avisoEm; }).length, b=document.getElementById('cntPac');
+  if(b){ b.textContent=n; b.style.display=n?'':'none'; }
+}
+function setPacFiltro(f){ PACV.filtro=f; renderPac(); }
+function renderPac(){
+  contarPac();
+  if(viewAtual!=='pac') return;
+  frescor();
+  var el=document.getElementById('page-pac'), hoje=hojeISO(), m0=hoje.slice(0,7);
+  var T=Object.keys(PAC).map(function(id){ var p=Object.assign({id:id}, PAC[id]); p.I=pacInfo(p); return p; });
+  var ativos=T.filter(function(p){ return p.ativo!==false; });
+  var alerta=ativos.filter(function(p){ return p.I.st!=='ok'; });
+  var vendMes=T.filter(function(p){ return String(p.compra||'').slice(0,7)===m0; });
+  var h=editorMsg('textoPacote','Mensagem de renovação','Use <b>{nome}</b>, <b>{pacote}</b> e <b>{situacao}</b> (ex.: "Faltam 2 sessões", "Acabaram as sessões", "Faltam 10 dias para vencer").');
+  h+=barraSeq('pac')+botaoSeq('pac');
+  h+='<div class="grid kpis k4" style="margin:12px 0 14px">';
+  h+='<div class="card"><div class="klabel">Pacotes ativos</div><div class="kval">'+n0(ativos.length)+'</div><div class="khint">'+n0(ativos.reduce(function(a,p){ return a+p.I.rest; },0))+' sessões a usar</div></div>';
+  h+='<div class="card"><div class="klabel">Precisam de atenção</div><div class="kval" style="color:var(--amber)">'+n0(alerta.length)+'</div><div class="khint">acabando, acabou ou vencendo</div></div>';
+  h+='<div class="card"><div class="klabel">Vendidos em '+mesLabel(m0)+'</div><div class="kval">'+n0(vendMes.length)+'</div><div class="khint">'+brl(vendMes.reduce(function(a,p){ return a+(+p.valor||0); },0))+' recebidos</div></div>';
+  var adiant=ativos.reduce(function(a,p){ return a+(p.total?(+p.valor||0)*p.I.rest/p.total:0); },0);
+  h+='<div class="card"><div class="klabel">Sessões já pagas a fazer</div><div class="kval">'+brl(adiant)+'</div><div class="khint">valor proporcional das sessões que faltam</div></div></div>';
+  h+='<div class="fbar"><input type="search" class="cf-busca" placeholder="Buscar cliente ou pacote" value="'+esc(PACV.busca)+'" oninput="PACV.busca=this.value;renderPacLista()"><div class="seg">'
+    +[['ativos','Ativos'],['atencao','Precisam de atenção'+(alerta.length?' <b>'+alerta.length+'</b>':'')],['encerrados','Encerrados'],['todos','Todos']].map(function(f){ return '<button class="'+(PACV.filtro===f[0]?'on':'')+'" onclick="setPacFiltro(\''+f[0]+'\')">'+f[1]+'</button>'; }).join('')
+    +'</div><span style="flex:1"></span><button class="btn" onclick="novoPac()">+ Novo pacote</button></div><div id="pac-lista" class="rlist"></div>';
+  h+='<div class="nota"><b>Como conta:</b> cada atendimento pago no Zelo de um serviço do pacote, depois da data da compra, desconta uma sessão sozinho (o robô confere a cada 15 min). Use <b>Dar baixa</b> só para sessão que não passou pelo Zelo. O valor do pacote não é lançado no financeiro automaticamente.</div>';
+  el.innerHTML=h; renderPacLista();
+}
+function renderPacLista(){
+  var box=document.getElementById('pac-lista'); if(!box) return;
+  var q=chaveTxt(PACV.busca), f=PACV.filtro;
+  var L=Object.keys(PAC).map(function(id){ var p=Object.assign({id:id}, PAC[id]); p.I=pacInfo(p); return p; }).filter(function(p){
+    if(f==='ativos' && p.ativo===false) return false;
+    if(f==='atencao' && (p.ativo===false || p.I.st==='ok')) return false;
+    if(f==='encerrados' && p.ativo!==false) return false;
+    if(q && chaveTxt(p.cn+' '+p.nome).indexOf(q)<0) return false;
+    return true;
+  }).sort(function(a,b){ var o={acabou:0,vencido:1,acabando:2,ok:3,encerrado:4}; return (o[a.I.st]-o[b.I.st]) || String(b.compra).localeCompare(String(a.compra)); });
+  if(!L.length){ box.innerHTML='<div class="card empty">'+(Object.keys(PAC).length?'Nenhum pacote com esse filtro.':'Nenhum pacote cadastrado. Clique em <b>+ Novo pacote</b>.')+'</div>'; return; }
+  box.innerHTML=L.map(function(p){
+    var I=p.I, cor={ok:'var(--green)',acabando:'var(--amber)',acabou:'var(--red)',vencido:'var(--red)',encerrado:'var(--border)'}[I.st];
+    var pill={ok:'<span class="pill p-ok">em uso</span>',acabando:'<span class="pill p-amb">'+(I.rest<=2?'faltam '+I.rest:'vence em '+I.dv+' dia(s)')+'</span>',acabou:'<span class="pill p-bad">sessões acabaram</span>',vencido:'<span class="pill p-bad">vencido</span>',encerrado:'<span class="pill p-mut">encerrado</span>'}[I.st];
+    var pc=p.total?Math.min(100,I.us/p.total*100):0;
+    var h='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+lkCli(p.ci,p.cn)+' <span class="p-sem" style="font-weight:500">· '+esc(p.nome)+'</span></div>';
+    h+='<div class="pac-bar"><i style="width:'+pc.toFixed(1)+'%;background:'+cor+'"></i></div>';
+    h+='<div class="info">'+I.us+' de '+p.total+' sessões usadas · faltam <b>'+I.rest+'</b> · comprado em '+(p.compra?dataBRc(p.compra):'—')+(p.validade?' · vale até '+dataBRc(p.validade):'')+(p.valor?' · '+brl(p.valor):'')+'</div>';
+    h+='<div class="tags">'+pill+(p.avisoEm?'<span class="pill p-mut">avisada em '+dataBR(p.avisoEm)+'</span>':'')+'</div>'+anotFix(p.ci)+'</div><div class="acts">';
+    if(p.ativo!==false){
+      if(I.st!=='ok' && p.cel) h+='<button class="btn btn-sm btn-wa" onclick="enviarRenov(\''+p.id+'\')">Oferecer renovação</button>';
+      if(I.rest>0) h+='<button class="btn btn-sm btn-ghost" onclick="baixaPac(\''+p.id+'\')">Dar baixa</button>';
+    }
+    h+='<button class="btn btn-sm btn-ghost" onclick="verPac(\''+p.id+'\')">Detalhes</button>'+btnAnot(p.ci,p.cn)+'</div></div>';
+    return h;
+  }).join('');
+}
+function situacaoPac(p){ var I=pacInfo(p); return I.st==='acabou'?'Acabaram as sessões':I.st==='vencido'?'Venceu o prazo':I.rest<=2?'Falta'+(I.rest>1?'m':'')+' '+I.rest+' sess'+(I.rest>1?'ões':'ão'):'Faltam '+I.dv+' dias para vencer o prazo'; }
+function enviarRenov(id){
+  var p=PAC[id]; if(!p||!p.cel) return;
+  abrirWhats(p.cel, preencher(textoMsg('textoPacote'), {nome:nomeCurto(p.cn), pacote:String(p.nome||'').toLowerCase(), situacao:situacaoPac(p)}));
+  var u={avisoEm:new Date().toISOString(), avisoPor:email};
+  if(DEMO){ Object.assign(p,u); renderPac(); return; }
+  gravar('voox_pacotes', id, u).catch(falhou);
+}
+function baixaPac(id){
+  var p=PAC[id], s=(p.servs||[])[0]||'';
+  var h=gavTopo('Dar baixa manual', esc(p.cn)+' · '+esc(p.nome));
+  h+='<div class="khint" style="margin:8px 0 12px">Só para sessão que <b>não</b> foi registrada no Zelo — as do Zelo descontam sozinhas.</div>';
+  h+='<div class="pac-f"><label>Data<input type="date" id="bx-d" value="'+hojeISO()+'"></label><label>Serviço<select id="bx-s">'+(p.servs||[]).map(function(x){ return '<option>'+esc(x)+'</option>'; }).join('')+'</select></label>';
+  h+='<label>Quantidade<input type="number" id="bx-q" value="1" min="-20" max="20"><small>use número negativo para devolver sessão</small></label><label class="full">Observação<input type="text" id="bx-o" maxlength="200" placeholder="opcional"></label></div>';
+  h+='<div class="cf-pe"><span class="cf-st"></span><button class="btn" onclick="salvarBaixa(\''+id+'\')">Dar baixa</button></div>';
+  abrirGav('pacgav', h);
+}
+function salvarBaixa(id){
+  var p=PAC[id], q=parseInt(document.getElementById('bx-q').value,10);
+  if(!q){ toast('Quantidade inválida.','err'); return; }
+  var it={d:document.getElementById('bx-d').value||hojeISO(), s:document.getElementById('bx-s').value, q:q, obs:document.getElementById('bx-o').value.trim(), por:email, nm:nome_logado()};
+  var man=(p.manual||[]).concat([it]);
+  if(DEMO){ p.manual=man; fecharGav('pacgav'); renderPac(); toast('Baixa registrada.'); return; }
+  gravar('voox_pacotes', id, {manual:man}).then(function(){ fecharGav('pacgav'); toast('Baixa registrada.'); }).catch(falhou);
+}
+function verPac(id){
+  var p=PAC[id], I=pacInfo(p);
+  var h=gavTopo('Pacote', esc(p.nome)+' <small class="p-sem" style="font-size:13px">· '+esc(p.cn)+'</small>');
+  h+='<div class="grid kpis fi-k" style="margin-top:12px"><div class="card"><div class="klabel">Sessões</div><div class="kval">'+I.us+' / '+p.total+'</div><div class="khint">faltam '+I.rest+'</div></div>';
+  h+='<div class="card"><div class="klabel">Valor pago</div><div class="kval">'+brl(p.valor||0)+'</div><div class="khint">'+(p.total?brl((p.valor||0)/p.total)+' por sessão':'')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Compra</div><div class="kval" style="font-size:17px">'+(p.compra?dataBRc(p.compra):'—')+'</div><div class="khint">'+(p.validade?'vale até '+dataBRc(p.validade):'sem validade')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Conta no Zelo</div><div class="kval" style="font-size:13px;line-height:1.35">'+(p.servs||[]).map(function(s){ return esc(s.toLowerCase()); }).join('<br>')+'</div></div></div>';
+  var U=[]; (p.auto||[]).forEach(function(x){ U.push({d:x.d, t:esc((x.s||'').toLowerCase())+' <span class="p-sem">· '+esc(nomeProf(x.p))+'</span>', o:'Zelo', q:1}); });
+  (p.manual||[]).forEach(function(x){ U.push({d:x.d, t:esc((x.s||'').toLowerCase())+(x.obs?' <span class="p-sem">· '+esc(x.obs)+'</span>':''), o:'baixa de '+esc(x.nm||x.por||''), q:x.q}); });
+  if(p.antes) U.push({d:p.compra||'', t:'sessões usadas antes do cadastro', o:'cadastro', q:p.antes});
+  U.sort(function(a,b){ return String(b.d).localeCompare(String(a.d)); });
+  h+='<div class="sect" style="margin-top:14px">Sessões usadas <small>'+I.us+'</small></div><div class="tw"><table><tbody>'+(U.length?U.map(function(x){ return '<tr><td style="width:84px">'+(x.d?dataBRc(x.d):'—')+'</td><td>'+x.t+'</td><td class="r p-sem">'+x.o+'</td><td class="r" style="width:40px">'+(x.q>0?'−':'+')+Math.abs(x.q)+'</td></tr>'; }).join(''):'<tr><td class="empty">Nenhuma sessão usada ainda.</td></tr>')+'</tbody></table></div>';
+  if(p.obs) h+='<div class="nota"><b>Obs.:</b> '+esc(p.obs)+'</div>';
+  h+='<div class="cf-pe"><span class="cf-st">'+(p.autoEm?'Zelo conferido '+dataBR(p.autoEm)+' às '+String(p.autoEm).slice(11,16):'O robô ainda não conferiu este pacote.')+'</span>';
+  h+='<button class="btn btn-sm btn-ghost" onclick="editarPac(\''+id+'\')">Editar</button>';
+  h+=(p.ativo===false?'<button class="btn btn-sm btn-ghost" onclick="encerrarPac(\''+id+'\',true)">Reabrir</button>':'<button class="btn btn-sm btn-ghost" onclick="encerrarPac(\''+id+'\',false)">Encerrar</button>');
+  if(podePainel()) h+='<button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="apagarPac(\''+id+'\')">Apagar</button>';
+  h+='</div>';
+  abrirGav('pacgav', h);
+}
+function encerrarPac(id, reabrir){
+  if(!reabrir && !confirm('Encerrar este pacote? Ele sai da lista de ativos e para de contar sessões.')) return;
+  var u={ativo:!!reabrir, encerradoEm:reabrir?null:new Date().toISOString(), encerradoPor:email};
+  if(DEMO){ Object.assign(PAC[id],u); indexarPac(); fecharGav('pacgav'); renderPac(); return; }
+  gravar('voox_pacotes', id, u).then(function(){ fecharGav('pacgav'); toast(reabrir?'Pacote reaberto.':'Pacote encerrado.'); }).catch(falhou);
+}
+function apagarPac(id){
+  if(!confirm('Apagar o pacote de vez? Use só se foi cadastrado errado.')) return;
+  if(DEMO){ delete PAC[id]; indexarPac(); fecharGav('pacgav'); renderPac(); return; }
+  db.collection('voox_pacotes').doc(id).delete().then(function(){ fecharGav('pacgav'); toast('Pacote apagado.'); }).catch(falhou);
+}
+var PACF=null;
+function novoPac(){ PACF={id:null, ci:'', cn:'', cel:'', nome:'', servs:[], total:10, valor:'', compra:hojeISO(), validade:'', antes:0, obs:''}; formPac(); }
+function editarPac(id){ var p=PAC[id]; PACF=Object.assign({}, p, {id:id, servs:(p.servs||[]).slice()}); formPac(); }
+function formPac(){
+  var f=PACF, S=servicosConhecidos();
+  var h=gavTopo(f.id?'Editar pacote':'Novo pacote', f.cn?esc(f.cn):'Escolha a cliente');
+  if(!f.id) h+='<div class="sect" style="margin-top:12px">Cliente</div>'+buscaCliHTML('pc','pickPacCli')+(f.cn?'<div class="khint">Selecionada: <b>'+esc(f.cn)+'</b>'+(f.cel?' · '+fmtCel(f.cel):' · sem celular')+'</div>':'');
+  h+='<div class="pac-f" style="margin-top:12px"><label class="full">Nome do pacote<input type="text" id="pf-nome" maxlength="60" value="'+esc(f.nome)+'" placeholder="Ex.: 10 drenagens linfáticas"></label>';
+  h+='<label>Sessões<input type="number" id="pf-total" min="1" max="200" value="'+esc(f.total)+'"></label><label>Valor pago (R$)<input type="text" inputmode="decimal" id="pf-valor" value="'+(f.valor?fmtNum(f.valor):'')+'" placeholder="0,00"></label>';
+  h+='<label>Data da compra<input type="date" id="pf-compra" value="'+esc(f.compra)+'"></label><label>Validade<input type="date" id="pf-val" value="'+esc(f.validade)+'"><small>'+[3,6,12].map(function(m){ return '<a href="#" onclick="document.getElementById(\'pf-val\').value=addMesData(document.getElementById(\'pf-compra\').value,'+m+');return false">'+m+' meses</a>'; }).join(' · ')+' · em branco = sem prazo</small></label>';
+  h+='<label>Já usadas antes de cadastrar<input type="number" id="pf-antes" min="0" max="200" value="'+esc(f.antes||0)+'"><small>se o pacote começou antes de hoje</small></label>';
+  h+='<label class="full">Observação<input type="text" id="pf-obs" maxlength="200" value="'+esc(f.obs||'')+'"></label></div>';
+  h+='<div class="sect" style="margin-top:12px">Serviços que descontam do pacote <small>toque para marcar</small></div><input type="search" class="cf-busca" style="max-width:none;width:100%;margin-bottom:8px" placeholder="Filtrar serviços" oninput="filtrarServPac(this.value)"><div class="cf-abas" id="pf-servs">';
+  var sel={}; f.servs.forEach(function(s){ sel[s]=1; });
+  f.servs.concat(S.filter(function(s){ return !sel[s]; })).forEach(function(s){ h+='<button type="button" class="cf-aba'+(sel[s]?' on':'')+'" data-s="'+esc(s)+'" onclick="togServPac(this)">'+(sel[s]?'✓ ':'')+esc(s.toLowerCase())+'</button>'; });
+  h+='</div>';
+  h+='<div class="cf-pe"><span class="cf-st" id="pf-st"></span><button class="btn" onclick="salvarPac()">'+(f.id?'Salvar':'Cadastrar pacote')+'</button></div>';
+  abrirGav('pacgav', h);
+}
+function addMesData(d, m){ if(!d) d=hojeISO(); var k=addMes(d.slice(0,7), m), dd=Math.min(+d.slice(8,10), diasNoMes(k)); return k+'-'+String(dd).padStart(2,'0'); }
+function pickPacCli(ds){ guardarFormPac(); PACF.ci=ds.i; PACF.cn=ds.n; PACF.cel=ds.c||''; formPac(); }
+function guardarFormPac(){
+  var g=function(id){ var e=document.getElementById(id); return e?e.value:null; };
+  if(g('pf-nome')!=null){ PACF.nome=g('pf-nome'); PACF.total=+g('pf-total')||0; PACF.valor=parseValor(g('pf-valor'))||0; PACF.compra=g('pf-compra'); PACF.validade=g('pf-val'); PACF.antes=+g('pf-antes')||0; PACF.obs=g('pf-obs'); }
+}
+function togServPac(b){ var s=b.dataset.s, i=PACF.servs.indexOf(s); if(i>=0) PACF.servs.splice(i,1); else PACF.servs.push(s); b.classList.toggle('on', i<0); b.textContent=(i<0?'✓ ':'')+s.toLowerCase(); }
+function filtrarServPac(q){ q=chaveTxt(q); Array.prototype.forEach.call(document.querySelectorAll('#pf-servs .cf-aba'), function(b){ b.style.display=!q||b.classList.contains('on')||chaveTxt(b.dataset.s).indexOf(q)>=0?'':'none'; }); }
+function salvarPac(){
+  guardarFormPac(); var f=PACF, st=document.getElementById('pf-st');
+  function erro(m){ st.textContent=m; st.style.color='var(--red)'; }
+  if(!f.ci) return erro('Escolha a cliente.');
+  if(!String(f.nome).trim()) return erro('Dê um nome ao pacote.');
+  if(!(f.total>0)) return erro('Quantas sessões?');
+  if(!f.servs.length) return erro('Marque os serviços que descontam do pacote.');
+  if(!f.compra) return erro('Data da compra.');
+  if(f.validade && f.validade<f.compra) return erro('A validade é antes da compra.');
+  var d={ci:String(f.ci), cn:f.cn, cel:f.cel||'', nome:String(f.nome).trim(), servs:f.servs, total:f.total, valor:Math.round((+f.valor||0)*100)/100, compra:f.compra, validade:f.validade||'', antes:f.antes||0, obs:String(f.obs||'').trim(),
+         desde:(f.antes>0?(f.id&&f.desde?f.desde:hojeISO()):f.compra), alteradoPor:email, alteradoEm:new Date().toISOString()};
+  if(!f.id){ d.ativo=true; d.criadoPor=email; d.criadoEm=d.alteradoEm; d.manual=[]; d.auto=[]; }
+  var id=f.id||('p'+uid8());
+  if(DEMO){ PAC[id]=Object.assign(PAC[id]||{}, d); indexarPac(); fecharGav('pacgav'); renderPac(); toast('Pacote salvo (demonstração).'); return; }
+  gravar('voox_pacotes', id, d).then(function(){ fecharGav('pacgav'); toast(f.id?'Pacote atualizado.':'Pacote cadastrado. O robô confere as sessões no Zelo a cada 15 min.'); }).catch(falhou);
+}
+
+// ================================================================ 3. INDIQUE UMA AMIGA
+function premios(){ return {premioAmiga:(MSG.premioAmiga||'').trim()||'10% de desconto', premioVoce:(MSG.premioVoce||'').trim()||'10% de desconto no próximo serviço'}; }
+function codigoDe(cid){ var k=Object.keys(INDC).filter(function(c){ return INDC[c].ci===String(cid); })[0]; return k||''; }
+function novoCodigo(nome){
+  var base=chaveTxt(nome).split(' ')[0].replace(/[^A-Z]/g,'').slice(0,6)||'VOOX';
+  for(var i=0;i<200;i++){ var c=base+String(10+Math.floor(Math.random()*90)); if(!INDC[c]) return c; }
+  return base+uid8().slice(-4).toUpperCase();
+}
+function garantirCodigo(cid, cn, cel){
+  var c=codigoDe(cid); if(c) return Promise.resolve(c);
+  c=novoCodigo(cn); var d={ci:String(cid), cn:cn, cel:cel||'', criadoEm:new Date().toISOString(), por:email};
+  INDC[c]=d;
+  if(DEMO) return Promise.resolve(c);
+  return db.collection('voox_indic_cod').doc(c).set(d).then(function(){ return c; });
+}
+function convidarIndica(cid, cn, cel){
+  if(!cel){ toast('Cliente sem celular.','err'); return; }
+  var w=MODO_SEQ;   // abre o WhatsApp no mesmo clique (o navegador bloqueia janela aberta depois de esperar o banco)
+  var c=codigoDe(cid)||novoCodigo(cn), P=premios();
+  abrirWhats(cel, preencher(textoMsg('textoIndica'), {nome:nomeCurto(cn), codigo:c, premioAmiga:P.premioAmiga, premioVoce:P.premioVoce}));
+  var d=Object.assign({ci:String(cid), cn:cn, cel:cel, criadoEm:new Date().toISOString(), por:email}, INDC[c]||{}, {conviteEm:new Date().toISOString(), convitePor:email});
+  INDC[c]=d;
+  if(DEMO){ renderIndic(); return; }
+  db.collection('voox_indic_cod').doc(c).set(d, {merge:true}).catch(falhou);
+}
+function setIndFiltro(f){ INDV.filtro=f; renderIndic(); }
+function candidatasIndica(){
+  // promotoras: nota 9 ou 10 nos últimos 180 dias + clientes fiéis (4+ visitas em 12 meses) — ainda sem convite
+  if(!podePainel()) return [];
+  var ja={}; Object.keys(INDC).forEach(function(c){ if(INDC[c].conviteEm) ja[INDC[c].ci]=1; });
+  var o={}, corte=addDias(hojeISO(),-180);
+  Object.keys(NOTAS).forEach(function(k){ var x=NOTAS[k]; if(x.nota>=9 && x.data>=corte && x.c && !ja[x.c]) o[x.c]={i:String(x.c), nota:x.nota}; });
+  var cmap={}; (cliLista||[]).forEach(function(c){ cmap[String(c.i)]=c; });
+  (cliLista||[]).forEach(function(c){ if((c.q||0)>=4 && !ja[c.i] && diasDesde(c.u)<=60) o[c.i]=o[c.i]||{i:String(c.i)}; });
+  return Object.keys(o).map(function(i){ var c=cmap[i]; if(!c||!c.c) return null; return {i:i, n:c.n, c:c.c, q:c.q||0, v:c.v||0, nota:o[i].nota||null}; }).filter(Boolean)
+    .sort(function(a,b){ return ((b.nota||0)-(a.nota||0)) || (b.q-a.q); });
+}
+function renderIndic(){
+  if(viewAtual!=='indic') return;
+  frescor();
+  var el=document.getElementById('page-indic'), P=premios();
+  var I=Object.keys(INDI).map(function(id){ return Object.assign({id:id}, INDI[id]); });
+  var conv=Object.keys(INDC).filter(function(c){ return INDC[c].conviteEm; }).length, vieram=I.filter(function(x){ return x.st==='veio'||x.st==='premiada'; }), aPremiar=I.filter(function(x){ return x.st==='veio'; });
+  var cmap={}; (cliLista||[]).forEach(function(c){ cmap[String(c.i)]=c; });
+  var fat=vieram.reduce(function(a,x){ var c=cmap[String(x.veioCi||'')]; return a+(c?(c.v||0):0); },0);
+  var h=editorMsg('textoIndica','Mensagem do convite','Use <b>{nome}</b>, <b>{codigo}</b>, <b>{premioAmiga}</b> e <b>{premioVoce}</b>.',
+    '<div class="pac-f" style="margin:8px 0"><label>A amiga ganha<input class="ed-extra" data-campo="textoIndica" data-k="premioAmiga" type="text" value="'+esc(MSG.premioAmiga||'')+'" placeholder="'+esc(P.premioAmiga)+'"></label><label>Quem indicou ganha<input class="ed-extra" data-campo="textoIndica" data-k="premioVoce" type="text" value="'+esc(MSG.premioVoce||'')+'" placeholder="'+esc(P.premioVoce)+'"></label></div>');
+  h+=editorMsg('textoIndicaPremio','Mensagem de agradecimento (quando a amiga vem)','Use <b>{nome}</b>, <b>{amiga}</b> e <b>{premioVoce}</b>.');
+  h+=barraSeq('indic')+botaoSeq('indic');
+  h+='<div class="grid kpis k4" style="margin:12px 0 14px">';
+  h+='<div class="card"><div class="klabel">Convites enviados</div><div class="kval">'+n0(conv)+'</div><div class="khint">'+n0(Object.keys(INDC).length)+' códigos criados</div></div>';
+  h+='<div class="card"><div class="klabel">Amigas indicadas</div><div class="kval">'+n0(I.length)+'</div><div class="khint">'+n0(vieram.length)+' já vieram · '+(I.length?pct(vieram.length/I.length):'—')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Prêmios a dar</div><div class="kval" style="color:var(--amber)">'+n0(aPremiar.length)+'</div><div class="khint">'+esc(P.premioVoce)+'</div></div>';
+  h+='<div class="card"><div class="klabel">Faturamento das indicadas</div><div class="kval">'+(podePainel()?brl(fat):'—')+'</div><div class="khint">'+(podePainel()?'estimado, desde que vieram':'visível para a gestão')+'</div></div></div>';
+  // registrar
+  h+='<div class="card ind-reg"><div class="klabel" style="margin:0 0 8px">Chegou uma amiga indicada? Registre aqui</div><div class="pac-f">';
+  h+='<label>Código de quem indicou<input type="text" id="ir-cod" maxlength="12" placeholder="Ex.: ANA27" oninput="this.value=this.value.toUpperCase();checarCod()"><small id="ir-cod-st">ou busque a cliente abaixo</small></label>';
+  h+='<label>Quem indicou (se não tiver o código)'+buscaCliHTML('ir','pickIndicadora')+'</label>';
+  h+='<label>Nome da amiga<input type="text" id="ir-nome" maxlength="80" placeholder="Nome e sobrenome, como vai no Zelo"></label><label>Celular da amiga<input type="tel" id="ir-cel" maxlength="16" placeholder="(51) 99999-9999"></label>';
+  h+='</div><div class="fbar" style="margin:8px 0 0"><span class="khint">Quando ela for atendida (pago no Zelo), o robô marca <b>veio</b> sozinho pelo nome.</span><span style="flex:1"></span><button class="btn" onclick="registrarIndic()">Registrar indicação</button></div></div>';
+  // lista
+  h+='<div class="fbar" style="margin-top:14px"><input type="search" class="cf-busca" placeholder="Buscar" value="'+esc(INDV.busca)+'" oninput="INDV.busca=this.value;renderIndic()"><div class="seg">'
+    +[['todas','Todas'],['aguardando','Aguardando'],['veio','Vieram — dar prêmio'+(aPremiar.length?' <b>'+aPremiar.length+'</b>':'')],['premiada','Prêmio dado'],['codigos','Códigos']].map(function(f){ return '<button class="'+(INDV.filtro===f[0]?'on':'')+'" onclick="setIndFiltro(\''+f[0]+'\')">'+f[1]+'</button>'; }).join('')+'</div></div>';
+  var q=chaveTxt(INDV.busca);
+  if(INDV.filtro==='codigos'){
+    var C=Object.keys(INDC).map(function(c){ var x=INDC[c]; return {c:c, x:x, n:I.filter(function(i){ return i.cod===c; }).length, v:I.filter(function(i){ return i.cod===c && (i.st==='veio'||i.st==='premiada'); }).length}; })
+      .filter(function(o){ return !q || chaveTxt(o.c+' '+o.x.cn).indexOf(q)>=0; }).sort(function(a,b){ return b.v-a.v || b.n-a.n || String(b.x.conviteEm||'').localeCompare(String(a.x.conviteEm||'')); });
+    h+='<div class="tw"><div class="tscroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Convite</th><th class="r">Indicou</th><th class="r">Vieram</th><th></th></tr></thead><tbody>'
+      +(C.length?C.map(function(o){ return '<tr><td><b class="ind-cod">'+esc(o.c)+'</b></td><td>'+lkCli(o.x.ci,o.x.cn)+'</td><td>'+(o.x.conviteEm?dataBRc(o.x.conviteEm.slice(0,10)):'<span class="p-sem">não enviado</span>')+'</td><td class="r">'+o.n+'</td><td class="r">'+o.v+'</td><td class="r">'+(o.x.cel?'<button class="btn btn-sm btn-ghost" data-i="'+esc(o.x.ci)+'" data-n="'+esc(o.x.cn)+'" data-c="'+esc(o.x.cel)+'" onclick="convidarIndica(this.dataset.i,this.dataset.n,this.dataset.c)">'+(o.x.conviteEm?'Reenviar':'Enviar')+' convite</button>':'')+'</td></tr>'; }).join(''):'<tr><td colspan="6" class="empty">Nenhum código ainda.</td></tr>')+'</tbody></table></div></div>';
+  } else {
+    var L=I.filter(function(x){ return (INDV.filtro==='todas'||x.st===INDV.filtro) && (!q || chaveTxt(x.nome+' '+x.icn+' '+x.cod).indexOf(q)>=0); })
+      .sort(function(a,b){ var o={veio:0,aguardando:1,premiada:2,nao_veio:3}; return (o[a.st]-o[b.st]) || String(b.criadoEm).localeCompare(String(a.criadoEm)); });
+    h+='<div class="rlist">'+(L.length?L.map(function(x){
+      var cor={aguardando:'var(--amber)',veio:'var(--green)',premiada:'var(--border)',nao_veio:'var(--red)'}[x.st]||'var(--border)';
+      var pill={aguardando:'<span class="pill p-amb">aguardando a 1ª visita</span>',veio:'<span class="pill p-ok">veio '+(x.veioEm?dataBR(x.veioEm):'')+' — dar o prêmio</span>',premiada:'<span class="pill p-mut">prêmio dado '+(x.premiadaEm?dataBR(x.premiadaEm):'')+'</span>',nao_veio:'<span class="pill p-bad">não veio</span>'}[x.st]||'';
+      var r='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+esc(x.nome)+' <span class="p-sem" style="font-weight:500">indicada por</span> '+lkCli(x.ici,x.icn)+' <span class="ind-cod">'+esc(x.cod||'')+'</span></div>';
+      r+='<div class="info">registrada em '+(x.criadoEm?dataBRc(String(x.criadoEm).slice(0,10)):'—')+(x.cel?' · '+fmtCel(x.cel):'')+(x.veioNome&&x.veioNome!==x.nome?' · no Zelo: '+esc(x.veioNome):'')+'</div><div class="tags">'+pill+'</div></div><div class="acts">';
+      if(x.st==='aguardando') r+='<button class="btn btn-sm btn-ghost" onclick="stIndic(\''+x.id+'\',\'veio\')">Veio</button><button class="btn btn-sm btn-ghost" onclick="stIndic(\''+x.id+'\',\'nao_veio\')">Não veio</button>';
+      if(x.st==='veio'){ if(x.icel) r+='<button class="btn btn-sm btn-wa" onclick="avisarPremio(\''+x.id+'\')">Avisar quem indicou</button>'; r+='<button class="btn btn-sm" onclick="stIndic(\''+x.id+'\',\'premiada\')">Prêmio dado</button>'; }
+      if(x.st==='premiada'||x.st==='nao_veio') r+='<button class="btn btn-sm btn-ghost" onclick="stIndic(\''+x.id+'\',\'aguardando\')">Reabrir</button>';
+      return r+'</div></div>';
+    }).join(''):'<div class="card empty">Nenhuma indicação '+(INDV.filtro==='todas'?'registrada ainda.':'com esse filtro.')+'</div>')+'</div>';
+  }
+  // candidatas
+  var cand=candidatasIndica();
+  if(cand.length){
+    h+='<div class="sect" style="margin-top:18px">Quem convidar <small>nota 9 ou 10 nos últimos 6 meses e clientes fiéis que vieram nos últimos 60 dias — ainda sem convite</small></div><div class="rlist">';
+    cand.slice(0,30).forEach(function(c){ h+='<div class="rrow" style="--c:var(--primary)"><div><div class="nm">'+lkCli(c.i,c.n)+'</div><div class="info">'+(c.nota?'deu nota '+c.nota+' · ':'')+c.q+' visita(s) em 12 meses</div></div><div class="acts"><button class="btn btn-sm btn-wa" data-i="'+esc(c.i)+'" data-n="'+esc(c.n)+'" data-c="'+esc(c.c)+'" onclick="convidarIndica(this.dataset.i,this.dataset.n,this.dataset.c)">Enviar convite</button></div></div>'; });
+    h+='</div>'+(cand.length>30?'<div class="khint">+ '+(cand.length-30)+' — use o envio em sequência lá em cima.</div>':'');
+  }
+  h+='<div class="sect" style="margin-top:18px">Gerar código para outra cliente</div><div class="card">'+buscaCliHTML('ig','pickConvite')+'</div>';
+  h+='<div class="nota">Cada cliente tem um código só dela (ex.: ANA27). A amiga fala o código na recepção, que registra aqui. Quando a amiga é atendida, o robô marca <b>veio</b> e o prêmio fica pendente até alguém marcar <b>Prêmio dado</b>. Os prêmios não são lançados no Zelo — combine na recepção como aplicar.</div>';
+  el.innerHTML=h;
+}
+var IREG={ici:'', icn:'', icel:'', cod:''};
+function checarCod(){
+  var c=document.getElementById('ir-cod').value.trim(), s=document.getElementById('ir-cod-st'), x=INDC[c];
+  if(x){ IREG={ici:x.ci, icn:x.cn, icel:x.cel||'', cod:c}; s.innerHTML='✓ <b>'+esc(x.cn)+'</b>'; s.style.color='var(--green)'; }
+  else { if(IREG.cod) IREG={ici:'',icn:'',icel:'',cod:''}; s.textContent=c.length>=3?'código não encontrado':'ou busque a cliente abaixo'; s.style.color=''; }
+}
+function pickIndicadora(ds){ IREG={ici:ds.i, icn:ds.n, icel:ds.c||'', cod:codigoDe(ds.i)}; document.getElementById('ir-q').value=ds.n; document.getElementById('ir-r').innerHTML=''; var s=document.getElementById('ir-cod-st'); s.innerHTML='✓ <b>'+esc(ds.n)+'</b>'+(IREG.cod?' · código '+IREG.cod:''); s.style.color='var(--green)'; }
+function pickConvite(ds){ document.getElementById('ig-r').innerHTML=''; document.getElementById('ig-q').value=''; if(!ds.c){ garantirCodigo(ds.i, ds.n, '').then(function(c){ toast('Código de '+ds.n+': '+c+' (sem celular para enviar)'); renderIndic(); }); return; } convidarIndica(ds.i, ds.n, ds.c); }
+function registrarIndic(){
+  var nomeA=String(document.getElementById('ir-nome').value||'').trim().toUpperCase(), cel=limpaCel(document.getElementById('ir-cel').value);
+  if(!IREG.ici){ toast('Informe o código ou busque quem indicou.','err'); return; }
+  if(nomeA.split(' ').length<2){ toast('Nome e sobrenome da amiga (como vai ficar no Zelo).','err'); return; }
+  if(cel && cel.length<10){ toast('Celular inválido.','err'); return; }
+  var dup=Object.keys(INDI).filter(function(k){ return chaveTxt(INDI[k].nome)===chaveTxt(nomeA); })[0];
+  if(dup && !confirm(nomeA+' já foi registrada como indicada por '+INDI[dup].icn+'. Registrar de novo?')) return;
+  var salvar=function(cod){
+    var d={cod:cod, ici:String(IREG.ici), icn:IREG.icn, icel:IREG.icel||'', nome:nomeA, cel:cel, st:'aguardando', criadoEm:new Date().toISOString(), por:email};
+    var id='i'+uid8();
+    if(DEMO){ INDI[id]=d; IREG={ici:'',icn:'',icel:'',cod:''}; renderIndic(); toast('Indicação registrada.'); return; }
+    db.collection('voox_indicacoes').doc(id).set(d).then(function(){ IREG={ici:'',icn:'',icel:'',cod:''}; toast('Indicação registrada. Quando ela for atendida, aparece aqui como "veio".'); }).catch(falhou);
+  };
+  if(IREG.cod) salvar(IREG.cod); else garantirCodigo(IREG.ici, IREG.icn, IREG.icel).then(salvar).catch(falhou);
+}
+function stIndic(id, st){
+  var u={st:st, stPor:email, stEm:new Date().toISOString()};
+  if(st==='veio' && !INDI[id].veioEm) u.veioEm=hojeISO();
+  if(st==='premiada'){ u.premiadaEm=new Date().toISOString(); u.premiadaPor=email; }
+  if(DEMO){ Object.assign(INDI[id],u); renderIndic(); return; }
+  gravar('voox_indicacoes', id, u).then(function(){ toast(st==='premiada'?'Prêmio marcado como dado.':'Atualizado.'); }).catch(falhou);
+}
+function avisarPremio(id){
+  var x=INDI[id], P=premios(); if(!x.icel) return;
+  abrirWhats(x.icel, preencher(textoMsg('textoIndicaPremio'), {nome:nomeCurto(x.icn), amiga:nomeCurto(x.nome), premioVoce:P.premioVoce}));
+  if(DEMO){ x.avisadaEm=new Date().toISOString(); return; }
+  gravar('voox_indicacoes', id, {avisadaEm:new Date().toISOString()}).catch(function(){});
+}
+function fichaExtras(c){
+  var h='';
+  var P=(PACMAP[c.i]||[]).concat(Object.keys(PAC).filter(function(id){ return PAC[id].ci===String(c.i) && PAC[id].ativo===false; }));
+  if(P.length) h+='<div class="sect" style="margin-top:14px">Pacotes</div>'+P.map(function(id){ var p=PAC[id], I=pacInfo(p); return '<div class="fi-nota" style="cursor:pointer" onclick="verPac(\''+id+'\')"><b>'+esc(p.nome)+'</b> · '+I.us+'/'+p.total+' sessões'+(I.st!=='ok'?' · <span style="color:var(--amber)">'+({acabando:'acabando',acabou:'acabou',vencido:'vencido',encerrado:'encerrado'}[I.st])+'</span>':'')+'</div>'; }).join('');
+  var cod=codigoDe(c.i), ind=Object.keys(INDI).filter(function(k){ return INDI[k].ici===String(c.i); }), foi=Object.keys(INDI).filter(function(k){ return INDI[k].veioCi===String(c.i); })[0];
+  if(cod||ind.length||foi) h+='<div class="sect" style="margin-top:14px">Indicações</div><div class="fi-nota">'+(cod?'Código <b class="ind-cod">'+esc(cod)+'</b> · ':'')+(ind.length?'indicou '+ind.length+' amiga(s), '+ind.filter(function(k){ return INDI[k].st==='veio'||INDI[k].st==='premiada'; }).length+' vieram':'ainda não indicou ninguém')+(foi?' · veio indicada por <b>'+esc(INDI[foi].icn)+'</b>':'')+'</div>';
+  h+='<div class="sect" style="margin-top:14px">Anotações</div>'+anotBloco(c.i, c.n);
+  return h;
+}
+function dadosDemoCli2(){
+  var L=cliLista.filter(function(c){ return c.c; }), h=hojeISO();
+  if(L.length<6) return;
+  var a=L[0], b=L[1], d=L[2], e=L[3];
+  ANOT[a.i]={n:a.n, itens:[{id:'a1', t:'Prefere a Karina. Sensível a cera quente — usar cera fria.', fixa:true, por:'demo', nm:'Recepção', em:addDias(h,-20)+'T10:00'},{id:'a2', t:'Gosta de café sem açúcar.', fixa:false, por:'demo', nm:'Demo', em:addDias(h,-3)+'T15:00'}]};
+  ANOT[b.i]={n:b.n, itens:[{id:'b1', t:'Vem sempre com a filha pequena — avisar se atrasar.', fixa:true, por:'demo', nm:'Gerência', em:addDias(h,-40)+'T09:00'}]};
+  PAC.p1={ci:a.i, cn:a.n, cel:a.c, nome:'10 drenagens linfáticas', servs:['DRENAGEM LINFATICA'], total:10, valor:1500, compra:addDias(h,-60), desde:addDias(h,-60), validade:addMesData(addDias(h,-60),6), ativo:true, manual:[], auto:[0,1,2,3,4,5,6,7].map(function(i){ return {d:addDias(h,-55+i*7), s:'DRENAGEM LINFATICA', p:'ANA (EST)'}; }), autoEm:h+'T10:30'};
+  PAC.p2={ci:b.i, cn:b.n, cel:b.c, nome:'5 limpezas de pele', servs:['LIMPEZA DE PELE'], total:5, valor:900, compra:addDias(h,-20), desde:addDias(h,-20), validade:'', ativo:true, manual:[{d:addDias(h,-6), s:'LIMPEZA DE PELE', q:1, obs:'sessão de cortesia', por:'demo', nm:'Recepção'}], auto:[{d:addDias(h,-14), s:'LIMPEZA DE PELE', p:'GABI (EST)'}], autoEm:h+'T10:30'};
+  PAC.p3={ci:d.i, cn:d.n, cel:d.c, nome:'Pacote noiva', servs:['ESCOVA MEDIA','MANICURE'], total:6, valor:1200, compra:addDias(h,-170), desde:addDias(h,-170), validade:addDias(h,8), ativo:true, manual:[], auto:[{d:addDias(h,-160), s:'ESCOVA MEDIA', p:'CARLA (CAB)'}], autoEm:h+'T10:30'};
+  PAC.p4={ci:e.i, cn:e.n, cel:e.c, nome:'4 podologias', servs:['PODOLOGIA'], total:4, valor:480, compra:addDias(h,-200), desde:addDias(h,-200), validade:'', ativo:false, manual:[], auto:[1,2,3,4].map(function(i){ return {d:addDias(h,-200+i*30), s:'PODOLOGIA', p:'EVA (POD)'}; })};
+  indexarPac();
+  INDC.ANA27={ci:a.i, cn:a.n, cel:a.c, criadoEm:addDias(h,-30)+'T10:00', conviteEm:addDias(h,-30)+'T10:00'};
+  var cb=novoCodigo(b.n); INDC[cb]={ci:b.i, cn:b.n, cel:b.c, criadoEm:addDias(h,-12)+'T10:00', conviteEm:addDias(h,-12)+'T10:00'};
+  INDI.i1={cod:'ANA27', ici:a.i, icn:a.n, icel:a.c, nome:'MARINA GOMES', cel:'51988887777', st:'veio', veioEm:addDias(h,-4), veioCi:L[8].i, veioNome:'MARINA GOMES', criadoEm:addDias(h,-10)+'T11:00'};
+  INDI.i2={cod:'ANA27', ici:a.i, icn:a.n, icel:a.c, nome:'CLARA VIEIRA', cel:'51977776666', st:'aguardando', criadoEm:addDias(h,-2)+'T16:00'};
+  INDI.i3={cod:cb, ici:b.i, icn:b.n, icel:b.c, nome:'BRUNA TEIXEIRA', cel:'', st:'premiada', veioEm:addDias(h,-9), premiadaEm:addDias(h,-7)+'T10:00', criadoEm:addDias(h,-11)+'T11:00'};
+  CIDX.servs=['DRENAGEM LINFATICA','LIMPEZA DE PELE','PODOLOGIA','MANICURE','PEDICURE','ESCOVA MEDIA','SOBRANCELHA','DEPILAÇÃO VIRILHA','MASSAGEM RELAXANTE'];
+}
+
 // ---------------------------------------------------------------- start
 (function(){ var on=true; try{ on=(localStorage.getItem('voox_painel_pin')!=='0'); }catch(e){} if(on) document.getElementById('sidebar').classList.add('pin'); })();
 aplicarModo(modoAtual());
@@ -4759,7 +5248,7 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
