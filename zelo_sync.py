@@ -1529,6 +1529,21 @@ def gravar_paineis_prof(z, db, d):
                         anot[sn.id] = " · ".join(fx)[:300]
     except Exception as e:
         log(f"Anotações para a agenda das profissionais: {e}")
+    # o que já foi oferecido a cada cliente da agenda (últimos 120 dias)
+    ofer = {}
+    try:
+        lim_of = (hoje - dt.timedelta(days=120)).isoformat()
+        rot = {"aceitou": "aceitou", "pensar": "vai pensar", "recusou": "recusou", "sem_resposta": "sem resposta"}
+        refs = [db.collection("voox_ofertas").document(i) for i in ids]
+        for k in range(0, len(refs), 200):
+            for sn in db.get_all(refs[k:k + 200]):
+                if sn.exists:
+                    its = sorted([x for x in ((sn.to_dict() or {}).get("itens") or []) if str(x.get("em") or "")[:10] >= lim_of],
+                                 key=lambda x: str(x.get("em")), reverse=True)[:2]
+                    if its:
+                        ofer[sn.id] = " · ".join(f"{str(x.get('s') or '').lower()} {str(x.get('em'))[8:10]}/{str(x.get('em'))[5:7]} ({rot.get(x.get('res'), '')})" for x in its)[:240]
+    except Exception as e:
+        log(f"Ofertas para a agenda das profissionais: {e}")
     corte = (hoje - dt.timedelta(days=90)).isoformat()
     notas = [x for x in (y.to_dict() for y in db.collection("voox_notas").where("nota", ">=", 0).stream()) if (x.get("data") or "") >= corte]
     vagas = [x.to_dict() for x in db.collection("voox_vagas").where("data", ">=", hoje.isoformat()).stream()]
@@ -1567,7 +1582,9 @@ def gravar_paineis_prof(z, db, d):
             meses[m] = {"tot": tot, "itens": sorted(itens, key=lambda o: o["d"], reverse=True)}
         agenda = sorted([{"d": a["dataHora"][:10], "h": a["dataHora"][11:16], "c": limpa_nome((a.get("cliente") or {}).get("nome") or ""),
                           "s": limpa_serv((a.get("servico") or {}).get("nome")), "min": _min(a),
-                          **({"an": anot[str((a.get("cliente") or {}).get("id"))]} if anot.get(str((a.get("cliente") or {}).get("id"))) else {})}
+                          "ci": str((a.get("cliente") or {}).get("id") or ""),
+                          **({"an": anot[str((a.get("cliente") or {}).get("id"))]} if anot.get(str((a.get("cliente") or {}).get("id"))) else {}),
+                          **({"of": ofer[str((a.get("cliente") or {}).get("id"))]} if ofer.get(str((a.get("cliente") or {}).get("id"))) else {})}
                          for a in ags if ((a.get("profissional") or {}).get("nomeAgenda") or "").strip() == p and a.get("dataHora")],
                         key=lambda o: (o["d"], o["h"]))
         nts = sorted([{"d": x.get("data"), "nota": x.get("nota"), "com": x.get("comentario") or "", "s": x.get("s") or [], "n": x.get("n") or ""}
