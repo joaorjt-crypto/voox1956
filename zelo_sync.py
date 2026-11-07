@@ -1261,6 +1261,54 @@ def gravar_comissoes_zelo(z, db):
     log(f"Comissões do Zelo: {len(profs)} profissionais, {n_serv} serviços com % cadastrado")
 
 
+# ---------------------------------------------------------------- base completa de clientes (varredura e duplicidades)
+
+BASE_POR_PARTE = 4000
+
+
+def gravar_base_clientes(z, db, hoje):
+    meta_ref = db.collection("voox_base").document("meta")
+    md = meta_ref.get().to_dict() or {}
+    if md.get("data") == hoje.isoformat() and "--base" not in sys.argv:
+        log("Base de clientes: já atualizada hoje")
+        return
+    campos = ("id,nome,apelido,celular,telefoneFixo,email,dataNascimento,codigoInterno,clienteVip,"
+              "clienteDesejaReceberAcaoMarketing,clienteComplemento(cpf,sexo)")
+    todos, page = [], 1
+    while page <= 80:
+        c = z.get("/api/clientes", {"clienteOuProfissionais": "TODOS", "fields": campos, "page": page,
+                                    "rpp": 1000, "tipoBuscaCodigo": "CT"})["content"]
+        todos += c.get("resultList") or []
+        if not c.get("more"):
+            break
+        page += 1
+
+    def limpo(v):
+        return re.sub(r"[|\r\n]+", " ", str(v or "")).strip()
+
+    linhas = []
+    for o in todos:
+        comp = (o.get("clienteComplemento") or [{}])[0] or {}
+        linhas.append("|".join([
+            limpo(o.get("id")), limpo(o.get("nome")), limpo(o.get("apelido")),
+            re.sub(r"\D", "", str(o.get("celular") or "")), re.sub(r"\D", "", str(o.get("telefoneFixo") or "")),
+            limpo(o.get("email")).lower(), limpo(o.get("dataNascimento"))[:10],
+            re.sub(r"\D", "", str(comp.get("cpf") or "")), limpo(comp.get("sexo"))[:1],
+            "1" if o.get("clienteVip") else "", "1" if o.get("clienteDesejaReceberAcaoMarketing") else "",
+            limpo(o.get("codigoInterno"))]))
+    partes = [linhas[i:i + BASE_POR_PARTE] for i in range(0, len(linhas), BASE_POR_PARTE)] or [[]]
+    batch = db.batch()
+    for i, parte in enumerate(partes):
+        batch.set(db.collection("voox_base").document(f"p{i:02d}"), {"c": parte})
+    for i in range(len(partes), md.get("partes", 0)):
+        batch.delete(db.collection("voox_base").document(f"p{i:02d}"))
+    batch.set(meta_ref, {"data": hoje.isoformat(), "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes"),
+                         "partes": len(partes), "total": len(linhas),
+                         "campos": "id|nome|apelido|celular|fixo|email|nascimento|cpf|sexo|vip|marketing|codigo"})
+    batch.commit()
+    log(f"Base de clientes: {len(linhas)} cadastros ({len(partes)} partes)")
+
+
 # ---------------------------------------------------------------- agenda de hoje (tablet da pesquisa de satisfação)
 
 def gravar_agenda_hoje(z, db, hoje):
@@ -1629,6 +1677,7 @@ def main():
                       ("Comissões do Zelo", lambda: gravar_comissoes_zelo(z, db)),
                       ("Faltosas", lambda: gravar_faltosas(z, db, d, fones)),
                       ("Agenda de hoje", lambda: gravar_agenda_hoje(z, db, d["hoje"])),
+                      ("Base de clientes", lambda: gravar_base_clientes(z, db, d["hoje"])),
                       ("Pacotes", lambda: gravar_pacotes(db, d["pagos"], d["hoje"] - dt.timedelta(days=JANELA_DIAS))),
                       ("Indicações", lambda: gravar_indicacoes(db, d["pagos"])),
                       ("Painel das profissionais", lambda: gravar_paineis_prof(z, db, d))):
