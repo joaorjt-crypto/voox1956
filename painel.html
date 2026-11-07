@@ -551,6 +551,15 @@ body.sem-rolar{overflow:hidden}
 .pp-l span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pp-l b{text-align:right}
 .pp-l small{color:var(--muted);text-align:right}
+.prev-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));gap:4px 26px}
+.prev-tabs>div{min-width:0;overflow-x:auto}
+table.prev-t{width:100%;border-collapse:collapse;font-size:12.5px}
+table.prev-t th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;text-align:left;padding:4px 6px}
+table.prev-t td{padding:5px 6px;border-top:1px solid var(--border);white-space:nowrap}
+table.prev-t .r{text-align:right}
+.lk-row{cursor:pointer}.lk-row:hover td{background:rgba(188,130,64,.07)}.lk-row.on td{background:rgba(188,130,64,.14)}
+.oc-c{display:grid;grid-template-columns:1fr 42px;gap:8px;align-items:center}
+.oc-c b{text-align:right;font-size:12px}
 .ag-an{font-size:11.5px;color:var(--amber);margin:1px 0 4px 44px}
 @media (max-width:560px){.pac-f{grid-template-columns:1fr}}
 #cfged{display:none}
@@ -5584,41 +5593,59 @@ function dadosDemoOfertas(){
 
 
 // ================================================================ PREVISÃO: valor da agenda à frente (voox_previsao/agenda, robô)
-var PREV=null, PRVP='mes';
-try{ PRVP=localStorage.getItem('voox_prev_per')||'mes'; }catch(e){}
-function setPrevPer(p){ PRVP=p; try{ localStorage.setItem('voox_prev_per',p); }catch(e){} renderPainel(); }
+var PREV=null, PRVP='sem', PRVX=null;
+try{ PRVP=localStorage.getItem('voox_prev_per2')||'sem'; }catch(e){}
+function setPrevPer(p){ PRVP=p; PRVX=null; try{ localStorage.setItem('voox_prev_per2',p); }catch(e){} renderPainel(); }
+function setPrevX(de, ate){ PRVP='x'; PRVX=[de,ate]; renderPainel(); }
+function segunda(d){ return addDias(d,-((s2d(d).getDay()+6)%7)); }
+function somaPrev(de, ate){
+  var r={v:0,q:0,m:0,cap:0,p:{}};
+  Object.keys(PREV.dias).forEach(function(d){ if(d<de||d>ate) return; var o=PREV.dias[d]; r.v+=o.v||0; r.q+=o.q||0; r.m+=o.m||0; r.cap+=o.cap||0;
+    Object.keys(o.p||{}).forEach(function(p){ var x=r.p[p]||(r.p[p]=[0,0,0,0]), y=o.p[p]; for(var i=0;i<4;i++) x[i]+=(+y[i]||0); }); });
+  r.oc=r.cap?Math.min(1,r.m/r.cap):null; return r;
+}
+function corOc(o){ return o==null?'var(--muted)':o>=.85?'var(--green)':o>=.6?'var(--amber)':'var(--red)'; }
+function barOc(o){ return '<div class="pq-b" style="min-width:70px"><i style="width:'+(o==null?0:o*100).toFixed(1)+'%;background:'+corOc(o)+'"></i></div><b style="color:'+corOc(o)+'">'+(o==null?'—':pct(o))+'</b>'; }
 function cardPrevisao(P){
   if(!PREV || !PREV.dias) return '';
-  var hoje=hojeISO(), k=hoje.slice(0,7), de=hoje, ate;
-  if(PRVP==='mes') ate=fimMes(k);
-  else if(PRVP==='7') ate=addDias(hoje,6);
-  else if(PRVP==='30') ate=addDias(hoje,29);
-  else if(PRVP==='90') ate=addDias(hoje,89);
-  else { de=P.de>hoje?P.de:hoje; ate=P.ate; }
-  var v=0, q=0, pr={}, sem={};
-  Object.keys(PREV.dias).forEach(function(d){ if(d<de||d>ate) return; var o=PREV.dias[d]; v+=o.v||0; q+=o.q||0;
-    Object.keys(o.p||{}).forEach(function(p){ var x=pr[p]||(pr[p]=[0,0]); x[0]+=o.p[p][0]; x[1]+=o.p[p][1]; });
-    var s=s2d(d), w=addDias(d,-((s.getDay()+6)%7)); sem[w]=(sem[w]||0)+(o.v||0); });
-  var k30=(resumo&&resumo.kpis30)||{}, perdas=(k30.cancelados||0)+(k30.faltas||0), taxa=(k30.atendimentos+perdas)?perdas/(k30.atendimentos+perdas):0;
-  var real=v*(1-taxa), alem=ate>(PREV.ate||'');
-  var h='<div class="card prev-card" style="margin-top:13px"><div class="fbar" style="margin:0 0 10px"><div><div class="klabel" style="margin:0">Previsão pela agenda</div><div class="khint" style="margin-top:3px">valor dos horários já marcados no Zelo, de '+dataBRc(de)+' a '+dataBRc(ate)+'</div></div><span style="flex:1"></span><div class="seg">'
-    +[['mes','Até o fim do mês'],['7','7 dias'],['30','30 dias'],['90','90 dias'],['filtro','Período do filtro']].map(function(x){ return '<button class="'+(PRVP===x[0]?'on':'')+'" onclick="setPrevPer(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div></div>';
-  if(ate<de){ return h+'<div class="khint">O período do filtro já passou — escolha um período que inclua dias à frente.</div></div>'; }
-  h+='<div class="prev-nums"><div><div class="kval">'+brl(v)+'</div><div class="khint">'+n0(q)+' atendimento(s) marcado(s)</div></div>';
-  h+='<div><div class="kval" style="font-size:19px">'+brl(real)+'</div><div class="khint">descontando '+pct(taxa)+' de faltas e cancelamentos (média dos últimos 30 dias)</div></div>';
-  if(PRVP==='mes'){ var cur=((resumo&&resumo.meses)||{})[k]||{fat:0}, mt=(metas||{})[k], meta=mt&&(mt.meta||mt.valor||mt);
-    h+='<div><div class="kval" style="font-size:19px">'+brl((cur.fat||0)+real)+'</div><div class="khint">fechamento provável de '+MESES[+k.slice(5)-1]+': '+brl(cur.fat||0)+' faturado + agenda'+(typeof meta==='number'&&meta?' · '+pct(((cur.fat||0)+real)/meta)+' da meta':'')+'</div></div>'; }
+  var hoje=hojeISO(), k=hoje.slice(0,7), sg=segunda(hoje), de=hoje, ate, rot;
+  if(PRVP==='sem'){ ate=addDias(sg,6); rot='esta semana'; }
+  else if(PRVP==='prox'){ de=addDias(sg,7); ate=addDias(sg,13); rot='próxima semana'; }
+  else if(PRVP==='mes'){ ate=fimMes(k); rot='até o fim do mês'; }
+  else if(PRVP==='pmes'){ var k2=addMes(k,1); de=k2+'-01'; ate=fimMes(k2); rot=MESES_NOME?MESES_NOME[+k2.slice(5)-1]:mesLabel(k2); }
+  else if(PRVP==='30'){ ate=addDias(hoje,29); rot='30 dias'; }
+  else if(PRVP==='90'){ ate=addDias(hoje,89); rot='90 dias'; }
+  else if(PRVP==='x' && PRVX){ de=PRVX[0]<hoje?hoje:PRVX[0]; ate=PRVX[1]; rot=dataBR(PRVX[0])+' a '+dataBR(PRVX[1]); }
+  else { de=P.de>hoje?P.de:hoje; ate=P.ate; rot='período do filtro'; }
+  var h='<div class="card prev-card" style="margin-top:13px"><div class="fbar" style="margin:0 0 10px"><div><div class="klabel" style="margin:0">Previsão pela agenda <span class="pill p-mut">futuro</span></div><div class="khint" style="margin-top:3px">horários já marcados no Zelo · '+dataBRc(de)+' a '+dataBRc(ate)+'</div></div><span style="flex:1"></span><div class="seg seg-wrap">'
+    +[['sem','Esta semana'],['prox','Próxima semana'],['mes','Resto do mês'],['pmes','Próximo mês'],['30','30 dias'],['90','90 dias'],['filtro','Filtro']].map(function(x){ return '<button class="'+(PRVP===x[0]?'on':'')+'" onclick="setPrevPer(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div></div>';
+  if(ate<de) return h+'<div class="khint">O período do filtro já passou — escolha um período com dias à frente.</div></div>';
+  var R=somaPrev(de, ate), k30=(resumo&&resumo.kpis30)||{}, perdas=(k30.cancelados||0)+(k30.faltas||0), taxa=((k30.atendimentos||0)+perdas)?perdas/((k30.atendimentos||0)+perdas):0;
+  h+='<div class="prev-nums"><div><div class="klabel">Agendado</div><div class="kval">'+brl(R.v)+'</div><div class="khint">'+n0(R.q)+' atendimento(s) · '+brl(R.v*(1-taxa))+' descontando '+pct(taxa)+' de faltas e cancelamentos</div></div>';
+  h+='<div><div class="klabel">Agenda preenchida</div><div class="kval" style="color:'+corOc(R.oc)+'">'+(R.oc==null?'—':pct(R.oc))+'</div><div class="khint">'+n0(Math.round(R.m/60))+'h marcadas de '+n0(Math.round(R.cap/60))+'h disponíveis · '+n0(Math.max(0,Math.round((R.cap-R.m)/60)))+'h livres</div></div>';
+  if(PRVP==='mes'){ var cur=((resumo&&resumo.meses)||{})[k]||{fat:0}, meta=+metas[k]||0, fp=(cur.fat||0)+R.v*(1-taxa);
+    h+='<div><div class="klabel">Fechamento provável de '+MESES[+k.slice(5)-1]+'</div><div class="kval">'+brl(fp)+'</div><div class="khint">'+brl(cur.fat||0)+' faturado + agenda'+(meta?' · '+pct(fp/meta)+' da meta':'')+'</div></div>'; }
   h+='</div>';
-  var L=Object.keys(pr).filter(function(p){ return p!=='—'; }).map(function(p){ return {p:p, v:pr[p][0], q:pr[p][1]}; }).sort(function(a,b){ return b.v-a.v; });
-  var mx=L.length?L[0].v:1;
-  if(L.length) h+='<div class="prev-prof">'+L.slice(0,10).map(function(x){ return '<div class="pp-l"><span>'+esc(nomeProf(x.p))+'</span><div class="pq-b"><i style="width:'+(x.v/mx*100).toFixed(1)+'%;background:var(--s1)"></i></div><b>'+brl(x.v)+'</b><small>'+x.q+'</small></div>'; }).join('')+'</div>';
-  var W=Object.keys(sem).sort(); if(W.length>1 && W.length<=14) h+='<div class="khint" style="margin-top:8px">Por semana: '+W.map(function(w){ return dataBR(w)+' '+brl(sem[w]); }).join(' · ')+'</div>';
-  h+='<div class="nota" style="margin-top:8px">Cada horário marcado vale a média real daquele serviço nos últimos 3 meses (mesma base de Serviços feitos) ou, se o serviço é raro, o preço de tabela.'+(PREV.semValor?' '+n0(PREV.semValor)+' horário(s) sem valor conhecido ficaram de fora.':'')+(alem?' A agenda lida vai até '+dataBRc(PREV.ate)+'.':'')+' Clientes costumam marcar em cima da hora: quanto mais longe a data, mais a agenda ainda vai encher. Atualizado '+dataBR(PREV.atualizadoEm)+' às '+String(PREV.atualizadoEm||'').slice(11,16)+'.</div></div>';
+  // semanas e meses
+  var S=[], M=[];
+  for(var i=0;i<8;i++){ var a=addDias(sg,7*i), b=addDias(a,6); if(a>PREV.ate) break; var r=somaPrev(a<hoje?hoje:a, b); r.a=a; r.b=b; S.push(r); }
+  for(var j=0;j<4;j++){ var km=addMes(k,j), a2=j?km+'-01':hoje, b2=fimMes(km); if(a2>PREV.ate) break; var r2=somaPrev(a2,b2); r2.k=km; r2.a=km+'-01'; r2.b=b2; M.push(r2); }
+  h+='<div class="prev-tabs"><div><div class="sect" style="margin-top:12px">Por semana</div><table class="prev-t"><thead><tr><th>Semana</th><th class="r">Agendado</th><th class="r">Atend.</th><th>Preenchida</th></tr></thead><tbody>'
+    +S.map(function(r,i){ return '<tr class="lk-row'+(PRVP==='x'&&PRVX&&PRVX[0]===r.a?' on':'')+'" onclick="setPrevX(\''+r.a+'\',\''+r.b+'\')"><td>'+(i===0?'Esta · ':i===1?'Próxima · ':'')+dataBR(r.a)+'–'+dataBR(r.b)+'</td><td class="r">'+brl(r.v)+'</td><td class="r">'+n0(r.q)+'</td><td><div class="oc-c">'+barOc(r.oc)+'</div></td></tr>'; }).join('')+'</tbody></table></div>';
+  h+='<div><div class="sect" style="margin-top:12px">Por mês</div><table class="prev-t"><thead><tr><th>Mês</th><th class="r">Agendado</th><th class="r">Atend.</th><th>Preenchida</th></tr></thead><tbody>'
+    +M.map(function(r,i){ return '<tr class="lk-row" onclick="setPrevX(\''+r.a+'\',\''+r.b+'\')"><td>'+mesLabel(r.k)+(i===0?' (resto)':'')+'</td><td class="r">'+brl(r.v)+'</td><td class="r">'+n0(r.q)+'</td><td><div class="oc-c">'+barOc(r.oc)+'</div></td></tr>'; }).join('')+'</tbody></table>';
+  // por profissional no período escolhido
+  var L=Object.keys(R.p).filter(function(p){ return p!=='—' && p!=='CASA'; }).map(function(p){ var x=R.p[p]; return {p:p, v:x[0], q:x[1], oc:x[3]?Math.min(1,x[2]/x[3]):null}; }).sort(function(a,b){ return b.v-a.v; });
+  if(L.length) h+='<div class="sect" style="margin-top:12px">Por profissional <small>'+esc(rot)+'</small></div><table class="prev-t"><tbody>'+L.slice(0,14).map(function(x){ return '<tr><td>'+esc(nomeProf(x.p))+'</td><td class="r">'+brl(x.v)+'</td><td class="r">'+x.q+'</td><td><div class="oc-c">'+barOc(x.oc)+'</div></td></tr>'; }).join('')+'</tbody></table>';
+  h+='</div></div>';
+  h+='<div class="nota" style="margin-top:8px"><b>Agenda preenchida</b> = minutos marcados ÷ minutos disponíveis das profissionais que costumam trabalhar naquele dia da semana (últimas 8 semanas), no horário de funcionamento, descontando bloqueios de agenda (folgas, cursos). <b>Valor</b> = média real de cada serviço nos últimos 3 meses ou preço de tabela.'+(PREV.semValor?' '+n0(PREV.semValor)+' horário(s) sem valor conhecido.':'')+' Quanto mais longe a data, mais a agenda ainda vai encher. Clique numa semana ou mês para ver o detalhe por profissional. Atualizado '+dataBR(PREV.atualizadoEm)+' às '+String(PREV.atualizadoEm||'').slice(11,16)+'.</div></div>';
   return h;
 }
 function dadosDemoPrev(){
   var h=hojeISO(), ps=['ANA (MAN)','CARLA (CAB)','GABI (SOB)','EVA (POD)','DANI (DEP)'], dias={};
-  for(var i=0;i<150;i++){ var d=addDias(h,i), dow=s2d(d).getDay(); if(dow===0) { dias[d]={v:0,q:0,p:{}}; continue; } var f=Math.max(0.05, 1-i/40), q=Math.round((dow===6?55:38)*f), p={}; ps.forEach(function(x,j){ var qq=Math.round(q*[.3,.25,.2,.15,.1][j]); if(qq) p[x]=[qq*[48,95,40,85,60][j],qq]; }); var v=0; Object.keys(p).forEach(function(x){ v+=p[x][0]; }); dias[d]={v:v,q:q,p:p}; }
+  for(var i=0;i<150;i++){ var d=addDias(h,i), dow=s2d(d).getDay(); if(dow===0){ dias[d]={v:0,q:0,m:0,cap:0,p:{}}; continue; } var f=Math.max(0.04, 0.95-i/35), p={}, v=0, q=0, m=0, cap=0;
+    ps.forEach(function(x,j){ var c=(dow===6?480:540), qq=Math.round(c/[60,90,45,60,40][j]*f*(.8+.2*((i+j)%3)/2)); var mm=Math.min(c, qq*[60,90,45,60,40][j]); p[x]=[qq*[48,95,40,85,60][j],qq,mm,c]; v+=p[x][0]; q+=qq; m+=mm; cap+=c; });
+    dias[d]={v:v,q:q,m:m,cap:cap,p:p}; }
   PREV={dias:dias, ate:addDias(h,149), semValor:3, atualizadoEm:h+'T10:30'};
 }
 
