@@ -1295,9 +1295,14 @@ BASE_POR_PARTE = 4000
 def gravar_base_clientes(z, db, hoje):
     meta_ref = db.collection("voox_base").document("meta")
     md = meta_ref.get().to_dict() or {}
-    if md.get("data") == hoje.isoformat() and "--base" not in sys.argv:
-        log("Base de clientes: já atualizada hoje")
-        return
+    # relê a base em toda rodada completa (6h, 12h, 18h), mas não mais que 1x a cada 3h
+    try:
+        ult = dt.datetime.fromisoformat(md.get("atualizadoEm") or "")
+        if (dt.datetime.now(TZ) - ult).total_seconds() < 3 * 3600 and "--base" not in sys.argv:
+            log("Base de clientes: lida há menos de 3h")
+            return
+    except ValueError:
+        pass
     campos = ("id,nome,apelido,celular,telefoneFixo,email,dataNascimento,codigoInterno,clienteVip,"
               "clienteDesejaReceberAcaoMarketing,clienteComplemento(cpf,sexo)")
     todos, page = [], 1
