@@ -877,7 +877,19 @@ function trocarSenha(){
 function logout(){ if(DEMO){ location.href=location.pathname; return; } auth.signOut(); }
 
 // ---------------------------------------------------------------- dados
-function pararListeners(){ unsubs.forEach(function(u){ try{u();}catch(e){} }); unsubs=[]; }
+function pararListeners(){ unsubs.forEach(function(u){ try{u();}catch(e){} }); unsubs=[]; OPORT_ON=false; }
+var OPORT_ON=false;
+function assinarOport(){
+  // as oportunidades são milhares de documentos: só carregam quando a aba é aberta (economiza leituras do Firestore)
+  if(OPORT_ON || DEMO || !db || !logado || nivel==='prof') return; OPORT_ON=true;
+  unsubs.push(db.collection('voox_oportunidades').where('temEnv','==',true).limit(4000).onSnapshot(function(snap){
+    OPRES={}; snap.forEach(function(d){ OPRES[d.id]=d.data(); }); renderOport();
+  }, function(err){ toast('Resultados das oportunidades: '+(err.code||err.message),'err'); }));
+  unsubs.push(db.collection('voox_oportunidades').where('ativo','==',true).limit(2500).onSnapshot(function(snap){
+    oport={}; snap.forEach(function(d){ oport[d.id]=d.data(); }); renderOport();
+  }, function(err){ document.getElementById('page-oport').innerHTML='<div class="card empty">Sem permissão para ler as oportunidades ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
+}
+
 
 function assinar(){
   pararListeners();
@@ -943,7 +955,7 @@ function assinar(){
     unsubs.push(db.collection('voox_pesquisa').where('data','>=',addDias(hojeISO(),-400)).limit(5000).onSnapshot(function(snap){
       PESQ={}; snap.forEach(function(d){ PESQ[d.id]=d.data(); }); if(SATV==='tablet') renderSat();
     }, function(err){ console.warn('pesquisa:', err.code||err.message); }));
-    unsubs.push(db.collection('voox_notas').where('data','>=',addDias(hojeISO(),-400)).limit(5000).onSnapshot(function(snap){
+    unsubs.push(db.collection('voox_notas').where('nota','>=',0).limit(4000).onSnapshot(function(snap){
       NOTAS={}; snap.forEach(function(d){ NOTAS[d.id]=d.data(); }); renderSat();
     }, function(err){ document.getElementById('page-sat').innerHTML='<div class="card empty">Sem permissão para ler as notas ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
     unsubs.push(db.collection('voox_config').doc('metas').onSnapshot(function(snap){
@@ -981,12 +993,6 @@ function assinar(){
   unsubs.push(db.collection('voox_posatend').where('data','>=',addDias(hojeISO(),-4)).limit(800).onSnapshot(function(snap){
     posat={}; snap.forEach(function(d){ posat[d.id]=d.data(); }); renderPos();
   }, function(err){ document.getElementById('page-pos').innerHTML='<div class="card empty">Sem permissão para ler o pós-atendimento ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
-  unsubs.push(db.collection('voox_oportunidades').where('temEnv','==',true).limit(4000).onSnapshot(function(snap){
-    OPRES={}; snap.forEach(function(d){ OPRES[d.id]=d.data(); }); renderOport();
-  }, function(err){ toast('Resultados das oportunidades: '+(err.code||err.message),'err'); }));
-  unsubs.push(db.collection('voox_oportunidades').where('ativo','==',true).limit(2500).onSnapshot(function(snap){
-    oport={}; snap.forEach(function(d){ oport[d.id]=d.data(); }); renderOport();
-  }, function(err){ document.getElementById('page-oport').innerHTML='<div class="card empty">Sem permissão para ler as oportunidades ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
   unsubs.push(db.collection('voox_reativacao').onSnapshot(function(snap){
     clientes={};
     snap.forEach(function(d){ clientes[d.id]=d.data(); });
@@ -1183,7 +1189,7 @@ function nav(v){
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
-  if(v==='oport'){ limite=60; renderOport(); }
+  if(v==='oport'){ limite=60; assinarOport(); renderOport(); }
   if(v==='fin') renderFin();
   if(v==='lanc') renderLanc();
   if(v==='cgs') renderCgs();
@@ -3880,7 +3886,7 @@ function renderSat(){
   h+='<div class="grid kpis k4">';
   h+='<div class="card"><div class="klabel">NPS</div><div class="kval" style="color:'+(nps==null?'':nps>=75?'var(--green)':nps>=50?'var(--amber)':'var(--red)')+'">'+(nps==null?'—':nps)+'</div><div class="khint">% de notas 9–10 menos % de 0–6 · acima de 75 é excelente</div></div>';
   h+='<div class="card"><div class="klabel">Nota média</div><div class="kval">'+(media==null?'—':media.toFixed(1).replace('.',','))+'</div><div class="khint">de 0 a 10</div></div>';
-  h+='<div class="card"><div class="klabel">Respostas</div><div class="kval">'+n0(resp.length)+'</div><div class="khint">'+(env?pct(resp.length/env)+' de '+n0(env)+' mensagens enviadas':'—')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Respostas</div><div class="kval">'+n0(resp.length)+'</div><div class="khint">notas recebidas no período</div></div>';
   h+='<div class="card"><div class="klabel">Precisam de atenção</div><div class="kval" style="'+(det.length?'color:var(--red)':'')+'">'+n0(det.length)+'</div><div class="khint">notas de 0 a 6</div></div></div>';
   if(det.length){
     h+='<div class="sect">Precisam de atenção <small>notas de 0 a 6 — vale ligar ou mandar mensagem</small></div><div class="rlist">';
