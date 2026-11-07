@@ -1340,6 +1340,64 @@ def gravar_base_clientes(z, db, hoje):
     log(f"Base de clientes: {len(linhas)} cadastros ({len(partes)} partes)")
 
 
+# ---------------------------------------------------------------- hora de voltar: retorno por ciclo de cada serviço
+
+def gravar_retornos(db, d, fones):
+    hoje = d["hoje"]
+    por = defaultdict(lambda: defaultdict(list))     # cliente -> serviço base -> [(dia, nome, prof)]
+    nomes = {}
+    for a in d["pagos"]:
+        c = a.get("cliente") or {}
+        if not c.get("id") or not a.get("dataHora"):
+            continue
+        nome_s = limpa_serv((a.get("servico") or {}).get("nome"))
+        if not nome_s or NAO_SUGERIR.search(sem_acento(nome_s)):
+            continue
+        cid = str(c["id"])
+        nomes[cid] = c.get("nome") or nomes.get(cid, "")
+        por[cid][base_servico(nome_s)].append((a["dataHora"][:10], nome_s, ((a.get("profissional") or {}).get("nomeAgenda") or "").strip()))
+    # ciclo automático: mediana dos intervalos entre repetições do mesmo serviço pela mesma cliente
+    inter = defaultdict(list)
+    for cid, ss in por.items():
+        for b, L in ss.items():
+            ds = sorted({x[0] for x in L})
+            for i in range(1, len(ds)):
+                n = (dt.date.fromisoformat(ds[i]) - dt.date.fromisoformat(ds[i - 1])).days
+                if 5 <= n <= 110:
+                    inter[b].append(n)
+    auto = {b: sorted(v)[len(v) // 2] for b, v in inter.items() if len(v) >= 10}
+    manual = {}
+    try:
+        for x in ((db.collection("voox_config").document("ciclos").get().to_dict() or {}).get("itens") or []):
+            manual[x.get("s")] = int(x.get("d") or 0)
+    except Exception as e:
+        log(f"Retorno: ciclos manuais não lidos ({e})")
+    marcadas = {str((a.get("cliente") or {}).get("id")) for a in d["futuros"] if a.get("cliente")}
+    itens, uso = [], Counter()
+    for cid, ss in por.items():
+        if cid in marcadas or EH_CRIANCA.search(nomes.get(cid, "")) or EXCLUIR_NOMES.search(nomes.get(cid, "")):
+            continue
+        for b, L in ss.items():
+            ciclo = manual.get(b, auto.get(b))
+            if not ciclo:
+                continue
+            L.sort()
+            ult, nome_s, prof = L[-1]
+            vence = dt.date.fromisoformat(ult) + dt.timedelta(days=ciclo)
+            atraso = (hoje - vence).days
+            if atraso < -21 or atraso > ciclo:      # até 3 semanas antes (para antecipar em semana fraca)
+                continue
+            uso[b] += 1
+            itens.append({"ci": cid, "n": limpa_nome(nomes.get(cid, "")), "cel": fones(cid, essencial=False), "s": nome_s, "b": b,
+                          "ult": ult, "ciclo": ciclo, "vence": vence.isoformat(), "p": prof, "q": len({x[0] for x in L})})
+    itens.sort(key=lambda x: (x["vence"], -x["q"]))
+    ciclos = sorted([{"s": b, "auto": auto.get(b, 0), "n": len(inter.get(b, [])), "lista": uso.get(b, 0)}
+                     for b in set(auto) | set(manual)], key=lambda x: -x["n"])
+    db.collection("voox_retorno").document("lista").set({"data": hoje.isoformat(), "itens": itens[:1500], "ciclos": ciclos,
+                                                          "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes")})
+    log(f"Hora de voltar: {len(itens)} clientes · {len(auto)} serviços com ciclo automático")
+
+
 # ---------------------------------------------------------------- previsão: valor da agenda à frente
 
 def medias_por_servico(db, hoje, meses=3):
@@ -1440,6 +1498,26 @@ def gravar_previsao(z, db, d, rapido=False):
     antigos = {k: v for k, v in (velho.get("dias") or {}).items() if k >= hoje.isoformat() and k not in dias}
     novo = {"dias": dict(antigos, **dias), "medias": medias, "escala": escala, "semValor": sem_valor,
             "ate": max(list(dias) + list(antigos)), "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes")}
+    # semanas à frente (sem valores): % preenchida e horas livres por profissional — para a recepção encher semana fraca
+    try:
+        seg = hoje - dt.timedelta(days=hoje.weekday())
+        semanas = []
+        for i in range(3):
+            a, b = seg + dt.timedelta(weeks=i), seg + dt.timedelta(weeks=i, days=6)
+            m = cap = 0; livres = defaultdict(int)
+            for dd, o in novo["dias"].items():
+                if max(a, hoje).isoformat() <= dd <= b.isoformat():
+                    m += o.get("m", 0); cap += o.get("cap", 0)
+                    for p_, v in (o.get("p") or {}).items():
+                        if len(v) > 3 and v[3]:
+                            livres[p_] += max(0, v[3] - v[2])
+            semanas.append({"de": a.isoformat(), "ate": b.isoformat(), "oc": round(m / cap, 3) if cap else None,
+                            "livresH": round(max(0, cap - m) / 60), "profs": {k: round(v / 60, 1) for k, v in livres.items() if v >= 60}})
+        rs = db.collection("voox_retorno").document("semanas")
+        if (rs.get().to_dict() or {}).get("semanas") != semanas:
+            rs.set({"semanas": semanas, "atualizadoEm": novo["atualizadoEm"]})
+    except Exception as e:
+        log(f"Semanas à frente: {e}")
     if velho.get("dias") == novo["dias"] and velho.get("medias") == medias:
         return
     ref.set(novo)
@@ -1828,6 +1906,7 @@ def main():
     fones = Fones(z, {k: v for k, v in conhecidos.items() if v})
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
                       ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas), hist), fones, d)),
+                      ("Hora de voltar", lambda: gravar_retornos(db, d, fones)),
                       ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v})),
                       ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo)),
                       ("Horários vagos", lambda: gravar_vagas(z, db, d, fones)),
