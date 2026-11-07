@@ -275,7 +275,7 @@ def coletar(z):
 
     dados["perdas"] = z.agendamentos(hoje - dt.timedelta(days=30), hoje, STATUS_PERDA, "dataHora,status,cliente(id)")
     dados["futuros"] = z.agendamentos(hoje, hoje + dt.timedelta(days=150), STATUS_FUTURO,
-                                      "dataHora,status,cliente(id),servico(id,nome),profissional(nomeAgenda)")
+                                      "dataHora,duracao,status,cliente(id),servico(id,nome),profissional(nomeAgenda)")
     log(f"Cancelados/faltas 30d: {len(dados['perdas'])} · agendados à frente: {len(dados['futuros'])}")
     return dados
 
@@ -1356,45 +1356,89 @@ def medias_por_servico(db, hoje, meses=3):
     return {s: round(soma[s] / qtd[s], 2) for s in soma if qtd[s] >= 3}
 
 
-def gravar_previsao(db, d, rapido=False):
+NAO_PROF = {"—", "CASA", ""}
+
+
+def escala_habitual(db, hoje, semanas=8):
+    """quem costuma trabalhar em cada dia da semana: atendeu em pelo menos metade desses dias nas últimas semanas"""
+    ini = hoje - dt.timedelta(weeks=semanas)
+    dias_sem, trab = Counter(), defaultdict(Counter)
+    for m in {ini.strftime("%Y-%m"), date_add_months(ini.replace(day=1), 1).strftime("%Y-%m"), hoje.strftime("%Y-%m")}:
+        doc = db.collection("voox_dias").document(m).get().to_dict() or {}
+        for dd, x in (doc.get("dias") or {}).items():
+            dia = dt.date.fromisoformat(f"{m}-{dd}")
+            if not (ini <= dia < hoje) or not (x.get("at") or 0):
+                continue
+            wd = dia.weekday()
+            dias_sem[wd] += 1
+            for o in x.get("p") or []:
+                if (o.get("q") or 0) > 0 and o.get("n") not in NAO_PROF:
+                    trab[wd][o["n"]] += 1
+    return {str(wd): sorted(p for p, n in trab[wd].items() if n >= max(1, dias_sem[wd] * 0.5)) for wd in range(7)}
+
+
+def gravar_previsao(z, db, d, rapido=False):
     hoje = d["hoje"]
     ref = db.collection("voox_previsao").document("agenda")
     velho = ref.get().to_dict() or {}
-    medias = velho.get("medias") or {}
-    if not rapido or not medias:
+    medias, escala = velho.get("medias") or {}, velho.get("escala") or {}
+    if not rapido or not medias or not escala:
         try:
             medias = medias_por_servico(db, hoje) or medias
+            escala = escala_habitual(db, hoje) or escala
         except Exception as e:
-            log(f"Previsão: médias não calculadas ({e})")
+            log(f"Previsão: médias/escala não calculadas ({e})")
     precos = d.get("precos") or {}
+    horario = d.get("horario") or [{}] * 7
     fim = hoje + dt.timedelta(days=30 if rapido else 150)
+    # bloqueios de agenda (folgas, cursos, almoço) entram como horário indisponível
+    blq = defaultdict(int)
+    try:
+        for a in z.agendamentos(hoje, min(fim, hoje + dt.timedelta(days=90)), "BLOQUEIO_AGENDA", "dataHora,duracao,profissional(nomeAgenda)"):
+            if a.get("dataHora"):
+                blq[(a["dataHora"][:10], ((a.get("profissional") or {}).get("nomeAgenda") or "").strip())] += _min(a) or 30
+    except Exception as e:
+        log(f"Previsão: bloqueios não lidos ({e})")
     dias = {}
     x = hoje
     while x <= fim:
-        dias[x.isoformat()] = {"v": 0.0, "q": 0, "p": {}}
+        dias[x.isoformat()] = {"v": 0.0, "q": 0, "m": 0, "cap": 0, "p": defaultdict(lambda: [0.0, 0, 0, 0])}
         x += dt.timedelta(days=1)
     sem_valor = 0
-    for a in d["futuros"]:
+    hoje_pagos = [a for a in (d.get("pagos") or []) if (a.get("dataHora") or "")[:10] == hoje.isoformat()]
+    for a in list(d["futuros"]) + [dict(a, _pago=True) for a in hoje_pagos]:
         dia = (a.get("dataHora") or "")[:10]
         if dia not in dias:
             continue
+        prof = ((a.get("profissional") or {}).get("nomeAgenda") or "—").strip()
+        o, pp = dias[dia], dias[dia]["p"][prof]
+        mins = _min(a) or 30
+        o["m"] += mins; pp[2] += mins
+        if a.get("_pago"):
+            continue          # já está no faturamento: conta só para a ocupação
         sv = a.get("servico") or {}
-        nome = limpa_serv(sv.get("nome"))
-        v = medias.get(nome)
+        v = medias.get(limpa_serv(sv.get("nome")))
         if v is None:
             v = precos.get(str(sv.get("id")), 0.0)
             if not v:
                 sem_valor += 1
-        prof = ((a.get("profissional") or {}).get("nomeAgenda") or "—").strip()
-        o = dias[dia]
         o["v"] += v; o["q"] += 1
-        pp = o["p"].setdefault(prof, [0.0, 0])
         pp[0] += v; pp[1] += 1
-    for o in dias.values():
+    for dia, o in dias.items():
+        wd = dt.date.fromisoformat(dia).weekday()
+        h = horario[wd] or {}
+        aberto = (h.get("min") or 0) if h.get("aberto", True) else 0
+        quem = set(escala.get(str(wd)) or []) | {p for p, v in o["p"].items() if v[1] or v[2]}
+        for p in quem:
+            if p in NAO_PROF:
+                continue
+            cap = max(0, aberto - blq.get((dia, p), 0))
+            o["p"][p][3] = cap
+            o["cap"] += cap
         o["v"] = round(o["v"], 2)
-        o["p"] = {k: [round(v[0], 2), v[1]] for k, v in o["p"].items()}
+        o["p"] = {k: [round(v[0], 2), v[1], v[2], v[3]] for k, v in o["p"].items() if any(v)}
     antigos = {k: v for k, v in (velho.get("dias") or {}).items() if k >= hoje.isoformat() and k not in dias}
-    novo = {"dias": dict(antigos, **dias), "medias": medias, "semValor": sem_valor,
+    novo = {"dias": dict(antigos, **dias), "medias": medias, "escala": escala, "semValor": sem_valor,
             "ate": max(list(dias) + list(antigos)), "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes")}
     if velho.get("dias") == novo["dias"] and velho.get("medias") == medias:
         return
@@ -1686,7 +1730,7 @@ def main_rapido():
     d["pagos"] = z.agendamentos(hoje - dt.timedelta(days=5), hoje, STATUS_PAGO,
                                 "dataHora,agendamentoMobile,cliente(id,nome),servico(id,nome),profissional(id,nomeAgenda)")
     d["futuros"] = z.agendamentos(hoje, hoje + dt.timedelta(days=30), STATUS_FUTURO,
-                                  "dataHora,status,cliente(id),servico(id,nome),profissional(nomeAgenda)")
+                                  "dataHora,duracao,status,cliente(id),servico(id,nome),profissional(nomeAgenda)")
     if DRY:
         log(f"--rapido --dry-run: {len(d['pagos'])} atendimentos em 5 dias, {len(d['futuros'])} marcados em 30 dias")
         return
@@ -1707,7 +1751,7 @@ def main_rapido():
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
                       ("Horários vagos", lambda: gravar_vagas(z, db, d, fones, rapido=True)),
                       ("Agenda de hoje", lambda: gravar_agenda_hoje(z, db, hoje)),
-                      ("Previsão", lambda: gravar_previsao(db, d, rapido=True)),
+                      ("Previsão", lambda: gravar_previsao(z, db, d, rapido=True)),
                       ("Pacotes", lambda: gravar_pacotes(db, d["pagos"], hoje - dt.timedelta(days=5))),
                       ("Indicações", lambda: gravar_indicacoes(db, d["pagos"]))):
         try:
@@ -1790,7 +1834,7 @@ def main():
                       ("Comissões do Zelo", lambda: gravar_comissoes_zelo(z, db)),
                       ("Faltosas", lambda: gravar_faltosas(z, db, d, fones)),
                       ("Agenda de hoje", lambda: gravar_agenda_hoje(z, db, d["hoje"])),
-                      ("Previsão", lambda: gravar_previsao(db, d)),
+                      ("Previsão", lambda: gravar_previsao(z, db, d)),
                       ("Base de clientes", lambda: gravar_base_clientes(z, db, d["hoje"])),
                       ("Pacotes", lambda: gravar_pacotes(db, d["pagos"], d["hoje"] - dt.timedelta(days=JANELA_DIAS))),
                       ("Indicações", lambda: gravar_indicacoes(db, d["pagos"])),
