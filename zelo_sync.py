@@ -591,16 +591,25 @@ def gravar_mensagens_do_dia(z, db, d, fones):
 
     # 1) confirmações: próximos 2 dias abertos
     col = db.collection("voox_confirmacoes")
+    # cache num documento só: o que já foi gravado (hash) — evita ler centenas de documentos a cada 15 min
+    cache_ref = db.collection("voox_cache").document("msgs")
+    cache = (cache_ref.get().to_dict() or {}).get("h") or {}
+    for k, v in cache.items():
+        if len(v) > 2 and v[2]:
+            fones.c.setdefault(str(v[3]), v[2])
+    cache_mudou = False
+
+    def assinatura(o):
+        return hashlib.md5(json.dumps(o, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
+
     dias_conf = proximos_dias_abertos(hoje, d.get("horario"))
     batch, ops, total = db.batch(), 0, 0
     for dia in dias_conf:
         ags = z.agendamentos(dia, dia, "AGENDADO,AGUARDANDO",
                              "dataHora,agendamentoConfirmado,cliente(id,nome),servico(nome),profissional(nomeAgenda)")
         por = _agrupar_por_cliente(ags, dia.isoformat())
-        existentes = {doc.id: (doc.to_dict() or {}) for doc in col.where("data", "==", dia.isoformat()).stream()}
-        for k, v in existentes.items():
-            if v.get("cel") and v.get("cliente"):
-                fones.c.setdefault(str(v["cliente"]), v["cel"])
+        pref = f"c:{dia.isoformat()}_"
+        existentes = {k[2:]: {"h": v[0], "ativo": v[1]} for k, v in cache.items() if k.startswith(pref)}
         vivos = set()
         for cid, x in por.items():
             nome = limpa_nome(x["nomeZelo"])
@@ -610,10 +619,11 @@ def gravar_mensagens_do_dia(z, db, d, fones):
             novo = {"data": dia.isoformat(), "cliente": cid, "nome": nome,
                     "primeiro": nome.split(" ")[0].capitalize() if nome else "", "cel": fones(cid),
                     "itens": x["itens"], "confZelo": x["confZelo"], "ativo": True}
-            velho = existentes.get(doc_id)
-            if velho and all(velho.get(k) == v for k, v in novo.items()):
+            hsh = assinatura(novo)
+            if (existentes.get(doc_id) or {}).get("h") == hsh:
                 continue      # nada mudou: não gasta gravação
             batch.set(col.document(doc_id), dict(novo, atualizadoEm=agora), merge=True)
+            cache["c:" + doc_id] = [hsh, True, novo["cel"] or "", cid]; cache_mudou = True
             ops += 1
             if ops >= 400:
                 batch.commit(); batch, ops = db.batch(), 0
@@ -621,6 +631,7 @@ def gravar_mensagens_do_dia(z, db, d, fones):
         for k, v in existentes.items():
             if k not in vivos and v.get("ativo"):
                 batch.set(col.document(k), {"ativo": False, "atualizadoEm": agora}, merge=True); ops += 1
+                cache["c:" + k] = [v["h"], False]; cache_mudou = True
     batch.commit()
     log(f"Confirmações: {total} clientes em {', '.join(x.strftime('%d/%m') for x in dias_conf)}")
 
@@ -635,10 +646,6 @@ def gravar_mensagens_do_dia(z, db, d, fones):
                     if (a.get("dataHora") or "")[:10] < hoje.isoformat()})[-1:] + [hoje.isoformat()]
     batch, ops, total = db.batch(), 0, 0
     for data_iso in datas:
-        existentes = {doc.id: (doc.to_dict() or {}) for doc in col.where("data", "==", data_iso).stream()}
-        for k, v in existentes.items():
-            if v.get("cel") and v.get("cliente"):
-                fones.c.setdefault(str(v["cliente"]), v["cel"])
         for cid, x in _agrupar_por_cliente(d["pagos"], data_iso).items():
             if EH_CRIANCA.search(x["nomeZelo"]):
                 continue
@@ -649,10 +656,11 @@ def gravar_mensagens_do_dia(z, db, d, fones):
             total += 1
             novo = {"data": data_iso, "cliente": cid, "nome": nome, "primeiro": primeiro, "cel": fones(cid),
                     "itens": x["itens"], "tk": tk, "ativo": True}
-            velho = existentes.get(doc_id)
-            if velho and all(velho.get(k) == v for k, v in novo.items()) and velho.get("notaOk") == link_google:
+            hsh = assinatura(dict(novo, notaOk=link_google))
+            if (cache.get("p:" + doc_id) or [None])[0] == hsh:
                 continue      # nada mudou: não gasta gravação
             batch.set(col.document(doc_id), dict(novo, atualizadoEm=agora, notaOk=link_google), merge=True)
+            cache["p:" + doc_id] = [hsh, True, novo["cel"] or "", cid]; cache_mudou = True
             # ficha da nota de satisfação (a cliente responde pelo link; o robô nunca mexe na nota)
             batch.set(col_notas.document(tk), {
                 "data": data_iso, "pid": doc_id, "c": cid, "nm": nome, "n": primeiro,
@@ -665,8 +673,13 @@ def gravar_mensagens_do_dia(z, db, d, fones):
     batch.commit()
     log(f"Pós-atendimento: {total} clientes ({', '.join(datas)})")
 
+    # cache: só os últimos 8 dias
+    for k in [k for k in cache if k[2:12] < limite]:
+        del cache[k]; cache_mudou = True
+    if cache_mudou:
+        cache_ref.set({"h": cache, "atualizadoEm": agora})
     # limpeza: listas com mais de 7 dias
-    for nome_col in ("voox_confirmacoes", "voox_posatend"):
+    for nome_col in ("voox_confirmacoes", "voox_posatend") if "--rapido" not in sys.argv else ():
         velhos = list(db.collection(nome_col).where("data", "<", limite).limit(400).stream())
         if velhos:
             b = db.batch()
@@ -783,7 +796,20 @@ def retornos_campanhas(docs, d):
     return novos
 
 
+def ja_rodou_hoje(db, chave, hoje):
+    """marca etapas pesadas que só precisam rodar uma vez por dia (economiza leituras do Firestore)"""
+    ref = db.collection("voox_cache").document("dia")
+    x = ref.get().to_dict() or {}
+    if x.get(chave) == hoje.isoformat() and f"--{chave}" not in sys.argv:
+        return True
+    ref.set({chave: hoje.isoformat()}, merge=True)
+    return False
+
+
 def gravar_oportunidades(db, oport, fones, d=None):
+    if d and ja_rodou_hoje(db, "oportunidades", d["hoje"]):
+        log("Oportunidades: já atualizadas hoje")
+        return
     col = db.collection("voox_oportunidades")
     agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
     todos_docs = {doc.id: (doc.to_dict() or {}) for doc in col.select(["ativo", "enviados", "ret", "sugEnviada", "temEnv"]).stream()}
@@ -1504,7 +1530,7 @@ def gravar_paineis_prof(z, db, d):
     except Exception as e:
         log(f"Anotações para a agenda das profissionais: {e}")
     corte = (hoje - dt.timedelta(days=90)).isoformat()
-    notas = [x.to_dict() for x in db.collection("voox_notas").where("data", ">=", corte).stream()]
+    notas = [x for x in (y.to_dict() for y in db.collection("voox_notas").where("nota", ">=", 0).stream()) if (x.get("data") or "") >= corte]
     vagas = [x.to_dict() for x in db.collection("voox_vagas").where("data", ">=", hoje.isoformat()).stream()]
     agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
     # metas do mês: realizado de todas (para o ranking) pela mesma base do painel
