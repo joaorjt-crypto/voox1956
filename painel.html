@@ -528,6 +528,12 @@ body.sem-rolar{overflow:hidden}
 .cbusca-r small{color:var(--muted)}
 .ind-cod{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.06em;padding:1px 6px;border:1px dashed var(--primary);border-radius:6px;color:var(--primary)}
 .ind-reg{margin-top:4px}
+.pq-l{display:grid;grid-template-columns:150px 1fr 44px 28px;gap:8px;align-items:center;font-size:12.5px;margin:5px 0}
+.pq-l span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pq-l b{text-align:right;font-size:12.5px}
+.pq-l small{color:var(--muted);text-align:right}
+.pq-b{height:9px;background:var(--border);border-radius:5px;overflow:hidden}
+.pq-b i{display:block;height:100%;border-radius:5px}
 .ag-an{font-size:11.5px;color:var(--amber);margin:1px 0 4px 44px}
 @media (max-width:560px){.pac-f{grid-template-columns:1fr}}
 #cfged{display:none}
@@ -925,6 +931,9 @@ function assinar(){
     if(temFin()) unsubs.push(db.collection('voox_fin_pagar').limit(1500).onSnapshot(function(snap){
       PAGAR={}; snap.forEach(function(d){ PAGAR[d.id]=d.data(); }); renderPagar();
     }, function(err){ document.getElementById('page-pagar').innerHTML='<div class="card empty">Sem permissão para ler as contas a pagar ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
+    unsubs.push(db.collection('voox_pesquisa').where('data','>=',addDias(hojeISO(),-400)).limit(5000).onSnapshot(function(snap){
+      PESQ={}; snap.forEach(function(d){ PESQ[d.id]=d.data(); }); if(SATV==='tablet') renderSat();
+    }, function(err){ console.warn('pesquisa:', err.code||err.message); }));
     unsubs.push(db.collection('voox_notas').where('data','>=',addDias(hojeISO(),-400)).limit(5000).onSnapshot(function(snap){
       NOTAS={}; snap.forEach(function(d){ NOTAS[d.id]=d.data(); }); renderSat();
     }, function(err){ document.getElementById('page-sat').innerHTML='<div class="card empty">Sem permissão para ler as notas ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
@@ -3852,7 +3861,8 @@ function renderSat(){
   var r=intervaloP(SATPER), el=document.getElementById('page-sat');
   var todos=Object.keys(NOTAS).map(function(k){ return Object.assign({tk:k}, NOTAS[k]); }).filter(function(x){ return x.data>=r[0] && x.data<=r[1]; });
   var resp=todos.filter(function(x){ return x.nota!=null; }), env=todos.filter(function(x){ return x.enviado; }).length;
-  var h=barraP('SATPER','renderSat', r)+'</div>';
+  var h='<div class="seg seg-pg" style="margin-top:0">'+[['notas','Nota pelo WhatsApp'],['tablet','Pesquisa no tablet']].map(function(x){ return '<button class="'+(SATV===x[0]?'on':'')+'" onclick="setSatV(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div>'+barraP('SATPER','renderSat', r)+'</div>';
+  if(SATV==='tablet'){ el.innerHTML=h+renderPesq(r); return; }
   if(!Object.keys(NOTAS).length) h+='<div class="alert a-info">◇ As notas começam a chegar quando o pós-atendimento for enviado com o link <b>{nota}</b> na mensagem (veja a aba Pós-atendimento).</div>';
   var nps=npsDe(resp), media=resp.length?resp.reduce(function(a,x){ return a+x.nota; },0)/resp.length:null;
   var det=resp.filter(function(x){ return x.nota<=6; });
@@ -3878,7 +3888,7 @@ function renderSat(){
   h+='<div class="grid g2">'+tabela('Por profissional','p')+tabela('Por serviço','s')+'</div>';
   var com=resp.filter(function(x){ return x.comentario && x.nota>6; }).sort(function(a,b){ return b.data.localeCompare(a.data); });
   h+='<div class="sect">Comentários <small>'+n0(com.length)+'</small></div><div class="rlist">'+(com.length?com.slice(0,60).map(function(x){ return itemNota(x); }).join(''):'<div class="card empty">Nenhum comentário no período.</div>')+'</div>';
-  h+='<div class="nota">A nota chega pelo link <b>{nota}</b> da mensagem de pós-atendimento: a cliente toca na nota de 0 a 10 e, se quiser, escreve um comentário. Quem dá 9 ou 10 é convidada a avaliar no Google na mesma tela. Cada link vale para um atendimento e só pode ser respondido uma vez.</div>';
+  h+='<div class="nota">A nota chega pelo link <b>{nota}</b> da mensagem de pós-atendimento: a cliente toca na nota de 0 a 10 e, se quiser, escreve um comentário. Cada link vale para um atendimento e só pode ser respondido uma vez.</div>';
   el.innerHTML=h;
 }
 function itemNota(x, atencao){
@@ -5241,6 +5251,66 @@ function dadosDemoCli2(){
   CIDX.servs=['DRENAGEM LINFATICA','LIMPEZA DE PELE','PODOLOGIA','MANICURE','PEDICURE','ESCOVA MEDIA','SOBRANCELHA','DEPILAÇÃO VIRILHA','MASSAGEM RELAXANTE'];
 }
 
+
+// ================================================================ PESQUISA NO TABLET (voox_pesquisa, página /avaliacao)
+var PESQ={}, SATV='notas';
+var PQ=[
+  {k:'q1', t:'Experiência geral (1 a 5)', ops:[5,4,3,2,1]},
+  {k:'q2', t:'Cordialidade e atenção da equipe', ops:['Ótimo','Bom','Regular','Ruim']},
+  {k:'q3', t:'Sentiu-se bem atendida e acolhida', ops:['Sim','Parcialmente','Não']},
+  {k:'q4', t:'Conforto e limpeza do ambiente', ops:['Ótimo','Bom','Regular','Ruim']},
+  {k:'q5', t:'Café e outras bebidas', ops:['Ótimo','Bom','Regular','Ruim','Não experimentei']},
+  {k:'q6', t:'Preço das bebidas', ops:['Sim, justo','Mais barato que esperava','Mais caro que esperava','Não sei informar']},
+  {k:'q7', t:'Preço dos serviços', ops:['Sim, justo','Mais barato que esperava','Mais caro que esperava']}
+];
+var PCOR={'5':'var(--green)','4':'#6aa84f','3':'var(--amber)','2':'#d9822b','1':'var(--red)','Ótimo':'var(--green)','Bom':'#6aa84f','Regular':'var(--amber)','Ruim':'var(--red)','Sim':'var(--green)','Parcialmente':'var(--amber)','Não':'var(--red)','Sim, justo':'var(--green)','Mais barato que esperava':'var(--blue)','Mais caro que esperava':'var(--red)'};
+function setSatV(v){ SATV=v; renderSat(); }
+function pesqRuim(x){ return (x.q1&&x.q1<=2) || x.q2==='Ruim' || x.q3==='Não' || x.q4==='Ruim'; }
+function renderPesq(r){
+  var L=Object.keys(PESQ).map(function(k){ return Object.assign({id:k}, PESQ[k]); }).filter(function(x){ return x.data>=r[0] && x.data<=r[1]; }).sort(function(a,b){ return (b.data+b.hora).localeCompare(a.data+a.hora); });
+  var h='';
+  if(!Object.keys(PESQ).length) h+='<div class="alert a-info">◇ Abra <b>voox1956.com.br/avaliacao</b> no tablet da recepção e entre com o login da recepção. A recepcionista escolhe a cliente da agenda de hoje e entrega o tablet; as respostas aparecem aqui.</div>';
+  var n=L.length, m=n?L.reduce(function(a,x){ return a+(x.q1||0); },0)/n:null;
+  var cord=L.filter(function(x){ return x.q2==='Ótimo'||x.q2==='Bom'; }).length, caro=L.filter(function(x){ return x.q7==='Mais caro que esperava'; }).length, ruins=L.filter(pesqRuim);
+  h+='<div class="grid kpis k4">';
+  h+='<div class="card"><div class="klabel">Experiência geral</div><div class="kval" style="color:'+(m==null?'':m>=4.5?'var(--green)':m>=3.5?'var(--amber)':'var(--red)')+'">'+(m==null?'—':m.toFixed(1).replace('.',',')+' <small class="p-sem" style="font-size:13px">de 5</small>')+'</div><div class="khint">'+n0(n)+' avaliação(ões) no período</div></div>';
+  h+='<div class="card"><div class="klabel">Equipe ótima ou boa</div><div class="kval">'+(n?pct(cord/n):'—')+'</div><div class="khint">cordialidade e atenção</div></div>';
+  h+='<div class="card"><div class="klabel">Acharam os serviços caros</div><div class="kval" style="'+(caro?'color:var(--amber)':'')+'">'+(n?pct(caro/n):'—')+'</div><div class="khint">'+n0(caro)+' resposta(s)</div></div>';
+  h+='<div class="card"><div class="klabel">Precisam de atenção</div><div class="kval" style="'+(ruins.length?'color:var(--red)':'')+'">'+n0(ruins.length)+'</div><div class="khint">nota 1–2, equipe ou ambiente ruim, ou não se sentiu acolhida</div></div></div>';
+  if(ruins.length){ h+='<div class="sect">Precisam de atenção <small>vale ligar ou mandar mensagem</small></div><div class="rlist">'+ruins.map(function(x){ return itemPesq(x, true); }).join('')+'</div>'; }
+  // distribuição por pergunta
+  h+='<div class="sect">Respostas por pergunta</div><div class="grid g2">';
+  PQ.forEach(function(q){
+    var c={}, tot=0; L.forEach(function(x){ var v=x[q.k]; if(v===''||v==null||v===0) return; c[v]=(c[v]||0)+1; tot++; });
+    h+='<div class="card"><div class="klabel" style="margin-bottom:8px">'+esc(q.t)+'</div>'+q.ops.map(function(o){ var k=String(o), v=c[o]||0, p=tot?v/tot:0;
+      return '<div class="pq-l"><span>'+esc(k)+'</span><div class="pq-b"><i style="width:'+(p*100).toFixed(1)+'%;background:'+(PCOR[k]||'var(--muted)')+'"></i></div><b>'+(tot?pct(p):'—')+'</b><small>'+v+'</small></div>'; }).join('')+'</div>';
+  });
+  h+='</div>';
+  // por profissional
+  var por={}; L.forEach(function(x){ (x.p&&x.p.length?x.p:['—']).forEach(function(p){ (por[p]=por[p]||[]).push(x); }); });
+  var P=Object.keys(por).map(function(p){ var a=por[p]; return {p:p, n:a.length, m:a.reduce(function(s,x){ return s+(x.q1||0); },0)/a.length, cord:a.filter(function(x){ return x.q2==='Ótimo'; }).length/a.length, ac:a.filter(function(x){ return x.q3==='Sim'; }).length/a.length}; }).sort(function(a,b){ return b.n-a.n; });
+  h+='<div class="sect">Por profissional</div><div class="tw"><div class="tscroll"><table><thead><tr><th>Profissional</th><th class="r">Avaliações</th><th class="r">Experiência (1–5)</th><th class="r">Equipe "ótimo"</th><th class="r">Acolhida "sim"</th></tr></thead><tbody>'
+    +(P.length?P.map(function(x){ return '<tr><td>'+esc(x.p==='—'?'(sem identificar)':nomeProf(x.p))+'</td><td class="r">'+n0(x.n)+'</td><td class="r" style="font-weight:700">'+x.m.toFixed(1).replace('.',',')+'</td><td class="r">'+pct(x.cord)+'</td><td class="r">'+pct(x.ac)+'</td></tr>'; }).join(''):'<tr><td colspan="5" class="empty">Sem avaliações no período.</td></tr>')+'</tbody></table></div></div>';
+  // comentários
+  [['q9','O que mais gostaram'],['q10','O que podemos melhorar'],['q8','Sobre preços de bebidas e serviços']].forEach(function(t){
+    var C=L.filter(function(x){ return String(x[t[0]]||'').trim().length>1; });
+    h+='<div class="sect">'+t[1]+' <small>'+n0(C.length)+'</small></div><div class="rlist">'+(C.length?C.slice(0,15).map(function(x){ return '<div class="rrow" style="--c:var(--border)"><div><div class="coment" style="margin:0">“'+esc(x[t[0]])+'”</div><div class="info">'+(x.cn?lkCli(x.ci,x.cn)+' · ':'')+dataBRc(x.data)+(x.p&&x.p.length?' · '+esc(x.p.map(nomeProf).join(', ')):'')+' · experiência '+x.q1+'/5</div></div><div></div></div>'; }).join(''):'<div class="card empty">Nada no período.</div>')+'</div>';
+  });
+  h+='<div class="nota">A pesquisa roda no tablet da recepção (<b>voox1956.com.br/avaliacao</b>, com o login da recepção). As perguntas são as mesmas do formulário do Google. No final, toda cliente vê o QR code para avaliar a Voox no Google, qualquer que seja a nota — o Google não permite convidar só quem gostou.</div>';
+  return h;
+}
+function itemPesq(x){
+  var cli=x.ci && (cliLista||[]).filter(function(c){ return String(c.i)===String(x.ci); })[0];
+  var ruins=[]; if(x.q1<=2) ruins.push('experiência '+x.q1+'/5'); if(x.q2==='Ruim') ruins.push('equipe ruim'); if(x.q3==='Não') ruins.push('não se sentiu acolhida'); if(x.q4==='Ruim') ruins.push('ambiente ruim');
+  return '<div class="rrow" style="--c:var(--red)"><div><div class="nm">'+(x.cn?lkCli(x.ci,x.cn):'(sem identificar)')+' <small class="p-sem">'+dataBRc(x.data)+' '+esc(x.hora||'')+'</small></div><div class="info">'+esc((x.s||[]).join(', ').toLowerCase())+(x.p&&x.p.length?' · '+esc(x.p.map(nomeProf).join(', ')):'')+'</div><div class="tags">'+ruins.map(function(t){ return '<span class="pill p-bad">'+esc(t)+'</span>'; }).join('')+'</div>'+(x.q10?'<div class="coment">Melhorar: “'+esc(x.q10)+'”</div>':'')+'</div><div class="acts">'+(cli&&cli.c?'<a class="btn btn-sm btn-wa" href="https://wa.me/55'+cli.c+'" target="_blank" rel="noopener">WhatsApp</a>':'')+(x.ci?btnAnot(x.ci,x.cn):'')+'</div></div>';
+}
+function dadosDemoPesq(){
+  var h=hojeISO(), L=(cliLista||[]).slice(0,40), ps=['ANA (MAN)','CARLA (CAB)','GABI (SOB)','EVA (POD)'];
+  var gost=['Atendimento muito carinhoso','Ambiente lindo e cheiroso','O café é ótimo','A Carla é maravilhosa',''], melh=['Pontualidade nos horários','Nada, tudo perfeito','Mais opções de horário no sábado','Wi-fi mais rápido'];
+  for(var i=0;i<34;i++){ var c=L[i%L.length]||{}, q1=i===5?2:i%7===0?3:i%3===0?4:5;
+    PESQ['d'+i]={data:addDias(h,-(i%25)), hora:(9+i%9)+':'+(i%2?'30':'00'), ci:i%6===0?'':String(c.i), cn:i%6===0?'':c.n, p:[ps[i%4]], s:['MANICURE'], q1:q1, q2:i===5?'Ruim':i%4===0?'Bom':'Ótimo', q3:i===5?'Não':i%9===0?'Parcialmente':'Sim', q4:i%5===0?'Bom':'Ótimo', q5:i%3===0?'Não experimentei':'Ótimo', q6:i%4===0?'Mais caro que esperava':'Sim, justo', q7:i%6===0?'Mais caro que esperava':'Sim, justo', q8:i%6===0?'A escova está um pouco cara':'', q9:gost[i%5], q10:melh[i%4]}; }
+}
+
 // ---------------------------------------------------------------- start
 (function(){ var on=true; try{ on=(localStorage.getItem('voox_painel_pin')!=='0'); }catch(e){} if(on) document.getElementById('sidebar').classList.add('pin'); })();
 aplicarModo(modoAtual());
@@ -5248,7 +5318,7 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
