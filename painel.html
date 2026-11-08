@@ -176,6 +176,8 @@ html[data-theme="dark"] .seg select{background:none}
 .seg select:hover{color:var(--text)}
 html[data-theme] .seg select.on{background:var(--primary-strong);color:#fff;font-weight:600}
 .seg select option{background:var(--card-2);color:var(--text);font-weight:400}
+.seg select{field-sizing:content}
+.sel-area{height:28px;font-size:12px;padding:2px 6px;width:auto;min-width:150px}
 html[data-theme="dark"] .seg select option{background:#1c1c1f}
 .seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
 .seg button b{font-weight:600;opacity:.75;margin-left:3px}
@@ -990,6 +992,7 @@ function assinar(){
   unsubs.push(db.collection('voox_anotacoes').limit(5000).onSnapshot(function(snap){ ANOT={}; snap.forEach(function(d){ ANOT[d.id]=d.data(); }); reAnot(); renderAnotUsos(); }, function(err){ console.warn('anotações:', err.code||err.message); }));
   unsubs.push(db.collection('voox_retorno').doc('lista').onSnapshot(function(snap){ var x=snap.exists?snap.data():{}; RET={itens:x.itens||[], ciclos:x.ciclos||[], atualizadoEm:x.atualizadoEm||'', ok:true}; renderRetorno(); }, function(err){ var el=document.getElementById('page-retorno'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler a lista ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
   unsubs.push(db.collection('voox_retorno').doc('semanas').onSnapshot(function(snap){ RSEM=snap.exists?snap.data():null; renderRetorno(); if(viewAtual==='painel') renderPainel(); }, function(){}));
+  assinarAreas();
   unsubs.push(db.collection('voox_config').doc('ciclos').onSnapshot(function(snap){ CICLOS={}; ((snap.exists&&snap.data().itens)||[]).forEach(function(x){ CICLOS[x.s]=x.d; }); renderRetorno(); }, function(){}));
   unsubs.push(db.collection('voox_ofertas').limit(5000).onSnapshot(function(snap){ OFER={}; snap.forEach(function(d){ OFER[d.id]=d.data(); }); reOfertaTudo(); }, function(err){ console.warn('ofertas:', err.code||err.message); }));
   unsubs.push(db.collection('voox_pacotes').limit(3000).onSnapshot(function(snap){ setPac(snap); renderPac(); if(viewAtual==='conf') renderConfirm(); if(FICHA.nome) renderFicha(); }, function(err){ var el=document.getElementById('page-pac'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler os pacotes ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
@@ -1363,7 +1366,12 @@ var rsT; window.addEventListener('resize', function(){ clearTimeout(rsT); rsT=se
 var dias = {};   // 'AAAA-MM' -> doc do voox_dias
 var PER = { preset:'mes', de:'', ate:'', comp:'ano' };
 try{ var _p=JSON.parse(localStorage.getItem('voox_painel_periodo')||'null'); if(_p && _p.preset) PER=Object.assign(PER,_p); }catch(e){}
-var PRESETS = [['mes','Este mês'],['mespass','Mês anterior'],['90','90 dias']];
+var PRESETS = [['sem','Esta semana'],['sempass','Semana passada'],['mes','Este mês'],['mespass','Mês anterior'],['90','90 dias']];
+function segundaDaSemana(d){ return addDias(d,-((s2d(d).getDay()+6)%7)); }
+function intervaloSemana(p){ var hoje=hojeISO(), s;
+  if(p==='sem') s=segundaDaSemana(hoje); else if(p==='sempass') s=addDias(segundaDaSemana(hoje),-7); else if(p.indexOf('w:')===0) s=p.slice(2); else return null;
+  var f=addDias(s,6); return [s, f<hoje?f:hoje]; }
+function opcoesSemana(sel, n){ var s0=segundaDaSemana(hojeISO()), h=''; for(var i=0;i<(n||16);i++){ var s=addDias(s0,-7*i), f=addDias(s,6); h+='<option value="'+s+'"'+(sel==='w:'+s?' selected':'')+'>'+dataBRc(s).slice(0,5)+' a '+dataBRc(f).slice(0,5)+'</option>'; } return h; }
 // atalhos antigos que saíram da barra: converte para o equivalente novo
 if(PER.preset==='ano') PER.preset='a:'+hojeISO().slice(0,4);
 else if(['7','30','12m'].indexOf(PER.preset)>=0) PER.preset='mes';
@@ -1380,7 +1388,7 @@ function ultimoDiaComDado(){
   var k=ks[ks.length-1], ds=Object.keys(dias[k].dias||{}).sort(); return k+'-'+(ds[ds.length-1]||'01');
 }
 function intervaloDoPreset(p){
-  var hoje=hojeISO(), y=+hoje.slice(0,4), m=hoje.slice(0,7);
+  var hoje=hojeISO(), y=+hoje.slice(0,4), m=hoje.slice(0,7), _w=intervaloSemana(p); if(_w) return _w;
   if(p==='mes') return [m+'-01', hoje];
   if(p==='mespass'){ var mp=addMes(m,-1); return [mp+'-01', mp+'-'+String(diasNoMes(mp)).padStart(2,'0')]; }
   if(p==='7'||p==='30'||p==='90') return [addDias(hoje, -(+p-1)), hoje];
@@ -1430,7 +1438,8 @@ function agregar(de, ate){
 function barraFiltro(P){
   var cust=PER.preset==='custom';
   var h='<div class="fbar"><div class="seg">'+PRESETS.map(function(x){ return '<button class="'+(PER.preset===x[0]?'on':'')+'" onclick="setPreset(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('');
-  var cur=hojeISO().slice(0,7), selM=PER.preset.indexOf('m:')===0, selA=PER.preset.indexOf('a:')===0, y0=+cur.slice(0,4);
+  var cur=hojeISO().slice(0,7), selM=PER.preset.indexOf('m:')===0, selA=PER.preset.indexOf('a:')===0, selW=PER.preset.indexOf('w:')===0, y0=+cur.slice(0,4);
+  h+='<select class="'+(selW?'on':'')+'" onchange="if(this.value) setPreset(\'w:\'+this.value)" title="Escolher uma semana (segunda a domingo)"><option value="">Semana ▾</option>'+opcoesSemana(PER.preset)+'</select>';
   h+='<select class="'+(selM?'on':'')+'" onchange="if(this.value) setPreset(\'m:\'+this.value)" title="Escolher um mês"><option value="">Mês ▾</option>';
   for(var i=0;i<25;i++){ var mm=addMes(cur,-i); h+='<option value="'+mm+'"'+(selM&&PER.preset==='m:'+mm?' selected':'')+'>'+MESES_NOME[+mm.slice(5)-1]+' '+mm.slice(0,4)+'</option>'; }
   h+='</select><select class="'+(selA?'on':'')+'" onchange="if(this.value) setPreset(\'a:\'+this.value)" title="Escolher um ano"><option value="">Ano ▾</option>';
@@ -3210,17 +3219,18 @@ function dadosDemoFin(){
 
 // ---------------------------------------------------------------- aba Serviços feitos
 // voox_servicos/{AAAA-MM}: sd/cd/pd (listas de nomes) + it ["DD,serviço,cliente,profissional,valor,qtd"]
-var SERV = { meses:{}, carregando:{}, semDado:{}, aberto:null, grupo:'', modo:'lista', medida:'q', ord:null, lim:100, limDet:200 };
+var SERV = { meses:{}, carregando:{}, semDado:{}, aberto:null, grupo:'', modo:'lista', medida:'q', ord:null, lim:100, limDet:200, ver:'serv', fa:'', aAberta:null };
 var SPER = { preset:'mes', de:'', ate:'' }, TPER = { preset:'12m', de:'', ate:'' };
-try{ var _sv=JSON.parse(localStorage.getItem('voox_serv_ui')||'null'); if(_sv){ SERV.modo=_sv.modo||'lista'; SERV.medida=_sv.medida||'q'; SERV.grupo=_sv.grupo||''; if(_sv.sper) SPER=_sv.sper; if(_sv.tper) TPER=_sv.tper; } }catch(e){}
-var SPRESETS = [['30','30 dias'],['mes','Este mês'],['mespass','Mês passado'],['90','90 dias'],['ano','Este ano'],['12m','12 meses'],['24m','24 meses']];
+try{ var _sv=JSON.parse(localStorage.getItem('voox_serv_ui')||'null'); if(_sv){ SERV.modo=_sv.modo||'lista'; SERV.medida=_sv.medida||'q'; SERV.grupo=_sv.grupo||''; SERV.ver=_sv.ver||'serv'; SERV.fa=_sv.fa||''; if(_sv.sper) SPER=_sv.sper; if(_sv.tper) TPER=_sv.tper; } }catch(e){}
+var SPRESETS = [['sem','Esta semana'],['sempass','Semana passada'],['30','30 dias'],['mes','Este mês'],['mespass','Mês passado'],['90','90 dias'],['ano','Este ano'],['12m','12 meses'],['24m','24 meses']];
 var SGRUPOS = [['','Sem agrupar'],['d','Dia'],['m','Mês'],['c','Cliente'],['p','Profissional']];
 
-function salvarServUI(){ try{ localStorage.setItem('voox_serv_ui', JSON.stringify({modo:SERV.modo, medida:SERV.medida, grupo:SERV.grupo, sper:SPER, tper:TPER})); }catch(e){} }
+function salvarServUI(){ try{ localStorage.setItem('voox_serv_ui', JSON.stringify({modo:SERV.modo, medida:SERV.medida, grupo:SERV.grupo, ver:SERV.ver, fa:SERV.fa, sper:SPER, tper:TPER})); }catch(e){} }
 function servPer(){ return SERV.modo==='tabela' ? TPER : SPER; }
 function servIntervalo(){
-  var P=servPer(), hoje=hojeISO(), y=hoje.slice(0,4), m=hoje.slice(0,7), p=P.preset, r;
-  if(p==='30') r=[addDias(hoje,-29), hoje];
+  var P=servPer(), hoje=hojeISO(), y=hoje.slice(0,4), m=hoje.slice(0,7), p=P.preset, r, w=intervaloSemana(p);
+  if(w) r=w;
+  else if(p==='30') r=[addDias(hoje,-29), hoje];
   else if(p==='90') r=[addDias(hoje,-89), hoje];
   else if(p==='mes') r=[m+'-01', hoje];
   else if(p==='mespass'){ var mp=addMes(m,-1); r=[mp+'-01', mp+'-'+String(diasNoMes(mp)).padStart(2,'0')]; }
@@ -3275,7 +3285,9 @@ function agruparServ(L){
 function barraServ(r){
   var P=servPer(), min=addMes(hojeISO().slice(0,7),-24)+'-01';
   var h='<div class="fbar"><div class="seg"><button class="'+(SERV.modo==='lista'?'on':'')+'" onclick="setServModo(\'lista\')">☰ Lista</button><button class="'+(SERV.modo==='tabela'?'on':'')+'" onclick="setServModo(\'tabela\')">▦ Tabela por mês</button></div>';
-  h+='<div class="seg">'+SPRESETS.map(function(x){ return '<button class="'+(P.preset===x[0]?'on':'')+'" onclick="setServPreset(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div>';
+  h+='<div class="seg">'+SPRESETS.map(function(x){ return '<button class="'+(P.preset===x[0]?'on':'')+'" onclick="setServPreset(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')
+    +'<select class="'+(P.preset.indexOf('w:')===0?'on':'')+'" onchange="if(this.value) setServPreset(\'w:\'+this.value)" title="Escolher uma semana (segunda a domingo)"><option value="">Semana ▾</option>'+opcoesSemana(P.preset)+'</select></div>';
+  h+='<div class="seg"><button class="'+(SERV.ver!=='area'?'on':'')+'" onclick="setServVer(\'serv\')">Por serviço</button><button class="'+(SERV.ver==='area'?'on':'')+'" onclick="setServVer(\'area\')">Por área</button></div>';
   h+='<button class="fdate'+(P.preset==='custom'?' on':'')+'" onclick="toggleDatas(event)" title="Escolher datas"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3"/></svg>'+dataBRc(r[0])+' – '+dataBRc(r[1])+'</button>';
   h+='<div class="fpop" id="fpop" onclick="event.stopPropagation()"><label>De<input type="date" id="fs-de" value="'+r[0]+'" min="'+min+'" max="'+hojeISO()+'"></label><label>Até<input type="date" id="fs-ate" value="'+r[1]+'" min="'+min+'" max="'+hojeISO()+'"></label><button class="btn btn-sm" onclick="setServDatas()">Aplicar</button></div></div>';
   return h;
@@ -3286,7 +3298,9 @@ function renderServ(manterBusca){
   var el=document.getElementById('page-serv'), r=servIntervalo();
   servCarregar(listaMeses(r[0].slice(0,7), r[1].slice(0,7)));
   var X=servItens(r[0], r[1]), q=((document.getElementById('sv-busca')||{}).value)||'';
-  SERV.r=r; SERV.X=X; SERV.grupos=agruparServ(X.L);
+  SERV.areaDe={}; agruparServ(X.L).forEach(function(g){ SERV.areaDe[g.n]=areaServ(g.n, g.it); });
+  if(SERV.fa && SERV.ver!=='area') X={L:X.L.filter(function(o){ return SERV.areaDe[o.s]===SERV.fa; }), falta:X.falta, carregando:X.carregando};
+  SERV.r=r; SERV.X=X; SERV.grupos=agruparServ(X.L); SERV.grupos.forEach(function(g){ g.a=SERV.areaDe[g.n]; });
   var tq=0, tv=0, nc={}; X.L.forEach(function(o){ tq+=o.q; tv+=o.v; nc[o.c]=1; });
   var h=barraServ(r);
   if(X.carregando) h+='<div class="alert a-info">◇ Carregando '+X.carregando+' mês(es)…</div>';
@@ -3297,6 +3311,7 @@ function renderServ(manterBusca){
   h+='<div class="card"><div class="klabel">Valor médio por serviço</div><div class="kval">'+(tq?brl2(tv/tq):'—')+'</div><div class="khint">estimado</div></div>';
   h+='<div class="card"><div class="klabel">Clientes atendidas</div><div class="kval">'+n0(Object.keys(nc).length)+'</div><div class="khint">'+(Object.keys(nc).length?(tq/Object.keys(nc).length).toFixed(1).replace('.',',')+' serviços por cliente':'—')+'</div></div></div>';
   h+='<div class="fbar" style="margin-top:16px"><input id="sv-busca" type="search" placeholder="Buscar serviço" oninput="SERV.lim=100;'+(SERV.modo==='tabela'?'renderTabServ()':'renderListaServ()')+'" style="flex:1;min-width:200px;height:34px">';
+  if(SERV.ver!=='area'){ var _as={}; Object.keys(SERV.areaDe).forEach(function(k){ _as[SERV.areaDe[k]]=1; }); h+='<div class="seg"><select class="'+(SERV.fa?'on':'')+'" onchange="setServArea(this.value)" title="Mostrar só uma área"><option value="">Todas as áreas ▾</option>'+AREAS.filter(function(a){ return _as[a]||a===SERV.fa; }).map(function(a){ return '<option value="'+esc(a)+'"'+(SERV.fa===a?' selected':'')+'>'+esc(a)+'</option>'; }).join('')+'</select></div>'; }
   if(SERV.modo==='tabela') h+='<div class="seg"><button class="'+(SERV.medida==='q'?'on':'')+'" onclick="setServMedida(\'q\')">Quantidade</button><button class="'+(SERV.medida==='v'?'on':'')+'" onclick="setServMedida(\'v\')">Valor (R$)</button></div>';
   h+='</div><div id="sv-box"></div>';
   h+='<div class="nota"><b>Valor (est.)</b>: o Zelo não libera o valor cobrado em cada atendimento; o robô usa o preço de tabela do serviço ajustado, mês a mês, para bater com o faturamento real de serviços. Quantidade = vezes que o serviço foi feito (atendimentos pagos).</div>';
@@ -3307,6 +3322,7 @@ function renderServ(manterBusca){
 function buscaServ(){ return (((document.getElementById('sv-busca')||{}).value)||'').trim().toUpperCase(); }
 
 function renderListaServ(){
+  if(SERV.ver==='area') return renderAreasServ();
   var box=document.getElementById('sv-box'); if(!box || !SERV.grupos) return;
   var q=buscaServ(), tq=SERV.grupos.reduce(function(a,x){ return a+x.q; },0);
   var L=SERV.grupos.filter(function(x){ return !q || x.n.toUpperCase().indexOf(q)>=0; });
@@ -3354,18 +3370,18 @@ function renderTabServ(){
   var box=document.getElementById('sv-box'); if(!box || !SERV.grupos) return;
   var r=SERV.r, meses=listaMeses(r[0].slice(0,7), r[1].slice(0,7)), med=SERV.medida, q=buscaServ();
   var por={}, totM={}, tot=0;
-  SERV.X.L.forEach(function(o){ var m=o.d.slice(0,7), x=por[o.s]||(por[o.s]={n:o.s, t:0, m:{}}), v=med==='q'?o.q:o.v; x.m[m]=(x.m[m]||0)+v; x.t+=v; totM[m]=(totM[m]||0)+v; tot+=v; });
+  var porArea=SERV.ver==='area'; SERV.X.L.forEach(function(o){ var m=o.d.slice(0,7), kk=porArea?(SERV.areaDe[o.s]||'Outros'):o.s, x=por[kk]||(por[kk]={n:kk, t:0, m:{}}), v=med==='q'?o.q:o.v; x.m[m]=(x.m[m]||0)+v; x.t+=v; totM[m]=(totM[m]||0)+v; tot+=v; });
   var L=Object.keys(por).map(function(k){ return por[k]; }).filter(function(x){ return !q || x.n.toUpperCase().indexOf(q)>=0; }).sort(function(a,b){ return b.t-a.t; });
   function f(v){ return v ? (med==='q' ? n0(v) : mil(v)) : '<span class="p-sem">·</span>'; }
-  var h='<div class="tw" style="margin-top:12px"><div class="tscroll" style="max-height:calc(100vh - 220px)"><table class="tmes"><thead><tr><th class="fix">Serviço</th>'+meses.map(function(m){ return '<th class="r">'+mesLabel(m)+'</th>'; }).join('')+'<th class="r">Total</th></tr></thead><tbody>';
-  h+='<tr class="tot"><td class="fix">Todos os serviços</td>'+meses.map(function(m){ return '<td class="r">'+f(totM[m]||0)+'</td>'; }).join('')+'<td class="r">'+f(tot)+'</td></tr>';
+  var h='<div class="tw" style="margin-top:12px"><div class="tscroll" style="max-height:calc(100vh - 220px)"><table class="tmes"><thead><tr><th class="fix">'+(porArea?'Área':'Serviço')+'</th>'+meses.map(function(m){ return '<th class="r">'+mesLabel(m)+'</th>'; }).join('')+'<th class="r">Total</th></tr></thead><tbody>';
+  h+='<tr class="tot"><td class="fix">'+(porArea?'Todas as áreas':'Todos os serviços')+'</td>'+meses.map(function(m){ return '<td class="r">'+f(totM[m]||0)+'</td>'; }).join('')+'<td class="r">'+f(tot)+'</td></tr>';
   if(!L.length) h+='<tr><td colspan="'+(meses.length+2)+'" class="empty">Sem serviços.</td></tr>';
   L.slice(0,SERV.lim).forEach(function(x){
     var mx=Math.max.apply(null, meses.map(function(m){ return x.m[m]||0; }).concat([1]));
-    h+='<tr><td class="fix">'+esc(x.n.toLowerCase())+'</td>'+meses.map(function(m){ var v=x.m[m]||0; return '<td class="r" style="'+(v?'background:rgba(188,130,64,'+(0.05+0.25*v/mx).toFixed(3)+')':'')+'">'+f(v)+'</td>'; }).join('')+'<td class="r" style="font-weight:700">'+f(x.t)+'</td></tr>';
+    h+='<tr><td class="fix">'+esc(porArea?x.n:x.n.toLowerCase())+'</td>'+meses.map(function(m){ var v=x.m[m]||0; return '<td class="r" style="'+(v?'background:rgba(188,130,64,'+(0.05+0.25*v/mx).toFixed(3)+')':'')+'">'+f(v)+'</td>'; }).join('')+'<td class="r" style="font-weight:700">'+f(x.t)+'</td></tr>';
   });
   h+='</tbody></table></div></div>';
-  h+= L.length>SERV.lim ? '<div class="more"><button class="btn btn-sm btn-ghost" onclick="SERV.lim+=100;renderTabServ()">Mostrar mais ('+(L.length-SERV.lim)+')</button></div>' : '<div class="more">'+n0(L.length)+' serviço(s) · '+(med==='q'?'quantidade feita':'valor estimado em R$')+' por mês'+(r[0].slice(8)!=='01'||r[1]<hojeISO()&&r[1].slice(8)!==String(diasNoMes(r[1].slice(0,7))).padStart(2,'0')?' · meses das pontas podem estar parciais':'')+'</div>';
+  h+= L.length>SERV.lim ? '<div class="more"><button class="btn btn-sm btn-ghost" onclick="SERV.lim+=100;renderTabServ()">Mostrar mais ('+(L.length-SERV.lim)+')</button></div>' : '<div class="more">'+n0(L.length)+(porArea?' área(s) · ':' serviço(s) · ')+(med==='q'?'quantidade feita':'valor estimado em R$')+' por mês'+(r[0].slice(8)!=='01'||r[1]<hojeISO()&&r[1].slice(8)!==String(diasNoMes(r[1].slice(0,7))).padStart(2,'0')?' · meses das pontas podem estar parciais':'')+'</div>';
   box.innerHTML=h;
 }
 
@@ -3385,6 +3401,75 @@ function dadosDemoServ(){
   }
 }
 
+
+// ================================================================ ÁREAS DE SERVIÇO (agrupar Serviços feitos por área)
+// automático por palavra-chave do nome; se não achar, pela área da profissional que mais faz (sufixo CAB/MAN/DEP...);
+// ajuste manual em voox_config/areas -> {m:{'NOME DO SERVIÇO':'Área'}}
+var AREAS=['Cabelo','Manicure e pedicure','Depilação','Sobrancelha e cílios','Maquiagem','Podologia','Estética facial','Estética corporal','Outros'];
+var AREA_REGRAS=[
+  ['Podologia',/PODOLOG|ONICO|ENCRAVAD|CALOSIDADE|\bCALO/],
+  ['Depilação',/DEPILA|\bCERA\b|FOTODEPIL|LASER/],
+  ['Sobrancelha e cílios',/SOBRANCELHA|\bDESIGN\b|HENNA|CILIO|LASH|BROW|LAMINACAO|MICROPIGMENT|NANOBLADING|FIO A FIO/],
+  ['Maquiagem',/MAQUIAGEM|\bMAKE\b|AUTOMAQUIAGEM/],
+  ['Estética facial',/LIMPEZA DE PELE|PEELING|FACIAL|MICROAGULH|DERMAPLAN|REVITALIZ|ROSTO|\bPELE\b|ACNE|MASCARA DE OURO/],
+  ['Manicure e pedicure',/MANICURE|PEDICURE|\bUNHA|ESMALT|\bGEL\b|FIBRA|BLINDAGEM|\bPES\b|\bMAOS\b|FRANCESINHA|SPA DOS|PLASTICA DOS/],
+  ['Estética corporal',/DRENAGEM|MASSAG|MODELADORA|PEDRAS QUENTES|RELAXANTE|CORPORAL|ESFOLIA|BRONZE|LIPO|ENDERMO|RADIOFREQ|CELULITE|GORDURA|REFLEXOLOG|QUICK MASSAGE|BAMBU|VENTOSA/],
+  ['Cabelo',/CORTE|ESCOVA|MECHA|LUZES|COLORA|TINTURA|RETOQUE|RAIZ|HIDRATA|CAUTERIZ|PROGRESSIVA|SELAGEM|CAPILAR|PENTEADO|BABYLISS|CHAPINHA|LAVAGEM|RECONSTR|NUTRI|TONALIZ|BRILHO|ALISA|RELAXAMENTO|PERMANENTE|CRONOGRAMA|BARBA|ILUMINAD|OMBRE|BALAYAGE|DESCOLOR|MATIZ|CABELO|BOTOX|TRANCA|ACIDIFICA|UMECTA|AMPOLA|ALONGAMENTO|APLIQUE|MEGA HAIR|TERAPIA CAPILAR/]
+];
+var AREA_SUFIXO={CAB:'Cabelo', MAN:'Manicure e pedicure', MANI:'Manicure e pedicure', DEP:'Depilação', MAQ:'Maquiagem', POD:'Podologia', SOB:'Sobrancelha e cílios', CIL:'Sobrancelha e cílios', EST:'Estética facial', MAS:'Estética corporal'};
+var AREA_MAN={}, AREA_CACHE={};
+function chaveArea(n){ return String(n||'').toUpperCase().replace(/[\/.~*\[\]]/g,' ').replace(/\s+/g,' ').trim(); }
+function areaAuto(nome, itens){
+  var k=String(nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+  for(var i=0;i<AREA_REGRAS.length;i++) if(AREA_REGRAS[i][1].test(k)) return AREA_REGRAS[i][0];
+  var c={}; (itens||[]).forEach(function(o){ var m=/\(([A-Z]+)\)\s*$/.exec(String(o.p||'').toUpperCase()), a=m&&AREA_SUFIXO[m[1]]; if(a) c[a]=(c[a]||0)+(o.q||1); });
+  var best=Object.keys(c).sort(function(a,b){ return c[b]-c[a]; })[0];
+  return best||'Outros';
+}
+function areaServ(nome, itens){
+  var man=AREA_MAN[chaveArea(nome)]; if(man) return man;
+  if(AREA_CACHE[nome] && !itens) return AREA_CACHE[nome];
+  var a=areaAuto(nome, itens); if(itens) AREA_CACHE[nome]=a; return a;
+}
+function assinarAreas(){
+  if(DEMO) return;
+  unsubs.push(db.collection('voox_config').doc('areas').onSnapshot(function(snap){ AREA_MAN=(snap.exists&&snap.data().m)||{}; if(viewAtual==='serv') renderServ(true); }, function(){}));
+}
+function setServVer(v){ SERV.ver=v; SERV.aAberta=null; salvarServUI(); renderServ(true); }
+function setServArea(a){ SERV.fa=a; SERV.lim=100; salvarServUI(); renderServ(true); }
+function salvarArea(nome, area){
+  var k=chaveArea(nome), u={}; u[k]=area||(DEMO?'':firebase.firestore.FieldValue.delete());
+  if(DEMO){ if(area) AREA_MAN[k]=area; else delete AREA_MAN[k]; renderServ(true); toast('Área atualizada.'); return; }
+  db.collection('voox_config').doc('areas').set({m:u, atualizadoEm:new Date().toISOString(), por:email}, {merge:true})
+    .then(function(){ toast(area?'“'+nome.toLowerCase()+'” agora é '+area+'.':'Voltou para a área automática.'); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
+function toggleAreaServ(a){ SERV.aAberta = SERV.aAberta===a ? null : a; renderListaServ(); }
+function renderAreasServ(){
+  var box=document.getElementById('sv-box'); if(!box || !SERV.grupos) return;
+  var q=buscaServ(), por={}, tq=0, gest=(nivel==='admin'||nivel==='gerente');
+  SERV.grupos.forEach(function(g){ if(q && g.n.toUpperCase().indexOf(q)<0) return; var a=por[g.a]||(por[g.a]={a:g.a, q:0, v:0, cli:{}, L:[]}); a.q+=g.q; a.v+=g.v; Object.keys(g.cli).forEach(function(c){ a.cli[c]=1; }); a.L.push(g); tq+=g.q; });
+  var A=Object.keys(por).map(function(k){ var x=por[k]; x.nc=Object.keys(x.cli).length; return x; }).sort(function(a,b){ return b.q-a.q; });
+  var mx=A.reduce(function(m,x){ return Math.max(m,x.q); },1);
+  var h='<div class="tw" style="margin-top:12px"><div class="tscroll"><table class="tsv"><thead><tr><th>Área</th><th class="r">Quantidade</th><th style="width:22%"></th><th class="r">% do total</th><th class="r">Valor (est.)</th><th class="r">Clientes</th><th class="r">Serviços</th><th style="width:36px"></th></tr></thead><tbody>';
+  if(!A.length) h+='<tr><td colspan="8" class="empty">Sem serviços no período.</td></tr>';
+  A.forEach(function(x){
+    var ab=SERV.aAberta===x.a;
+    h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-a="'+esc(x.a)+'" onclick="toggleAreaServ(this.dataset.a)"><td><b>'+esc(x.a)+'</b></td><td class="r" style="font-weight:700">'+n0(x.q)+'</td><td><div class="sv-bar"><i style="width:'+(x.q/mx*100).toFixed(1)+'%"></i></div></td><td class="r">'+(tq?pct(x.q/tq):'—')+'</td><td class="r">'+brl(x.v)+'</td><td class="r">'+n0(x.nc)+'</td><td class="r">'+n0(x.L.length)+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
+    if(ab){
+      var L=x.L.slice().sort(function(a,b){ return b.q-a.q; });
+      h+='<tr class="sv-det"><td colspan="8"><div class="sv-panel"><div class="tscroll" style="max-height:420px"><table class="tdet"><thead><tr><th>Serviço</th><th class="r">Qtd</th><th class="r">% da área</th><th class="r">Valor (est.)</th><th class="r">Clientes</th>'+(gest?'<th>Área</th>':'')+'</tr></thead><tbody>';
+      L.forEach(function(g){
+        var man=!!AREA_MAN[chaveArea(g.n)];
+        h+='<tr><td>'+esc(g.n.toLowerCase())+'</td><td class="r" style="font-weight:700">'+n0(g.q)+'</td><td class="r">'+(x.q?pct(g.q/x.q):'—')+'</td><td class="r">'+brl(g.v)+'</td><td class="r">'+n0(g.nc)+'</td>';
+        if(gest) h+='<td onclick="event.stopPropagation()"><select class="sel-area" data-n="'+esc(g.n)+'" onchange="salvarArea(this.dataset.n,this.value)"><option value="">'+(man?'↺ automática ('+esc(areaAuto(g.n,g.it))+')':'automática')+'</option>'+AREAS.map(function(a){ return '<option value="'+esc(a)+'"'+(man&&AREA_MAN[chaveArea(g.n)]===a?' selected':'')+'>'+esc(a)+'</option>'; }).join('')+'</select></td>';
+        h+='</tr>';
+      });
+      h+='</tbody></table></div>'+(gest?'<div class="khint" style="margin-top:8px">Serviço na área errada? Troque no seletor — vale para todo o painel e para todos os períodos.</div>':'')+'</div></td></tr>';
+    }
+  });
+  h+='</tbody></table></div></div><div class="more">'+n0(A.length)+' área(s) · clique numa área para ver os serviços dela</div>';
+  box.innerHTML=h;
+}
 
 // ================================================================ utilidades de período (Margem, Satisfação)
 var PRESETS_P = [['30','30 dias'],['mes','Este mês'],['mespass','Mês anterior'],['90','90 dias'],['ano','Este ano'],['12m','12 meses']];
