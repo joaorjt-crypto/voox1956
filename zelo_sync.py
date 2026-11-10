@@ -400,7 +400,9 @@ def gravar(z, db, resumo, candidatas, ultima, futuros, pagos_por_cli=None, preco
     existentes = {doc.id: doc.to_dict() for doc in col.stream()}
     log(f"Reativação: {len(candidatas)} candidatas · {len(existentes)} já no Firestore")
 
-    # telefones: só busca no Zelo quem ainda não tem celular salvo
+    # A lista de quem chamar agora vem de voox_reativ_lista (24 meses, gravar_reativ_lista).
+    # Aqui ficam só os documentos de quem a recepção já chamou/descartou: o robô marca quem voltou.
+    candidatas = {}
     for cid, c in candidatas.items():
         cel = (existentes.get(cid) or {}).get("cel")
         if not cel:
@@ -435,9 +437,9 @@ def gravar(z, db, resumo, candidatas, ultima, futuros, pagos_por_cli=None, preco
         ops += 1
         commit_if_full()
 
-    # quem estava ativo e saiu da lista: voltou (veio ou agendou) ou deixou de se encaixar
+    # quem recebeu mensagem e ainda não voltou: veio ou agendou?
     for cid, ex in existentes.items():
-        if cid in candidatas or not ex.get("ativo"):
+        if not ex.get("enviado") or ex.get("voltou"):
             continue
         upd = {"ativo": False, "atualizadoEm": agora}
         try:
@@ -450,7 +452,7 @@ def gravar(z, db, resumo, candidatas, ultima, futuros, pagos_por_cli=None, preco
         elif cid_int in futuros or cid in futuros:
             upd.update({"voltou": True, "voltouEm": agora[:10], "voltouTipo": "agendou"})
         else:
-            upd["saiuMotivo"] = "fora do critério"
+            continue
         batch.set(col.document(cid), upd, merge=True)
         ops += 1
         commit_if_full()
@@ -1340,6 +1342,90 @@ def gravar_base_clientes(z, db, hoje):
     log(f"Base de clientes: {len(linhas)} cadastros ({len(partes)} partes)")
 
 
+# ---------------------------------------------------------------- reativação (24 meses, lista compacta)
+
+REATIV_POR_PARTE = 3000
+
+
+def gravar_reativ_lista(db, d, docs_cli):
+    """Clientes que vieram 2+ vezes nos últimos 24 meses e pararam (mesma regra de antes: 30 dias e 1,5x o intervalo
+    habitual; sem horário marcado; quem só vem para evento fica fora). Grava em poucos documentos (sem valores),
+    para a recepção filtrar por período no app. Linha: id|nome|primeiro|celular|ultima|visitas|serviço|intervalo|prioridade|primeira"""
+    hoje = d["hoje"]
+    sd = (docs_cli.get("meta") or {}).get("sd") or []
+    if not sd:
+        log("Reativação 24m: lista de clientes ainda não existe; fica para a próxima")
+        return
+    futuros = {str((f.get("cliente") or {}).get("id")) for f in d["futuros"] if f.get("cliente")}
+    ult_recente = {}
+    for a in d["pagos"]:
+        c = a.get("cliente")
+        if c and a.get("dataHora"):
+            k = str(c["id"])
+            ult_recente[k] = max(ult_recente.get(k, ""), a["dataHora"][:10])
+    cel = {}
+    try:
+        for doc in db.collection("voox_base").stream():
+            if doc.id == "meta":
+                continue
+            for t in (doc.to_dict() or {}).get("c") or []:
+                a = t.split("|")
+                if len(a) > 3 and a[3]:
+                    cel[a[0]] = celular_br(a[3])
+    except Exception as e:
+        log(f"  celulares da base não carregaram: {e}")
+    linhas = []
+    for k, dd in docs_cli.items():
+        if k == "meta":
+            continue
+        for it in dd.get("itens") or []:
+            cid = str(it.get("i") or "")
+            if not cid or cid in futuros or EXCLUIR_NOMES.search(it.get("n") or ""):
+                continue
+            dias, serv = [], Counter()
+            for v in it.get("vs") or []:
+                a = v.split(",")
+                dias.append(f"20{a[0][0:2]}-{a[0][2:4]}-{a[0][4:6]}")
+                try:
+                    j = int(a[2])
+                    if 0 <= j < len(sd) and sd[j]:
+                        serv[sd[j]] += 1
+                except (IndexError, ValueError):
+                    pass
+            dias = sorted(set(dias))
+            n = len(dias)
+            if n < 2:
+                continue
+            ult = max(dias[-1], ult_recente.get(cid, ""))
+            principal = serv.most_common(1)[0][0] if serv else ""
+            if principal and SERV_EVENTO.search(principal):
+                continue
+            span = (dt.date.fromisoformat(dias[-1]) - dt.date.fromisoformat(dias[0])).days
+            intervalo = max(7, round(span / (n - 1)))
+            sem = (hoje - dt.date.fromisoformat(ult)).days
+            if sem < max(MIN_DIAS_SUMIDA, FATOR_INTERVALO * intervalo):
+                continue
+            fone = it.get("c") or cel.get(cid) or ""
+            nome = limpa_nome(it.get("n") or "")
+            prim = nome.split(" ")[0].capitalize() if nome else ""
+            linhas.append("|".join(re.sub(r"[|\r\n]+", " ", str(x)) for x in
+                                   [cid, nome, prim, fone, ult, n, principal, intervalo, 1 if n >= 3 else 2, dias[0]]))
+    partes = [linhas[i:i + REATIV_POR_PARTE] for i in range(0, len(linhas), REATIV_POR_PARTE)] or [[]]
+    meta_ref = db.collection("voox_reativ_lista").document("meta")
+    m0 = meta_ref.get()
+    antes = ((m0.to_dict() or {}).get("partes", 0)) if m0.exists else 0
+    batch = db.batch()
+    for i, parte in enumerate(partes):
+        batch.set(db.collection("voox_reativ_lista").document(f"p{i:02d}"), {"c": parte})
+    for i in range(len(partes), antes):
+        batch.delete(db.collection("voox_reativ_lista").document(f"p{i:02d}"))
+    batch.set(meta_ref, {"data": hoje.isoformat(), "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes"),
+                         "partes": len(partes), "total": len(linhas),
+                         "campos": "id|nome|primeiro|celular|ultima|visitas|servico|intervalo|prioridade|primeira"})
+    batch.commit()
+    log(f"Reativação 24m: {len(linhas)} clientes sumidas ({sum(1 for l in linhas if l.split('|')[3])} com celular)")
+
+
 # ---------------------------------------------------------------- hora de voltar: retorno por ciclo de cada serviço
 
 def gravar_retornos(db, d, fones):
@@ -1889,7 +1975,7 @@ def main():
         log(f"Dia a dia falhou (o resto segue): {e}")
     conhecidos = {doc.id: (doc.to_dict() or {}).get("cel") for doc in db.collection("voox_reativacao").select(["cel"]).stream()}
     # celulares já conhecidos da lista de clientes (evita buscar de novo no Zelo, que é a parte lenta)
-    hist = {}
+    hist, docs_cli = {}, {}
     try:
         docs_cli = {doc.id: (doc.to_dict() or {}) for doc in db.collection("voox_clientes").stream()}
         sd = (docs_cli.get("meta") or {}).get("sd") or []
@@ -1907,6 +1993,7 @@ def main():
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
                       ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas), hist), fones, d)),
                       ("Hora de voltar", lambda: gravar_retornos(db, d, fones)),
+                      ("Reativação 24m", lambda: gravar_reativ_lista(db, d, docs_cli)),
                       ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v})),
                       ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo)),
                       ("Horários vagos", lambda: gravar_vagas(z, db, d, fones)),
