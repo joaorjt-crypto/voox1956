@@ -177,6 +177,9 @@ html[data-theme="dark"] .seg select{background:none}
 html[data-theme] .seg select.on{background:var(--primary-strong);color:#fff;font-weight:600}
 .seg select option{background:var(--card-2);color:var(--text);font-weight:400}
 .seg select{field-sizing:content}
+.rp-box{display:contents}
+.rp-datas{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.rp-datas input{width:auto;height:34px}
 .sel-area{height:28px;font-size:12px;padding:2px 6px;width:auto;min-width:150px}
 html[data-theme="dark"] .seg select option{background:#1c1c1f}
 .seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
@@ -793,10 +796,11 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
       <div class="sect" id="r-titulo">Clientes</div>
       <div class="tools">
         <input id="r-busca" type="search" placeholder="Buscar cliente ou serviço" oninput="renderLista()">
+        <span id="r-perbox" class="rp-box"></span>
         <select id="r-prio" onchange="renderLista()">
           <option value="">Todas as prioridades</option>
-          <option value="1">Prioridade 1 (3+ serviços)</option>
-          <option value="2">Prioridade 2 (2 serviços)</option>
+          <option value="1">Prioridade 1 (3+ visitas)</option>
+          <option value="2">Prioridade 2 (2 visitas)</option>
         </select>
       </div>
       <div class="rlist" id="r-lista"><div class="empty">Carregando clientes…</div></div>
@@ -834,6 +838,8 @@ var SEMANA = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 
 var DEMO = /[?&]demo=1/.test(location.search);
 var db, auth, nivel = 'publico', logado = false, nome = '', email = '';
+var RLISTA = {}, RDOCS = {}, RLMETA = null, RLOK = false, RPER = {p:'', de:'', ate:''};
+try{ var _rp=JSON.parse(localStorage.getItem('voox_reativ_per')||'null'); if(_rp) RPER=_rp; }catch(e){}
 var resumo = null, clientes = {}, mensagem = MENSAGEM_PADRAO, mensagemCarregada = false;
 var filtro = 'enviar', limite = 60, viewAtual = null;
 var unsubs = [];
@@ -1025,10 +1031,15 @@ function assinar(){
   unsubs.push(db.collection('voox_posatend').where('data','>=',addDias(hojeISO(),-4)).limit(800).onSnapshot(function(snap){
     posat={}; snap.forEach(function(d){ posat[d.id]=d.data(); }); renderPos();
   }, function(err){ document.getElementById('page-pos').innerHTML='<div class="card empty">Sem permissão para ler o pós-atendimento ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
+  unsubs.push(db.collection('voox_reativ_lista').onSnapshot(function(snap){
+    var L=[], mt=null; snap.forEach(function(d){ if(d.id==='meta') mt=d.data(); else L=L.concat(d.data().c||[]); });
+    RLISTA={}; L.forEach(function(t){ var a=t.split('|'); RLISTA[a[0]]={nome:a[1], primeiro:a[2], cel:a[3], ult:a[4], n:+a[5]||0, servico:a[6], intervalo:+a[7]||0, prioridade:+a[8]||2, pri:a[9]||''}; });
+    RLMETA=mt; RLOK=true; mergeReativ();
+  }, function(err){ RLOK=true; mergeReativ(); toast('Reativação (lista): '+(err.code||err.message),'err'); }));
   unsubs.push(db.collection('voox_reativacao').onSnapshot(function(snap){
-    clientes={};
-    snap.forEach(function(d){ clientes[d.id]=d.data(); });
-    renderReativ();
+    RDOCS={};
+    snap.forEach(function(d){ RDOCS[d.id]=d.data(); });
+    mergeReativ();
   }, function(err){
     document.getElementById('r-lista').innerHTML='<div class="card empty">Sem permissão para ler a lista ('+esc(err.code||err.message)+').<br>Confira as regras do Firestore.</div>';
     toast('Reativação: '+(err.code||err.message),'err');
@@ -1055,9 +1066,14 @@ function atualizarCliente(id, campos, desfazer){
     if(desfazer) toast(desfazer, '', {label:'Desfazer', fn:function(){ Object.assign(clientes[id], antes); renderReativ(); }});
     return;
   }
-  db.collection('voox_reativacao').doc(id).update(campos).then(function(){
+  var c0=clientes[id]||{}, grava=Object.assign({}, campos);
+  if(!RDOCS[id] || c0._novoCiclo){   // primeira vez que a recepção mexe nela (ou voltou e sumiu de novo): guarda o retrato da lista
+    ['nome','primeiro','cel','ult','n','servico','intervalo','prioridade'].forEach(function(k){ if(c0[k]!=null) grava[k]=c0[k]; });
+    if(c0._novoCiclo) Object.assign(grava, {ciclos:(c0.ciclos||0), voltou:false, voltouEm:null, voltouTipo:null});
+  }
+  db.collection('voox_reativacao').doc(id).set(grava, {merge:true}).then(function(){
     if(desfazer) toast(desfazer, '', {label:'Desfazer', fn:function(){
-      db.collection('voox_reativacao').doc(id).update(antes).catch(function(e){ toast('Não desfez: '+(e.code||e.message),'err'); });
+      db.collection('voox_reativacao').doc(id).set(antes, {merge:true}).catch(function(e){ toast('Não desfez: '+(e.code||e.message),'err'); });
     }});
   }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
 }
@@ -1078,6 +1094,35 @@ function rect(x,y,w,h){ return 'M'+x+','+y+'h'+w+'v'+h+'h'+(-w)+'z'; }
 function roundTop(x,y,w,h,r){ if(h<=0) return ''; r=Math.min(r,h,w/2); return 'M'+x+','+(y+h)+'V'+(y+r)+'Q'+x+','+y+' '+(x+r)+','+y+'H'+(x+w-r)+'Q'+(x+w)+','+y+' '+(x+w)+','+(y+r)+'V'+(y+h)+'Z'; }
 
 // ---------------------------------------------------------------- reativação
+// lista de quem chamar: voox_reativ_lista (robô, 24 meses) · o que a recepção já fez: voox_reativacao/{id}
+function mergeReativ(){
+  var m={};
+  Object.keys(RLISTA).forEach(function(id){
+    var it=RLISTA[id], dc=RDOCS[id], c=Object.assign({}, dc||{}, it, {ativo:true});
+    if(dc && dc.voltou && !dc.descartado){ c.voltou=false; c.enviado=false; c._novoCiclo=true; c.ciclos=(dc.ciclos||0)+1; }
+    m[id]=c;
+  });
+  Object.keys(RDOCS).forEach(function(id){ if(!m[id]) m[id]=Object.assign({}, RDOCS[id], {ativo:false}); });
+  clientes=m; renderReativ();
+}
+var RPER_OP=[['','Qualquer época'],['1-3','1 a 3 meses'],['3-6','3 a 6 meses'],['6-12','6 a 12 meses'],['12+','Mais de 12 meses'],['datas','Escolher datas…']];
+function reativIntervalo(){
+  var h=hojeISO(), p=RPER.p;
+  if(p==='1-3') return [addDias(h,-91), addDias(h,-30)];
+  if(p==='3-6') return [addDias(h,-182), addDias(h,-92)];
+  if(p==='6-12') return [addDias(h,-365), addDias(h,-183)];
+  if(p==='12+') return ['0000', addDias(h,-366)];
+  if(p==='datas' && RPER.de && RPER.ate) return RPER.de<=RPER.ate?[RPER.de,RPER.ate]:[RPER.ate,RPER.de];
+  return null;
+}
+function reativNoPer(c){ var r=reativIntervalo(); if(!r) return true; var u=String(c.ult||'').slice(0,10); return u>=r[0] && u<=r[1]; }
+function setReativPer(v){ RPER.p=v; if(v==='datas' && !RPER.de){ RPER.de=addDias(hojeISO(),-365); RPER.ate=addDias(hojeISO(),-180); } try{ localStorage.setItem('voox_reativ_per', JSON.stringify(RPER)); }catch(e){} limite=60; renderReativ(); }
+function setReativDatas(){ RPER.de=document.getElementById('rp-de').value; RPER.ate=document.getElementById('rp-ate').value; setReativPer('datas'); }
+function barraReativPer(){
+  var h='<select id="r-per" onchange="setReativPer(this.value)" title="Última visita da cliente">'+RPER_OP.map(function(o){ return '<option value="'+o[0]+'"'+(RPER.p===o[0]?' selected':'')+'>'+(o[0]?'Sem vir há: ':'')+o[1]+'</option>'; }).join('')+'</select>';
+  if(RPER.p==='datas') h+='<span class="rp-datas">última visita entre <input type="date" id="rp-de" value="'+(RPER.de||'')+'" max="'+hojeISO()+'" onchange="setReativDatas()"> e <input type="date" id="rp-ate" value="'+(RPER.ate||'')+'" max="'+hojeISO()+'" onchange="setReativDatas()"></span>';
+  return h;
+}
 function estado(c){
   if(c.descartado) return 'descartadas';
   if(c.voltou) return 'voltaram';
@@ -1127,7 +1172,7 @@ function podePainel(){ return nivel==='admin' || nivel==='gerente'; }
 var TITULOS = {
   painel: ['Painel', 'Vendas e movimento da casa'],
   vendas: ['Mês a mês', 'Resumo de vendas do Zelo, últimos 13 meses'],
-  reativ: ['Reativação', 'Clientes frequentes que pararam de vir'],
+  reativ: ['Reativação', 'Clientes que vieram 2+ vezes nos últimos 24 meses e pararam de vir'],
   prof:   ['Profissionais', 'Atendimentos, faturamento, ocupação e faltas por profissional'],
   agenda: ['Agenda', 'Horários de pico e faltas por dia da semana'],
   aniv:   ['Aniversariantes', 'Clientes que fazem aniversário esta semana'],
@@ -2024,11 +2069,11 @@ var SEQCFG = {
   reativ: {
     ctx: function(){ return 'enviar'; },
     pend: function(){
-      return Object.keys(clientes).map(function(id){ return Object.assign({id:id}, clientes[id]); }).filter(function(c){ return estado(c)==='enviar' && c.cel; })
+      return Object.keys(clientes).map(function(id){ return Object.assign({id:id}, clientes[id]); }).filter(function(c){ return estado(c)==='enviar' && c.cel && reativNoPer(c); })
         .sort(function(a,b){ return (a.prioridade-b.prioridade) || (b.n-a.n) || (diasDesde(a.ult)-diasDesde(b.ult)); }).map(function(c){ return c.id; });
     },
     livre: function(id){ var c=clientes[id]; return c && estado(c)==='enviar' && c.cel; },
-    item: function(id){ var c=clientes[id]; return {nome:c.nome, info:(c.servico||'')+' · última visita há '+diasDesde(c.ult)+' dias · costuma vir a cada '+c.intervalo+' dias'}; },
+    item: function(id){ var c=clientes[id]; return {nome:c.nome, info:(c.servico||'')+' · última visita há '+fmtSumida(diasDesde(c.ult))+' · costumava vir a cada '+c.intervalo+' dias'}; },
     enviar: function(id){ enviar(id); }, dispensar: function(id){ descartar(id); }, rotDisp:'Descartar',
     render: function(){ renderReativ(); }
   },
@@ -2265,13 +2310,14 @@ function ordenarCli(k){ cliOrd = cliOrd && cliOrd.k===k ? {k:k, d:-cliOrd.d} : {
 function renderTabelaCli(){
   var box=document.getElementById('cli-tab'); if(!box) return;
   var q=((document.getElementById('cli-busca')||{}).value||'').trim().toUpperCase();
-  var L=cliPer.map(function(c){ var o=Object.assign({}, c); o.dias=diasDesde(c.u); o.pv=c.q?c.v/c.q:0; return o; });
+  var base = cliAba==='sumidas' ? calcularCliPeriodo(cliMeta.desde||addDias(hojeISO(),-729), hojeISO()) : cliPer;   // sumidas: sempre os 24 meses, o filtro de datas não vale aqui
+  var L=base.map(function(c){ var o=Object.assign({}, c); o.dias=diasDesde(c.u); o.pv=c.q?c.v/c.q:0; return o; });
   if(cliAba==='sumidas') L=L.filter(function(c){ return c.q>=2 && c.dias>Math.max(45, 2*(c.iv||30)); });
   if(q) L=L.filter(function(c){ return (c.n+' '+c.s+' '+c.r).toUpperCase().indexOf(q)>=0; });
   var ord=cliOrd || (cliAba==='top' ? {k:'v',d:-1} : cliAba==='freq' ? {k:'q',d:-1} : {k:'v',d:-1});
   L.sort(function(a,b){ var x=a[ord.k], y=b[ord.k]; if(typeof x==='string') return x.localeCompare(y||'')*ord.d; return ((x||0)-(y||0))*ord.d; });
   function th(k, t, cls){ return '<th class="sortable '+(cls||'')+(ord.k===k?' ord-on':'')+'" onclick="ordenarCli(\''+k+'\')">'+t+(ord.k===k?(ord.d>0?' ▲':' ▼'):'')+'</th>'; }
-  var h='<div class="tw" style="margin-top:12px"><div class="tscroll"><table><thead><tr><th class="r">#</th>'+th('n','Cliente')+th('v','Valor no período (est.)','r')+th('q','Visitas','r')+th('pv','Por visita','r')+th('dias','Última visita','r')+th('iv','Costuma vir','r')+th('s','Serviço principal')+th('r','Profissional')+'<th></th></tr></thead><tbody>';
+  var h=(cliAba==='sumidas'?'<div class="alert a-info" style="margin-top:12px"><span>◇ Esta aba olha sempre os <b>últimos 24 meses</b>, independente do período escolhido acima: clientes que vieram 2 vezes ou mais e estão sem vir há mais que o dobro do intervalo delas (mínimo 45 dias). Valor e visitas = 24 meses.</span></div>':'')+'<div class="tw" style="margin-top:12px"><div class="tscroll"><table><thead><tr><th class="r">#</th>'+th('n','Cliente')+th('v',cliAba==='sumidas'?'Valor em 24 meses (est.)':'Valor no período (est.)','r')+th('q','Visitas','r')+th('pv','Por visita','r')+th('dias','Última visita','r')+th('iv','Costuma vir','r')+th('s','Serviço principal')+th('r','Profissional')+'<th></th></tr></thead><tbody>';
   if(!L.length) h+='<tr><td colspan="10" class="empty">'+(cliAba==='sumidas'?'Nenhuma cliente recorrente sumida.':'Nenhuma cliente encontrada.')+'</td></tr>';
   L.slice(0, cliLim).forEach(function(c,i){
     var atraso = c.iv && c.dias > 2*c.iv && c.q>=2;
@@ -4398,16 +4444,21 @@ var COR_ESTADO = { enviar:'var(--amber)', aguardando:'var(--blue)', voltaram:'va
 
 function renderReativ(){
   var ids=Object.keys(clientes), cont={enviar:0,aguardando:0,voltaram:0,descartadas:0}, env30=0, volt30=0, retV=0, retN=0, retC=0;
+  var contTot=0;
   ids.forEach(function(id){
     var c=clientes[id], e=estado(c);
+    if(e==='enviar') contTot++;
+    if(!reativNoPer(c)) return;
     if(cont[e]!=null) cont[e]++;
     if(c.enviado && c.enviadoEm && diasDesde(c.enviadoEm)<=30){ env30++; if(c.voltou) volt30++; }
     if(c.enviado && c.retornoAtend){ retV+=c.retornoValor||0; retN+=c.retornoAtend; retC++; }
   });
   var cnt=document.getElementById('cntReativ');
-  cnt.textContent=cont.enviar; cnt.style.display=cont.enviar?'':'none';
+  cnt.textContent=contTot; cnt.style.display=contTot?'':'none';
   if(viewAtual!=='reativ') return;
   frescor();
+  var bp=document.getElementById('r-perbox'); if(bp && !bp.contains(document.activeElement)) bp.innerHTML=barraReativPer();
+
   var s='';
   [['enviar','A enviar',n0(cont.enviar),'clientes para chamar'],
    ['aguardando','Aguardando retorno',n0(cont.aguardando),'mensagem enviada'],
@@ -4425,6 +4476,7 @@ function renderReativ(){
 }
 
 function setFiltro(f){ filtro=f; limite=60; renderReativ(); }
+function fmtSumida(d){ if(d<60) return d+' dias'; var m=Math.round(d/30.4); return m<24?m+' meses':(d/365).toFixed(1).replace('.',',')+' anos'; }
 
 function renderLista(){
   var q=(document.getElementById('r-busca').value||'').trim().toUpperCase();
@@ -4432,6 +4484,7 @@ function renderLista(){
   document.getElementById('r-titulo').innerHTML={enviar:'Para chamar agora',aguardando:'Aguardando retorno',voltaram:'Voltaram',descartadas:'Descartadas'}[filtro]+' <small>'+({enviar:'prioridade 1 primeiro',aguardando:'mais recentes primeiro',voltaram:'mais recentes primeiro',descartadas:''}[filtro])+'</small>';
   var arr=Object.keys(clientes).map(function(id){ return Object.assign({id:id}, clientes[id]); }).filter(function(c){
     if(estado(c)!==filtro) return false;
+    if(!reativNoPer(c)) return false;
     if(pr && String(c.prioridade)!==pr) return false;
     if(q && (c.nome||'').toUpperCase().indexOf(q)<0 && (c.servico||'').toUpperCase().indexOf(q)<0) return false;
     return true;
@@ -4453,9 +4506,10 @@ function renderLista(){
     if(filtro==='voltaram') tags+='<span class="pill p-ok">'+(c.voltouTipo==='agendou'?'Agendou':c.voltouTipo==='manual'?'Marcado à mão':'Voltou')+' em '+dataBR(c.voltouEm)+'</span>'+(c.enviado?'<span class="pill p-mut">após mensagem</span>':'')+(c.retornoAtend?'<span class="pill p-ok">'+brl(c.retornoValor||0)+' em '+c.retornoAtend+' atend.</span>':'');
     if(c.ciclos) tags+='<span class="pill p-mut">'+(c.ciclos+1)+'ª vez na lista</span>';
     h+='<div class="rrow" style="--c:'+COR_ESTADO[filtro]+'"><div><div class="nm">'+lkCli(c.id,c.nome)+'</div>';
-    h+='<div class="info">'+esc(c.servico)+' · última visita '+dataBR(c.ult)+' ('+d+' dias) · '+n0(c.n)+' serviços em 120 dias · costuma vir a cada '+c.intervalo+' dias</div>';
+    h+='<div class="info">'+esc((c.servico||'').toLowerCase())+' · última visita '+dataBR(c.ult)+' ('+fmtSumida(d)+') · '+n0(c.n)+' visitas em 24 meses · costumava vir a cada '+c.intervalo+' dias</div>';
     if(tags) h+='<div class="tags">'+tags+'</div>';
-    h+='</div><div class="acts">';
+    h+=anotFix(c.id)+ultimaOferta(c.id,365);
+    h+='</div><div class="acts">'+btnOferta(c.id,c.nome)+btnAnot(c.id,c.nome);
     if(filtro==='enviar'){
       h+='<button class="btn btn-sm btn-wa" onclick="enviar(\''+c.id+'\')">WhatsApp</button>';
       h+='<button class="btn btn-sm btn-ghost" onclick="descartar(\''+c.id+'\')" title="Mudou de cidade, não quer contato, etc.">Descartar</button>';
