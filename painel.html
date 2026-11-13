@@ -180,6 +180,16 @@ html[data-theme] .seg select.on{background:var(--primary-strong);color:#fff;font
 .rp-box{display:contents}
 .rp-datas{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
 .rp-datas input{width:auto;height:34px}
+.cup-in{display:flex;gap:8px;max-width:420px}
+.cup-in input{font:600 20px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.12em;height:46px;text-transform:uppercase}
+.cup-box{margin-top:12px;padding:14px 16px;border-radius:12px;border:1px solid var(--border);max-width:620px}
+.cup-box.ok{border-color:var(--green);background:color-mix(in srgb,var(--green) 8%,transparent)}
+.cup-box.bad{border-color:var(--red);background:color-mix(in srgb,var(--red) 7%,transparent)}
+.cup-top{display:flex;align-items:center;gap:8px;font-size:16px}
+.cup-nm{font-size:18px;font-weight:700;margin:8px 0 4px}
+.cup-info{font-size:13px;color:var(--muted);margin-top:2px}
+.cup-acts{display:flex;gap:8px;margin:12px 0 6px;flex-wrap:wrap}
+.cup-acts input{flex:1;min-width:180px}
 .sel-area{height:28px;font-size:12px;padding:2px 6px;width:auto;min-width:150px}
 html[data-theme="dark"] .seg select option{background:#1c1c1f}
 .seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
@@ -705,6 +715,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <button class="navbtn" data-p="aniv" onclick="nav('aniv')"><span class="side-ico">✿</span><span class="lbl">Aniversariantes</span><span class="cnt" id="cntAniv" style="display:none">0</span></button>
     <button class="navbtn" data-p="pac" onclick="nav('pac')"><span class="side-ico">▤</span><span class="lbl">Pacotes</span><span class="cnt" id="cntPac" style="display:none">0</span></button>
     <button class="navbtn" data-p="indic" onclick="nav('indic')"><span class="side-ico">❦</span><span class="lbl">Indique uma amiga</span></button>
+    <button class="navbtn" data-p="cupom" onclick="nav('cupom')"><span class="side-ico">%</span><span class="lbl">Códigos de desconto</span></button>
     <div class="side-sec lbl admin-only">Admin</div>
     <button class="navbtn admin-only" data-p="config" onclick="nav('config')"><span class="side-ico">⚙</span><span class="lbl">Configurações</span><span class="cnt" id="cntCfg" style="display:none">0</span></button>
     <div class="side-foot">
@@ -746,6 +757,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div class="page" id="page-retorno"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-pac"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-indic"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-cupom"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-minha"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-pagar"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-com"><div class="empty">Carregando…</div></div>
@@ -787,7 +799,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
         <summary>Editar o texto</summary>
         <textarea id="msg-txt"></textarea>
         <div class="msgrow">
-          <span>Use <b>{nome}</b> para o primeiro nome da cliente.</span>
+          <span>Use <b>{nome}</b> para o primeiro nome, <b>{codigo}</b> para o código de desconto único dela, <b>{validade}</b> e <b>{desconto}</b>. Sem {codigo}, o código vai no fim da mensagem.</span>
           <span style="flex:1"></span>
           <button class="btn btn-sm" onclick="salvarMensagem()">Salvar mensagem</button>
         </div>
@@ -999,6 +1011,7 @@ function assinar(){
   unsubs.push(db.collection('voox_retorno').doc('lista').onSnapshot(function(snap){ var x=snap.exists?snap.data():{}; RET={itens:x.itens||[], ciclos:x.ciclos||[], atualizadoEm:x.atualizadoEm||'', ok:true}; renderRetorno(); }, function(err){ var el=document.getElementById('page-retorno'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler a lista ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
   unsubs.push(db.collection('voox_retorno').doc('semanas').onSnapshot(function(snap){ RSEM=snap.exists?snap.data():null; renderRetorno(); if(viewAtual==='painel') renderPainel(); }, function(){}));
   assinarAreas();
+  assinarCupons();
   unsubs.push(db.collection('voox_config').doc('ciclos').onSnapshot(function(snap){ CICLOS={}; ((snap.exists&&snap.data().itens)||[]).forEach(function(x){ CICLOS[x.s]=x.d; }); renderRetorno(); }, function(){}));
   unsubs.push(db.collection('voox_ofertas').limit(5000).onSnapshot(function(snap){ OFER={}; snap.forEach(function(d){ OFER[d.id]=d.data(); }); reOfertaTudo(); }, function(err){ console.warn('ofertas:', err.code||err.message); }));
   unsubs.push(db.collection('voox_pacotes').limit(3000).onSnapshot(function(snap){ setPac(snap); renderPac(); if(viewAtual==='conf') renderConfirm(); if(FICHA.nome) renderFicha(); }, function(err){ var el=document.getElementById('page-pac'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler os pacotes ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
@@ -1138,9 +1151,10 @@ function linkWhats(c){
 function enviar(id, reenvio){
   var c=clientes[id]; if(!c) return;
   if(!c.cel){ toast('Cliente sem celular válido no Zelo.','err'); return; }
-  abrirWhats(c.cel, mensagem.replace(/\{nome\}/g, c.primeiro || (c.nome||'').split(' ')[0]));
-  gravarOferta(id, c.nome, {s:'REATIVAÇÃO (VOLTE A NOS VISITAR)', camp:'reativ', canal:'whats', res:'sem_resposta'});
-  atualizarCliente(id, { enviado:true, enviadoEm:new Date().toISOString(), enviadoPor:email||'demo' }, reenvio ? 'Reenvio registrado.' : (c.primeiro||c.nome)+' marcada como enviada.');
+  var cp=gerarCupom(id, c.nome, c.cel, 'reativ');
+  abrirWhats(c.cel, textoComCupom(mensagem.replace(/\{nome\}/g, c.primeiro || (c.nome||'').split(' ')[0]), cp));
+  gravarOferta(id, c.nome, {s:'REATIVAÇÃO (VOLTE A NOS VISITAR)', camp:'reativ', canal:'whats', res:'sem_resposta', obs:'código '+cp.cod});
+  atualizarCliente(id, { enviado:true, enviadoEm:new Date().toISOString(), enviadoPor:email||'demo', cupom:cp.cod }, reenvio ? 'Reenvio registrado.' : (c.primeiro||c.nome)+' marcada como enviada.');
 }
 function voltou(id){ atualizarCliente(id, { voltou:true, voltouEm:hojeISO(), voltouTipo:'manual' }, 'Marcada como "voltou".'); }
 function descartar(id){ atualizarCliente(id, { descartado:true, descartadoEm:new Date().toISOString() }, 'Cliente descartada.'); }
@@ -1185,6 +1199,7 @@ var TITULOS = {
   retorno:['Hora de voltar', 'Clientes chegando no ciclo de cada serviço — e para encher semana fraca'],
   pac:    ['Pacotes', 'Sessões compradas, quanto falta e quem renovar'],
   indic:  ['Indique uma amiga', 'Códigos de indicação, amigas que vieram e prêmios'],
+  cupom:  ['Códigos de desconto', 'Confira o código que a cliente recebeu e marque como usado'],
   falt:   ['Faltosas', 'Clientes que costumam faltar — peça sinal ou confirme antes'],
   minha:  ['Meu painel', 'Sua agenda, seus serviços e o que as clientes disseram'],
   pagar:  ['Contas a pagar', 'Vencimentos e saldo projetado das contas'],
@@ -1266,6 +1281,7 @@ function nav(v){
   if(v==='retorno') renderRetorno();
   if(v==='base') renderBase();
   if(v==='indic') renderIndic();
+  if(v==='cupom') renderCupom();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
@@ -3517,6 +3533,107 @@ function renderAreasServ(){
   box.innerHTML=h;
 }
 
+// ================================================================ CUPONS DE DESCONTO (código único por cliente, conferido na recepção)
+// voox_cupons/{CODIGO} -> {ci, nome, cel, camp:'reativ', desc, validade:'AAAA-MM-DD', criadoEm, por, usado, usadoEm, usadoPor, usadoNome, obs}
+// voox_config/cupom    -> {desc:'20%', dias:30}
+var CUP={}, CUPCFG={desc:'20%', dias:30}, CUPV={filtro:'ativos', q:'', achado:null, buscando:false};
+var CUP_LETRAS='ACDEFHJKMNPRTUVWXY3479';
+function novoCodigoCupom(){ var c; do{ c='VX'; for(var i=0;i<5;i++) c+=CUP_LETRAS[Math.floor(Math.random()*CUP_LETRAS.length)]; } while(CUP[c]); return c; }
+function cupomStatus(x){ if(!x) return 'nao'; if(x.cancelado) return 'cancelado'; if(x.usado) return 'usado'; if(x.validade && x.validade<hojeISO()) return 'vencido'; return 'ativo'; }
+var CUP_ST={ativo:['Válido','p-ok'], usado:['Já usado','p-mut'], vencido:['Vencido','p-bad'], cancelado:['Cancelado','p-mut'], nao:['Não existe','p-bad']};
+// cupom válido que a cliente já tem nesta campanha (reenvio usa o mesmo)
+function cupomDe(ci, camp){
+  ci=String(ci); var L=Object.keys(CUP).filter(function(k){ var x=CUP[k]; return x.ci===ci && (x.camp||'reativ')===(camp||'reativ') && cupomStatus(x)==='ativo'; });
+  L.sort(function(a,b){ return String(CUP[b].criadoEm).localeCompare(String(CUP[a].criadoEm)); });
+  return L[0]||'';
+}
+// cria (ou reaproveita) e devolve {cod, validade, desc}
+function gerarCupom(ci, nome, cel, camp){
+  var k=cupomDe(ci, camp); if(k) return {cod:k, validade:CUP[k].validade, desc:CUP[k].desc};
+  var cod=novoCodigoCupom(), d={ci:String(ci), nome:nome||'', cel:cel||'', camp:camp||'reativ', desc:CUPCFG.desc||'20%', validade:addDias(hojeISO(), +CUPCFG.dias||30), criadoEm:new Date().toISOString(), por:email||'demo', usado:false};
+  CUP[cod]=d;
+  if(!DEMO) db.collection('voox_cupons').doc(cod).set(d).catch(function(e){ delete CUP[cod]; toast('O código '+cod+' não foi salvo ('+(e.code||e.message)+'). Não envie de novo antes de conferir.','err'); });
+  return {cod:cod, validade:d.validade, desc:d.desc};
+}
+// coloca o código no texto: {codigo}, {validade}, {desconto}; se o texto não tiver {codigo}, acrescenta no fim
+function textoComCupom(txt, cp){
+  var temCod=txt.indexOf('{codigo}')>=0;
+  txt=txt.replace(/\{codigo\}/g, cp.cod).replace(/\{validade\}/g, dataBR(cp.validade)).replace(/\{desconto\}/g, cp.desc);
+  if(!temCod) txt+='\n\nSeu código: *'+cp.cod+'* (válido até '+dataBR(cp.validade)+'). É só informar na recepção na hora de pagar.';
+  return txt;
+}
+
+// ---- tela
+function renderCupom(){
+  if(viewAtual!=='cupom') return;
+  var el=document.getElementById('page-cupom'), gest=(nivel==='admin'||nivel==='gerente');
+  var ks=Object.keys(CUP), cont={ativo:0, usado:0, vencido:0}; ks.forEach(function(k){ var s=cupomStatus(CUP[k]); if(cont[s]!=null) cont[s]++; });
+  var h='<div class="card cup-conf"><div class="klabel" style="margin:0 0 8px">A cliente informou um código? Confira aqui</div>';
+  h+='<div class="cup-in"><input id="cup-cod" type="text" maxlength="10" placeholder="VX…" autocomplete="off" value="'+esc(CUPV.q)+'" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\');CUPV.q=this.value" onkeydown="if(event.key===\'Enter\')conferirCupom()"><button class="btn" onclick="conferirCupom()">Conferir</button></div>';
+  h+='<div id="cup-res">'+cupomResultado()+'</div></div>';
+  h+='<div class="grid kpis" style="margin-top:14px">';
+  [['ativos','Válidos',cont.ativo,'esperando a cliente vir'],['usados','Usados',cont.usado,'desconto já dado'],['vencidos','Vencidos',cont.vencido,'passou da validade'],['todos','Todos',ks.length,'últimos 6 meses']].forEach(function(x){
+    h+='<div class="card kclick'+(CUPV.filtro===x[0]?' on':'')+'" onclick="CUPV.filtro=\''+x[0]+'\';renderCupom()"><div class="klabel">'+x[1]+'</div><div class="kval">'+n0(x[2])+'</div><div class="khint">'+x[3]+'</div></div>';
+  });
+  h+='</div>';
+  if(gest) h+='<details class="card msgcard" style="margin-top:14px"><summary>Desconto e validade dos novos códigos</summary><div class="pac-f" style="margin-top:10px"><label>Desconto<input id="cup-desc" type="text" value="'+esc(CUPCFG.desc||'')+'" placeholder="20%"></label><label>Validade (dias)<input id="cup-dias" type="number" min="1" max="365" value="'+esc(String(CUPCFG.dias||30))+'"></label></div><div class="fbar" style="margin:8px 0 0"><span class="khint">Vale para os próximos códigos. Na mensagem da Reativação use <b>{codigo}</b>, <b>{validade}</b> e <b>{desconto}</b>.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarCupCfg()">Salvar</button></div></details>';
+  var map={ativos:'ativo', usados:'usado', vencidos:'vencido'};
+  var L=ks.filter(function(k){ return CUPV.filtro==='todos' || cupomStatus(CUP[k])===map[CUPV.filtro]; }).sort(function(a,b){ var x=CUP[a], y=CUP[b]; return String(y.usadoEm||y.criadoEm).localeCompare(String(x.usadoEm||x.criadoEm)); });
+  h+='<div class="sect">Códigos <small>'+n0(L.length)+'</small></div><div class="rlist">';
+  h+=L.length?L.slice(0,300).map(function(k){ var x=CUP[k], s=cupomStatus(x);
+    return '<div class="rrow" style="--c:'+(s==='ativo'?'var(--green)':s==='vencido'?'var(--red)':'var(--muted)')+'"><div><div class="nm"><span class="ind-cod">'+esc(k)+'</span> '+lkCli(x.ci,x.nome)+'</div><div class="info">'+esc(x.desc||'')+' · enviado '+dataBR(x.criadoEm)+' · válido até '+dataBR(x.validade)+(x.usado?' · usado '+dataBR(x.usadoEm)+(x.usadoNome?' ('+esc(x.usadoNome)+')':''):'')+(x.obs?' · <i>'+esc(x.obs)+'</i>':'')+'</div></div><div class="acts"><span class="pill '+CUP_ST[s][1]+'">'+CUP_ST[s][0]+'</span></div></div>';
+  }).join(''):'<div class="card empty">Nenhum código '+(CUPV.filtro==='todos'?'enviado ainda.':'com esse filtro.')+'</div>';
+  h+='</div><div class="nota">Cada cliente recebe um código só dela pela Reativação. Na hora de pagar, a recepção confere aqui: se aparecer <b>Válido</b>, dá o desconto no Zelo e aperta <b>Confirmar uso</b> — assim o código não vale de novo.</div>';
+  el.innerHTML=h;
+}
+function cupomResultado(){
+  var a=CUPV.achado; if(!a) return '';
+  if(a.carregando) return '<div class="khint" style="margin-top:10px">Procurando…</div>';
+  var x=a.d, s=cupomStatus(x);
+  if(s==='nao') return '<div class="cup-box bad"><b>'+esc(a.cod)+'</b> — esse código não existe. Confira se digitou certo.</div>';
+  var h='<div class="cup-box '+(s==='ativo'?'ok':'bad')+'"><div class="cup-top"><span class="pill '+CUP_ST[s][1]+'">'+CUP_ST[s][0]+'</span> <b>'+esc(a.cod)+'</b></div>';
+  h+='<div class="cup-nm">'+lkCli(x.ci,x.nome)+'</div>';
+  h+='<div class="cup-info">Desconto: <b>'+esc(x.desc||'')+'</b> · válido até <b>'+dataBRc(x.validade)+'</b> · enviado em '+dataBRc(String(x.criadoEm).slice(0,10))+'</div>';
+  if(s==='usado') h+='<div class="cup-info">Usado em '+dataBRc(String(x.usadoEm).slice(0,10))+(x.usadoNome?' por '+esc(x.usadoNome):'')+(x.obs?' · '+esc(x.obs):'')+'</div>';
+  if(s==='vencido') h+='<div class="cup-info">Venceu — o desconto não vale mais (a gestão decide se aceita).</div>';
+  if(s==='ativo') h+='<div class="cup-acts"><input id="cup-obs" type="text" maxlength="120" placeholder="Observação (opcional) — ex.: serviço feito"><button class="btn" onclick="usarCupom(\''+esc(a.cod)+'\')">Confirmar uso</button></div><div class="khint">Confira se é a própria cliente (o nome acima) antes de dar o desconto.</div>';
+  return h+'</div>';
+}
+function conferirCupom(){
+  var cod=String(CUPV.q||'').trim().toUpperCase(); if(cod.length<4){ toast('Digite o código.','err'); return; }
+  if(CUP[cod]){ CUPV.achado={cod:cod, d:CUP[cod]}; renderCupom(); return; }
+  if(DEMO){ CUPV.achado={cod:cod, d:null}; renderCupom(); return; }
+  CUPV.achado={cod:cod, carregando:true}; renderCupom();
+  db.collection('voox_cupons').doc(cod).get().then(function(s){ if(s.exists) CUP[cod]=s.data(); CUPV.achado={cod:cod, d:s.exists?s.data():null}; renderCupom(); })
+    .catch(function(e){ CUPV.achado=null; renderCupom(); toast('Não consegui conferir: '+(e.code||e.message),'err'); });
+}
+function usarCupom(cod){
+  var x=CUP[cod]; if(!x || cupomStatus(x)!=='ativo') return;
+  var u={usado:true, usadoEm:new Date().toISOString(), usadoPor:email||'demo', usadoNome:nome_logado(), obs:String((document.getElementById('cup-obs')||{}).value||'').trim().slice(0,120)};
+  var fim=function(){ Object.assign(x,u); CUPV.achado={cod:cod, d:x}; renderCupom(); toast('Desconto confirmado para '+(x.nome||'a cliente')+'.');
+    if(x.camp==='reativ' && clientes[x.ci] && !clientes[x.ci].voltou) atualizarCliente(x.ci, {voltou:true, voltouEm:hojeISO(), voltouTipo:'cupom'}); };
+  if(DEMO){ fim(); return; }
+  db.collection('voox_cupons').doc(cod).set(u, {merge:true}).then(fim).catch(falhou);
+}
+function salvarCupCfg(){
+  var d={desc:String(document.getElementById('cup-desc').value||'').trim()||'20%', dias:Math.max(1, Math.min(365, parseInt(document.getElementById('cup-dias').value,10)||30))};
+  if(DEMO){ CUPCFG=d; renderCupom(); toast('Salvo.'); return; }
+  db.collection('voox_config').doc('cupom').set(d, {merge:true}).then(function(){ toast('Salvo. Vale para os próximos códigos.'); }).catch(falhou);
+}
+function assinarCupons(){
+  if(DEMO) return;
+  unsubs.push(db.collection('voox_config').doc('cupom').onSnapshot(function(s){ if(s.exists) CUPCFG=Object.assign({desc:'20%', dias:30}, s.data()); renderCupom(); }, function(){}));
+  unsubs.push(db.collection('voox_cupons').where('criadoEm','>=', addDias(hojeISO(),-183)).limit(4000).onSnapshot(function(snap){
+    CUP={}; snap.forEach(function(d){ CUP[d.id]=d.data(); }); renderCupom(); if(viewAtual==='reativ') renderLista();
+  }, function(err){ var el=document.getElementById('page-cupom'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler os códigos ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
+}
+function dadosDemoCupom(){
+  var h=hojeISO();
+  CUP={'VXK7M3A':{ci:'d0', nome:'MARIANA COSTA', camp:'reativ', desc:'20%', validade:addDias(h,20), criadoEm:addDias(h,-10)+'T10:00', por:'demo', usado:false},
+       'VXR4TPW':{ci:'d13', nome:'ISABEL MACHADO', camp:'reativ', desc:'20%', validade:addDias(h,15), criadoEm:addDias(h,-15)+'T11:00', por:'demo', usado:true, usadoEm:addDias(h,-3)+'T16:20', usadoNome:'Recepção'},
+       'VXH9CEN':{ci:'d11', nome:'GABRIELA TEIXEIRA', camp:'reativ', desc:'20%', validade:addDias(h,-2), criadoEm:addDias(h,-32)+'T09:00', por:'demo', usado:false}};
+}
+
 // ================================================================ utilidades de período (Margem, Satisfação)
 var PRESETS_P = [['30','30 dias'],['mes','Este mês'],['mespass','Mês anterior'],['90','90 dias'],['ano','Este ano'],['12m','12 meses']];
 function carregarPerP(v, padrao){ var P={preset:padrao, de:'', ate:''}; try{ var x=JSON.parse(localStorage.getItem('voox_per_'+v)||'null'); if(x&&x.preset) P=x; }catch(e){} return P; }
@@ -4502,8 +4619,9 @@ function renderLista(){
   arr.slice(0, limite).forEach(function(c){
     var d=diasDesde(c.ult), tags='';
     if(c.prioridade===1) tags+='<span class="pill p-warn">Prioridade 1</span>';
+    if(c.cupom && (filtro==='aguardando'||filtro==='voltaram')){ var cx=CUP[c.cupom], cs=cupomStatus(cx); tags+='<span class="pill '+(cx?CUP_ST[cs][1]:'p-mut')+'">código '+esc(c.cupom)+(cx?' · '+CUP_ST[cs][0].toLowerCase():'')+'</span>'; }
     if(filtro==='aguardando'){ var de=diasDesde(c.enviadoEm); tags+='<span class="pill '+(de>=7?'p-bad':'p-blue')+'">Enviada há '+de+(de===1?' dia':' dias')+'</span>'; if(c.enviadoPor) tags+='<span class="pill p-mut">por '+esc((c.enviadoPor||'').split('@')[0])+'</span>'; }
-    if(filtro==='voltaram') tags+='<span class="pill p-ok">'+(c.voltouTipo==='agendou'?'Agendou':c.voltouTipo==='manual'?'Marcado à mão':'Voltou')+' em '+dataBR(c.voltouEm)+'</span>'+(c.enviado?'<span class="pill p-mut">após mensagem</span>':'')+(c.retornoAtend?'<span class="pill p-ok">'+brl(c.retornoValor||0)+' em '+c.retornoAtend+' atend.</span>':'');
+    if(filtro==='voltaram') tags+='<span class="pill p-ok">'+(c.voltouTipo==='agendou'?'Agendou':c.voltouTipo==='manual'?'Marcado à mão':c.voltouTipo==='cupom'?'Usou o código':'Voltou')+' em '+dataBR(c.voltouEm)+'</span>'+(c.enviado?'<span class="pill p-mut">após mensagem</span>':'')+(c.retornoAtend?'<span class="pill p-ok">'+brl(c.retornoValor||0)+' em '+c.retornoAtend+' atend.</span>':'');
     if(c.ciclos) tags+='<span class="pill p-mut">'+(c.ciclos+1)+'ª vez na lista</span>';
     h+='<div class="rrow" style="--c:'+COR_ESTADO[filtro]+'"><div><div class="nm">'+lkCli(c.id,c.nome)+'</div>';
     h+='<div class="info">'+esc((c.servico||'').toLowerCase())+' · última visita '+dataBR(c.ult)+' ('+fmtSumida(d)+') · '+n0(c.n)+' visitas em 24 meses · costumava vir a cada '+c.intervalo+' dias</div>';
@@ -4572,7 +4690,7 @@ var NIVEIS = [
 var CFG_ABAS = [
   {g:'Gestão', gestao:true, abas:[['painel','Painel'],['semana','Resumo da semana'],['prof','Profissionais'],['metas','Metas da equipe'],['agenda','Agenda'],['serv','Serviços feitos'],['sat','Satisfação'],['vendas','Mês a mês']]},
   {g:'Financeiro', gestao:true, fin:true, abas:[['fin','Dashboard'],['lanc','Lançamentos'],['pagar','Contas a pagar'],['com','Comissões'],['marg','Margem por serviço'],['conc','Conferência Zelo'],['cgs','Contas gerenciais']]},
-  {g:'Clientes', abas:[['cli','Clientes',1],['base','Base de clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['retorno','Hora de voltar'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga']]}
+  {g:'Clientes', abas:[['cli','Clientes',1],['base','Base de clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['retorno','Hora de voltar'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga'],['cupom','Códigos de desconto']]}
 ];
 var FIN_ABAS = {}; CFG_ABAS[1].abas.forEach(function(a){ FIN_ABAS[a[0]]=1; });
 function nivelNome(n){ var x=NIVEIS.filter(function(v){ return v[0]===n; })[0]; return x?x[1]:'—'; }
@@ -5927,7 +6045,7 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoPrev(); dadosDemoRet(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoCupom(); dadosDemoPrev(); dadosDemoRet(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
