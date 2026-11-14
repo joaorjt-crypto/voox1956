@@ -125,7 +125,8 @@ html[data-theme="light"] .side-foot{border-top-color:rgba(120,90,60,.15)}
 .urole{font-size:10.5px;color:var(--muted)}
 .side:not(.pin):not(:hover) .side-foot .btn{display:none}
 
-main{flex:1;min-width:0;padding:22px 26px 60px}
+main{flex:1;min-width:0;padding:22px 26px 60px;overflow-x:clip}
+html,body{overflow-x:clip}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
 h1{font-size:21px;font-weight:700;letter-spacing:-.4px}
 .h1sub{font-size:12px;color:var(--muted);margin-top:2px}
@@ -246,14 +247,17 @@ html[data-theme="light"] .heat .hc{background:color-mix(in srgb, var(--s1) calc(
 .up{color:var(--green);font-weight:600}.down{color:var(--red);font-weight:600}
 .sect{font-size:15px;font-weight:700;margin:24px 0 11px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .sect small{font-size:12px;font-weight:400;color:var(--muted)}
-.tw{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
-.tscroll{overflow:auto}
+.tw{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:clip;box-shadow:var(--shadow)}
+.tscroll{overflow:visible}
+.tscroll.rolax{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{text-align:left;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;padding:9px 11px;background:var(--card-2);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:2}
-html[data-theme="light"] th{background:rgba(255,255,255,.45)}
+html[data-theme="light"] th{background:#f7f1e9}
 html[data-theme="light"] td,html[data-theme="light"] th{border-bottom-color:rgba(120,90,60,.12)}
 th.r,td.r{text-align:right}
-td{padding:8px 11px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:8px 11px;border-bottom:1px solid var(--border);white-space:normal;overflow-wrap:anywhere}
+td.r,td .pill,td .btn{white-space:nowrap}
+td.r{overflow-wrap:normal}
 tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--card-2)}
 tr.cur td{font-weight:600}
@@ -324,21 +328,63 @@ html[data-theme="light"] .hbar .tr{background:rgba(120,90,60,.08)}
 .toast button{background:none;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:3px 8px;font-size:12px}
 .demo{background:rgba(232,179,63,.14);color:var(--amber);text-align:center;font-size:12px;padding:6px;border-radius:10px;margin-bottom:14px}
 
-/* celular: menu vira barra horizontal (igual Logística) */
+/* ===== Tamanhos de tela =====
+   celular (até 600): abas embaixo e cartões no lugar de tabelas · tablet/celular deitado (até 900): abas embaixo, sem menu lateral
+   notebook (até 1400): menu encolhido e filtros compactos · monitor comum: largura toda · tela muito larga (2400+): largura máxima, centralizada */
+@media(max-width:1400px){
+  .seg button,.seg select{padding:4px 7px;font-size:12px}
+  .fbar{gap:6px}
+}
+@media(max-width:1100px){
+  th{white-space:normal}
+  td,th{padding:7px 7px}
+}
+@media(max-width:900px){
+  table{font-size:12px}
+  td,th{padding:6px 5px}
+  td.r{white-space:normal}
+}
+@media(min-width:2400px){
+  main>*{max-width:2240px;margin-left:auto;margin-right:auto}
+}
 @media(max-width:900px){
   .shell{flex-direction:column}
-  .side,.side:hover,.side.pin{width:100%;height:auto;position:sticky;top:0;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:10px;gap:6px;align-items:center;box-shadow:none;transition:none;border-right:none;border-bottom:1px solid var(--border)}
+  .side,.side:hover,.side.pin{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;height:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:5px 6px calc(5px + env(safe-area-inset-bottom));gap:2px;align-items:stretch;box-shadow:0 -8px 24px rgba(0,0,0,.25);transition:none;border-right:none;border-top:1px solid var(--border);z-index:60;scrollbar-width:none}
+  html[data-theme="dark"] .side{background:#151517}
+  html[data-theme="light"] .side{background:rgba(247,241,233,.92)}
   .side .lbl{opacity:1}
   .pinbtn,.side-logo,.side-sec{display:none!important}
-  .side:not(.pin):not(:hover) .navbtn .lbl,.side:not(.pin):not(:hover) .navbtn .cnt{display:inline}
-  .side:not(.pin):not(:hover) .navbtn,.navbtn{white-space:nowrap;width:auto;padding:8px 12px;gap:8px;justify-content:flex-start}
-  .side-foot{margin:0 0 0 auto;padding:0;border:none;display:flex;align-items:center;gap:6px}
-  .side-foot .uline .lbl{display:none}
+  .side:not(.pin):not(:hover) .navbtn .lbl,.side:not(.pin):not(:hover) .navbtn .cnt{display:block}
+  .side:not(.pin):not(:hover) .navbtn,.navbtn{position:relative;flex-direction:column;justify-content:center;gap:2px;width:auto;min-width:74px;max-width:96px;min-height:50px;padding:5px 6px;font-size:10.5px;line-height:1.15;text-align:center;white-space:normal;border-radius:10px}
+  .navbtn .side-ico{font-size:17px;width:auto;flex:none}
+  .navbtn.on{box-shadow:none}
+  .navbtn .cnt{position:absolute;top:2px;right:6px;margin:0;font-size:9.5px;min-width:16px;height:16px;line-height:16px;padding:0 4px}
+  .side-foot{margin:0 0 0 6px;padding:0 0 0 8px;border:none;border-left:1px solid var(--border);display:flex;align-items:center;gap:6px}
+  .side-foot .uline{display:none}
+  .side:not(.pin):not(:hover) .side-foot .btn{display:inline-flex}
+  .side-foot .btn{white-space:nowrap}
   .shell>main,.side.pin ~ main{margin-left:0}
-  main{padding:16px 14px 50px}
+  main{padding:16px 14px calc(84px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(76px + env(safe-area-inset-bottom))}
   .rrow{grid-template-columns:1fr}
   .rrow .acts{justify-content:flex-start}
   .kval{font-size:21px}
+}
+/* celular: tabela vira cartões (cada linha um cartão, rótulo à esquerda e valor à direita) */
+@media(max-width:600px){
+  table.tcard thead{display:none}
+  table.tcard,table.tcard tbody{display:block;width:100%}
+  table.tcard tr{display:block;padding:10px 12px;border-bottom:1px solid var(--border)}
+  table.tcard tr:last-child{border-bottom:none}
+  table.tcard td{display:block;padding:3px 0;border:none;text-align:right;white-space:normal;overflow:hidden}
+  table.tcard td::before{content:attr(data-l);float:left;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;text-align:left;max-width:45%;margin-right:12px;line-height:1.8}
+  table.tcard td[data-l=""]::before,table.tcard td.t1::before{display:none}
+  table.tcard td.t1{text-align:left;font-weight:600;font-size:13.5px;padding-bottom:5px}
+  table.tcard td[data-l="#"]{display:none}
+  table.tcard tr.tfull td{display:block;text-align:left}
+  table.tcard tr.tfull td::before{display:none}
+  table.tcard td:empty{display:none}
+  table.tlarga td{white-space:nowrap}
 }
 
 /* financeiro */
@@ -367,7 +413,7 @@ html[data-theme="light"] table.dre td:first-child{background:rgba(250,246,240,.9
 
 /* lançamentos em planilha */
 .tscroll.alto{max-height:calc(100vh - 300px);min-height:260px}
-table.planilha{min-width:880px}
+@media(min-width:1000px){table.planilha{min-width:880px}}
 table.planilha td{padding:1px 3px;height:34px}
 table.planilha th.c-d{width:100px} table.planilha th.c-v{width:125px} table.planilha th.c-cg{width:230px} table.planilha th.c-sal{width:130px} table.planilha th.c-x{width:40px}
 .planilha input.cel{border:1px solid transparent;background:transparent;border-radius:6px;padding:5px 8px;height:30px;width:100%;font-size:12.5px;color:var(--text);box-shadow:none}
@@ -399,6 +445,10 @@ html[data-theme="light"] .tsv tr.sv-det>td{background:rgba(255,255,255,.35)}
 .sv-panel .klabel{white-space:nowrap}
 table.tdet{font-size:12px}
 table.tdet th{position:sticky;top:0;background:var(--card-2)}
+/* tabela dentro de tabela: o cabeçalho de dentro gruda logo abaixo do de fora */
+td table th,td table.tdet th{top:var(--th-h,33px);z-index:1}
+@media(max-width:1100px){:root{--th-h:29px}}
+@media(max-width:900px){:root{--th-h:27px}}
 html[data-theme="light"] table.tdet th{background:#f7f1e9}
 .sv-bar{height:8px;background:rgba(127,127,127,.12);border-radius:4px;overflow:hidden}
 .sv-bar i{display:block;height:100%;background:var(--s1);border-radius:4px}
@@ -480,7 +530,9 @@ html[data-theme="light"] .tconc tr.conc-sem td{background:rgba(176,125,76,.07)}
 .tpagar tr.pg-atr td{background:rgba(240,96,90,.08)} .tpagar tr.pg-atr td:first-child{color:var(--red);font-weight:600}
 .tpagar tr.pg-hoje td:first-child{color:var(--red);font-weight:600}
 .tpagar tr.pg-breve td:first-child{color:var(--amber);font-weight:600}
-.pg-pay{display:inline-flex;gap:6px;align-items:center}
+.pg-pay{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:100%}
+.pg-pay input{max-width:100%}
+@media(max-width:900px){.dup-t,.dup-t tbody,.dup-t tr{display:block} .dup-t tr{border-top:1px solid var(--border);padding:4px 0} .dup-t td{display:inline-block;border:none;white-space:normal;padding:2px 6px} .dup-t td:nth-child(2){min-width:0;display:block}}
 .pg-pay input,.pg-pay select{width:auto;height:30px;padding:4px 8px;font-size:12px}
 .vg-prof{margin-bottom:12px}
 .vg-top .nm{font-weight:700;font-size:14.5px}
@@ -1182,6 +1234,7 @@ function toggleTema(){ aplicarModo(modoAtual()==='escuro' ? 'claro' : 'escuro');
 function togglePin(e){
   if(e){ e.stopPropagation(); e.preventDefault(); }
   var on=document.getElementById('sidebar').classList.toggle('pin');
+  PIN_PREF=on;
   try{ localStorage.setItem('voox_painel_pin', on?'1':'0'); }catch(err){}
   if(viewAtual==='painel') setTimeout(renderPainel, 180);
 }
@@ -1258,7 +1311,7 @@ function nav(v){
   if(!podeVer(v)) v=primeiraAba();
   viewAtual=v;
   Array.prototype.forEach.call(document.querySelectorAll('.page'), function(p){ p.classList.toggle('on', p.id==='page-'+v); });
-  Array.prototype.forEach.call(document.querySelectorAll('.navbtn[data-p]'), function(b){ b.classList.toggle('on', b.getAttribute('data-p')===v); });
+  Array.prototype.forEach.call(document.querySelectorAll('.navbtn[data-p]'), function(b){ b.classList.toggle('on', b.getAttribute('data-p')===v); if(b.getAttribute('data-p')===v && window.innerWidth<=900 && b.scrollIntoView) try{ b.scrollIntoView({inline:'center', block:'nearest'}); }catch(e){} });
   document.getElementById('ptitle').textContent=TITULOS[v][0];
   document.getElementById('psub').textContent=TITULOS[v][1];
   if(history.replaceState) history.replaceState(null,'', '#'+v);
@@ -2228,8 +2281,8 @@ function resultadosOport(){
   lista.sort(function(a,b){ return b.r.d.localeCompare(a.r.d); });
   h+='<div class="sect">Quem fez <small>'+n0(lista.length)+'</small></div><div class="rlist">';
   if(!lista.length) h+='<div class="card empty">Ainda ninguém — o robô confere 3 vezes por dia se quem recebeu a mensagem fez o serviço oferecido.</div>';
-  lista.slice(0,80).forEach(function(x){ h+='<div class="rrow" style="--c:var(--green)"><div><div class="nm">'+lkCli('',x.nome)+'</div><div class="info">'+esc(nomeCamp(x.k))+' · mensagem em '+dataBR(x.env)+' · fez <b>'+esc((x.r.s||'').toLowerCase())+'</b> em '+dataBR(x.r.d)+' ('+(nDias(x.env,x.r.d)-1)+' dias depois)</div></div><div class="acts"><span class="pill p-ok">'+brl(x.r.v||0)+'</span></div></div>'; });
-  h+='</div><div class="nota">Conta como "fez" quando a cliente realiza um serviço do tipo oferecido (ou o serviço sugerido) até 90 dias depois da mensagem. O valor é o preço de tabela desses serviços. A conferência é feita pelo robô, que olha os atendimentos pagos dos últimos 120 dias.</div>';
+  lista.slice(0,limDe('opres',80)).forEach(function(x){ h+='<div class="rrow" style="--c:var(--green)"><div><div class="nm">'+lkCli('',x.nome)+'</div><div class="info">'+esc(nomeCamp(x.k))+' · mensagem em '+dataBR(x.env)+' · fez <b>'+esc((x.r.s||'').toLowerCase())+'</b> em '+dataBR(x.r.d)+' ('+(nDias(x.env,x.r.d)-1)+' dias depois)</div></div><div class="acts"><span class="pill p-ok">'+brl(x.r.v||0)+'</span></div></div>'; });
+  h+='</div>'+maisHTML('opres', lista.length, 80, 'renderOport()')+'<div class="nota">Conta como "fez" quando a cliente realiza um serviço do tipo oferecido (ou o serviço sugerido) até 90 dias depois da mensagem. O valor é o preço de tabela desses serviços. A conferência é feita pelo robô, que olha os atendimentos pagos dos últimos 120 dias.</div>';
   return h;
 }
 
@@ -3412,7 +3465,7 @@ function renderListaServ(){
 function detalheServ(x){
   var g=SERV.grupo;
   var h='<div class="sv-panel"><div class="fbar" style="margin:0 0 10px"><span class="klabel" style="margin:0">Agrupar por</span><div class="seg">'+SGRUPOS.map(function(o){ return '<button class="'+(g===o[0]?'on':'')+'" onclick="event.stopPropagation();setServGrupo(\''+o[0]+'\')">'+o[1]+'</button>'; }).join('')+'</div></div>';
-  h+='<div class="tscroll" style="max-height:420px"><table class="tdet"><thead><tr>';
+  h+='<div class="tscroll"><table class="tdet"><thead><tr>';
   if(!g){
     h+='<th>Data</th><th>Cliente</th><th>Profissional</th><th class="r">Valor (est.)</th><th class="r">Qtd</th></tr></thead><tbody>';
     var it=x.it.slice().sort(function(a,b){ return b.d.localeCompare(a.d) || a.c.localeCompare(b.c); });
@@ -3442,7 +3495,7 @@ function renderTabServ(){
   var porArea=SERV.ver==='area'; SERV.X.L.forEach(function(o){ var m=o.d.slice(0,7), kk=porArea?(SERV.areaDe[o.s]||'Outros'):o.s, x=por[kk]||(por[kk]={n:kk, t:0, m:{}}), v=med==='q'?o.q:o.v; x.m[m]=(x.m[m]||0)+v; x.t+=v; totM[m]=(totM[m]||0)+v; tot+=v; });
   var L=Object.keys(por).map(function(k){ return por[k]; }).filter(function(x){ return !q || x.n.toUpperCase().indexOf(q)>=0; }).sort(function(a,b){ return b.t-a.t; });
   function f(v){ return v ? (med==='q' ? n0(v) : mil(v)) : '<span class="p-sem">·</span>'; }
-  var h='<div class="tw" style="margin-top:12px"><div class="tscroll" style="max-height:calc(100vh - 220px)"><table class="tmes"><thead><tr><th class="fix">'+(porArea?'Área':'Serviço')+'</th>'+meses.map(function(m){ return '<th class="r">'+mesLabel(m)+'</th>'; }).join('')+'<th class="r">Total</th></tr></thead><tbody>';
+  var h='<div class="tw" style="margin-top:12px"><div class="tscroll"><table class="tmes"><thead><tr><th class="fix">'+(porArea?'Área':'Serviço')+'</th>'+meses.map(function(m){ return '<th class="r">'+mesLabel(m)+'</th>'; }).join('')+'<th class="r">Total</th></tr></thead><tbody>';
   h+='<tr class="tot"><td class="fix">'+(porArea?'Todas as áreas':'Todos os serviços')+'</td>'+meses.map(function(m){ return '<td class="r">'+f(totM[m]||0)+'</td>'; }).join('')+'<td class="r">'+f(tot)+'</td></tr>';
   if(!L.length) h+='<tr><td colspan="'+(meses.length+2)+'" class="empty">Sem serviços.</td></tr>';
   L.slice(0,SERV.lim).forEach(function(x){
@@ -3526,7 +3579,7 @@ function renderAreasServ(){
     h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-a="'+esc(x.a)+'" onclick="toggleAreaServ(this.dataset.a)"><td><b>'+esc(x.a)+'</b></td><td class="r" style="font-weight:700">'+n0(x.q)+'</td><td><div class="sv-bar"><i style="width:'+(x.q/mx*100).toFixed(1)+'%"></i></div></td><td class="r">'+(tq?pct(x.q/tq):'—')+'</td><td class="r">'+brl(x.v)+'</td><td class="r">'+n0(x.nc)+'</td><td class="r">'+n0(x.L.length)+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
     if(ab){
       var L=x.L.slice().sort(function(a,b){ return b.q-a.q; });
-      h+='<tr class="sv-det"><td colspan="8"><div class="sv-panel"><div class="tscroll" style="max-height:420px"><table class="tdet"><thead><tr><th>Serviço</th><th class="r">Qtd</th><th class="r">% da área</th><th class="r">Valor (est.)</th><th class="r">Clientes</th>'+(gest?'<th>Área</th>':'')+'</tr></thead><tbody>';
+      h+='<tr class="sv-det"><td colspan="8"><div class="sv-panel"><div class="tscroll"><table class="tdet"><thead><tr><th>Serviço</th><th class="r">Qtd</th><th class="r">% da área</th><th class="r">Valor (est.)</th><th class="r">Clientes</th>'+(gest?'<th>Área</th>':'')+'</tr></thead><tbody>';
       L.forEach(function(g){
         var man=!!AREA_MAN[chaveArea(g.n)];
         h+='<tr><td>'+esc(g.n.toLowerCase())+'</td><td class="r" style="font-weight:700">'+n0(g.q)+'</td><td class="r">'+(x.q?pct(g.q/x.q):'—')+'</td><td class="r">'+brl(g.v)+'</td><td class="r">'+n0(g.nc)+'</td>';
@@ -3589,10 +3642,10 @@ function renderCupom(){
   var map={ativos:'ativo', usados:'usado', vencidos:'vencido'};
   var L=ks.filter(function(k){ return (!CUPV.camp || (CUP[k].camp||'reativ')===CUPV.camp) && (CUPV.filtro==='todos' || cupomStatus(CUP[k])===map[CUPV.filtro]); }).sort(function(a,b){ var x=CUP[a], y=CUP[b]; return String(y.usadoEm||y.criadoEm).localeCompare(String(x.usadoEm||x.criadoEm)); });
   h+='<div class="sect" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Códigos <small>'+n0(L.length)+'</small><span style="flex:1"></span><div class="seg">'+[['','Todos'],['reativ','Reativação'],['aniv','Aniversário']].map(function(o){ return '<button class="'+(CUPV.camp===o[0]?'on':'')+'" onclick="CUPV.camp=\''+o[0]+'\';renderCupom()">'+o[1]+'</button>'; }).join('')+'</div></div><div class="rlist">';
-  h+=L.length?L.slice(0,300).map(function(k){ var x=CUP[k], s=cupomStatus(x);
+  h+=L.length?L.slice(0,limDe('cup',100)).map(function(k){ var x=CUP[k], s=cupomStatus(x);
     return '<div class="rrow" style="--c:'+(s==='ativo'?'var(--green)':s==='vencido'?'var(--red)':'var(--muted)')+'"><div><div class="nm"><span class="ind-cod">'+esc(k)+'</span> '+lkCli(x.ci,x.nome)+'</div><div class="info">'+esc(CUP_CAMP[x.camp||'reativ']||'')+' · '+esc(x.desc||'')+' · enviado '+dataBR(x.criadoEm)+' · válido até '+dataBR(x.validade)+(x.usado?' · usado '+dataBR(x.usadoEm)+(x.usadoNome?' ('+esc(x.usadoNome)+')':''):'')+(x.obs?' · <i>'+esc(x.obs)+'</i>':'')+'</div></div><div class="acts"><span class="pill '+CUP_ST[s][1]+'">'+CUP_ST[s][0]+'</span></div></div>';
   }).join(''):'<div class="card empty">Nenhum código '+(CUPV.filtro==='todos'?'enviado ainda.':'com esse filtro.')+'</div>';
-  h+='</div><div class="nota">Cada cliente recebe um código só dela pela Reativação ou pelo Aniversário. Na hora de pagar, a recepção confere aqui: se aparecer <b>Válido</b>, dá o desconto no Zelo e aperta <b>Confirmar uso</b> — assim o código não vale de novo.</div>';
+  h+='</div>'+maisHTML('cup', L.length, 100, 'renderCupom()')+'<div class="nota">Cada cliente recebe um código só dela pela Reativação ou pelo Aniversário. Na hora de pagar, a recepção confere aqui: se aparecer <b>Válido</b>, dá o desconto no Zelo e aperta <b>Confirmar uso</b> — assim o código não vale de novo.</div>';
   el.innerHTML=h;
 }
 function cupomResultado(){
@@ -3784,7 +3837,7 @@ function renderCom(){
     h+='<td class="r">'+brl2(x.comF)+'</td><td class="r" onclick="event.stopPropagation()"><input class="inp-mini" type="text" inputmode="decimal" value="'+((+aj[x.p]||0)?fmtNum(+aj[x.p]):'')+'" placeholder="0,00" data-p="'+esc(x.p)+'" onchange="salvarAjuste(this.dataset.p,this.value)" title="Negativo para vale/desconto (ex.: -200), positivo para acréscimo"'+(F.lanc?' disabled':'')+'></td>';
     h+='<td class="r" style="font-weight:700">'+brl2(x.comF+a)+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
     if(ab){
-      h+='<tr class="sv-det"><td colspan="9"><div class="sv-panel"><div class="tscroll" style="max-height:380px"><table class="tdet"><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">Regra</th><th class="r">Comissão</th></tr></thead><tbody>';
+      h+='<tr class="sv-det"><td colspan="9"><div class="sv-panel"><div class="tscroll"><table class="tdet"><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">Regra</th><th class="r">Comissão</th></tr></thead><tbody>';
       x.it.slice().sort(function(a,b){ return a.d.localeCompare(b.d); }).forEach(function(i){ h+='<tr><td>'+dataBRc(i.d)+'</td><td>'+lkCli('',i.c)+'</td><td>'+esc(i.s.toLowerCase())+(i.q>1?' ×'+i.q:'')+'</td><td class="r">'+brl2(i.v)+'</td><td class="r">'+(i.fonte?esc(i.regra):'<span class="down">sem %</span>')+'</td><td class="r">'+brl2(i.comF)+'</td></tr>'; });
       h+='</tbody></table></div></div></td></tr>';
     }
@@ -3902,7 +3955,7 @@ function renderMarg(){
   h+='<div class="card"><div class="klabel">Margem de contribuição</div><div class="kval" style="color:'+(T.marg>=0?'var(--green)':'var(--red)')+'">'+brl(T.marg)+'</div><div class="khint">'+(T.rec?pct(T.marg/T.rec):'—')+' da receita · antes do aluguel e despesas fixas</div></div></div>';
   function th(k,t,cls){ return '<th class="sortable '+(cls||'')+(o.k===k?' ord-on':'')+'" onclick="ordenarMarg(\''+k+'\')">'+t+(o.k===k?(o.d>0?' ▲':' ▼'):'')+'</th>'; }
   h+='<div class="fbar" style="margin-top:16px"><input id="mg-busca" type="search" placeholder="Buscar serviço" oninput="filtrarMarg(this.value)" style="flex:1;min-width:200px;height:34px"></div>';
-  h+='<div class="tw"><div class="tscroll" style="max-height:calc(100vh - 230px)"><table class="tmarg"><thead><tr>'+th('n','Serviço')+th('q','Qtd','r')+th('rec','Receita','r')+th('com','Comissão','r')+'<th class="r" style="width:110px">Produto por<br>atendimento</th>'+th('prod','Produto','r')+th('marg','Margem R$','r')+th('mp','Margem %','r')+th('ma','Margem por<br>atendimento','r')+'</tr></thead><tbody>';
+  h+='<div class="tw"><div class="tscroll"><table class="tmarg"><thead><tr>'+th('n','Serviço')+th('q','Qtd','r')+th('rec','Receita','r')+th('com','Comissão','r')+'<th class="r" style="width:110px">Produto por<br>atendimento</th>'+th('prod','Produto','r')+th('marg','Margem R$','r')+th('mp','Margem %','r')+th('ma','Margem por<br>atendimento','r')+'</tr></thead><tbody>';
   if(!L.length) h+='<tr><td colspan="9" class="empty">Sem serviços no período.</td></tr>';
   L.forEach(function(x){
     var cor = x.mp<0 ? 'var(--red)' : x.mp<0.25 ? 'var(--amber)' : 'var(--green)';
@@ -3965,7 +4018,7 @@ function renderConc(){
   h+='<div class="card"><div class="klabel">Receita lançada</div><div class="kval">'+brl(T.l)+'</div><div class="khint">entradas de contas gerenciais do tipo receita'+(out?' · outras entradas '+brl(out)+' (fora da conta)':'')+'</div></div>';
   h+='<div class="card"><div class="klabel">Diferença no mês</div><div class="kval" style="color:'+(Math.abs(T.dif)>Math.max(5,0.01*T.z)?(T.dif<0?'var(--red)':'var(--amber)'):'var(--green)')+'">'+rs(T.dif).replace(/,\d\d$/,'')+'</div><div class="khint">'+(T.z?pct(Math.abs(T.dif)/T.z)+' do faturamento':'—')+' · '+(T.dif<0?'faltou lançar':'lançado a mais')+'</div></div>';
   h+='<div class="card"><div class="klabel">Dias com diferença</div><div class="kval">'+n0(T.n)+'</div><div class="khint">diferença maior que 2% ou R$ 5</div></div></div>';
-  h+='<div class="tw" style="margin-top:12px"><div class="tscroll" style="max-height:calc(100vh - 260px)"><table class="tconc"><thead>'+cols+'</thead><tbody>'+corpo+'</tbody></table></div></div>';
+  h+='<div class="tw" style="margin-top:12px"><div class="tscroll"><table class="tconc"><thead>'+cols+'</thead><tbody>'+corpo+'</tbody></table></div></div>';
   h+='<div class="nota">Diferença = lançado − Zelo. <b>Negativa</b>: o Zelo registrou mais do que entrou no financeiro (Pix ou caixa não lançado, por exemplo). <b>Positiva</b>: entrou mais do que o Zelo registrou no dia. Diferenças de um dia que se compensam no dia seguinte costumam ser cartão ou Pix caindo em outra data — por isso olhe também a coluna acumulada e o total da semana. O Zelo conta serviços, produtos e pacotes vendidos. Clique em → para abrir os lançamentos daquele dia.</div>';
   el.innerHTML=h;
 }
@@ -4059,10 +4112,10 @@ function renderPagar(){
   var pagas=L.filter(function(x){ return x.pago; }).sort(function(a,b){ return (b.pagoEm||'').localeCompare(a.pagoEm||''); });
   h+='<div class="sect" style="cursor:pointer" onclick="PG.verPagas=!PG.verPagas;renderPagar()">'+(PG.verPagas?'▾':'▸')+' Pagas <small>'+n0(pagas.length)+' · viram lançamento de saída no financeiro</small></div>';
   if(PG.verPagas){
-    h+='<div class="tw"><div class="tscroll" style="max-height:420px"><table class="tpagar"><thead><tr><th>Pago em</th><th>Vencimento</th><th>Descrição</th><th>Conta</th><th class="r">Valor</th><th></th></tr></thead><tbody>';
+    h+='<div class="tw"><div class="tscroll"><table class="tpagar"><thead><tr><th>Pago em</th><th>Vencimento</th><th>Descrição</th><th>Conta</th><th class="r">Valor</th><th></th></tr></thead><tbody>';
     if(!pagas.length) h+='<tr><td colspan="6" class="empty">Nenhuma ainda.</td></tr>';
-    pagas.slice(0,200).forEach(function(x){ h+='<tr><td>'+dataBRc(x.pagoEm||x.venc)+'</td><td>'+dataBRc(x.venc)+'</td><td>'+esc(x.ds)+'</td><td>'+esc(contaPorId((x.lanc||{}).conta||x.conta).nome)+'</td><td class="r">'+brl2(x.v)+'</td><td class="r"><button class="btn btn-sm btn-ghost" onclick="desfazerPagto(\''+x.id+'\')">Desfazer</button></td></tr>'; });
-    h+='</tbody></table></div></div>';
+    pagas.slice(0,limDe('pagas',100)).forEach(function(x){ h+='<tr><td>'+dataBRc(x.pagoEm||x.venc)+'</td><td>'+dataBRc(x.venc)+'</td><td>'+esc(x.ds)+'</td><td>'+esc(contaPorId((x.lanc||{}).conta||x.conta).nome)+'</td><td class="r">'+brl2(x.v)+'</td><td class="r"><button class="btn btn-sm btn-ghost" onclick="desfazerPagto(\''+x.id+'\')">Desfazer</button></td></tr>'; });
+    h+='</tbody></table></div></div>'+maisHTML('pagas', pagas.length, 100, 'renderPagar()')+'';
   }
   h+='<div class="nota">Ao clicar em <b>Pagar</b>, a conta vira uma saída em Lançamentos (na conta e data escolhidas) e sai da lista. Contas "todo mês" geram a do mês seguinte quando são pagas. O saldo projetado parte do saldo atual das três contas, tira as contas a pagar cadastradas e, se marcado, soma a receita média diária dos últimos 3 meses — despesas que não estiverem cadastradas aqui não entram na projeção.</div>';
   el.innerHTML=h;
@@ -4197,14 +4250,14 @@ function renderSat(){
     var por={};
     resp.forEach(function(x){ (x[chave]||['—']).forEach(function(k){ (por[k]=por[k]||[]).push(x); }); });
     var L=Object.keys(por).map(function(k){ var a=por[k]; return {k:k, n:a.length, m:a.reduce(function(s,x){ return s+x.nota; },0)/a.length, nps:npsDe(a), det:a.filter(function(x){ return x.nota<=6; }).length}; }).sort(function(a,b){ return b.n-a.n; });
-    var t='<div><div class="sect">'+tit+'</div><div class="tw"><div class="tscroll" style="max-height:420px"><table><thead><tr><th>'+(chave==='p'?'Profissional':'Serviço')+'</th><th class="r">Respostas</th><th class="r">Média</th><th class="r">NPS</th><th class="r">0–6</th></tr></thead><tbody>';
+    var t='<div><div class="sect">'+tit+'</div><div class="tw"><div class="tscroll"><table><thead><tr><th>'+(chave==='p'?'Profissional':'Serviço')+'</th><th class="r">Respostas</th><th class="r">Média</th><th class="r">NPS</th><th class="r">0–6</th></tr></thead><tbody>';
     if(!L.length) t+='<tr><td colspan="5" class="empty">Sem respostas no período.</td></tr>';
     L.forEach(function(y){ t+='<tr><td>'+esc(chave==='p'?nomeProf(y.k):y.k.toLowerCase())+'</td><td class="r">'+n0(y.n)+'</td><td class="r" style="font-weight:700;color:'+corNota(y.m)+'">'+y.m.toFixed(1).replace('.',',')+'</td><td class="r">'+y.nps+'</td><td class="r'+(y.det?' down':'')+'">'+n0(y.det)+'</td></tr>'; });
     return t+'</tbody></table></div></div></div>';
   }
   h+='<div class="grid g2">'+tabela('Por profissional','p')+tabela('Por serviço','s')+'</div>';
   var com=resp.filter(function(x){ return x.comentario && x.nota>6; }).sort(function(a,b){ return b.data.localeCompare(a.data); });
-  h+='<div class="sect">Comentários <small>'+n0(com.length)+'</small></div><div class="rlist">'+(com.length?com.slice(0,60).map(function(x){ return itemNota(x); }).join(''):'<div class="card empty">Nenhum comentário no período.</div>')+'</div>';
+  h+='<div class="sect">Comentários <small>'+n0(com.length)+'</small></div><div class="rlist">'+(com.length?com.slice(0,limDe('com',60)).map(function(x){ return itemNota(x); }).join(''):'<div class="card empty">Nenhum comentário no período.</div>')+'</div>'+maisHTML('com', com.length, 60, 'renderSat()');
   h+='<div class="nota">A nota chega pelo link <b>{nota}</b> da mensagem de pós-atendimento: a cliente toca na nota de 0 a 10 e, se quiser, escreve um comentário. Cada link vale para um atendimento e só pode ser respondido uma vez.</div>';
   el.innerHTML=h;
 }
@@ -4369,10 +4422,10 @@ function renderMinha(){
       h+='<div class="ag-it vg-c"><span>'+esc(c.n)+' <span class="p-sem">· '+esc((c.s||'').toLowerCase())+' · há '+c.dias+' dias</span></span>'+(c.cel?'<a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="https://wa.me/55'+c.cel+'?text='+encodeURIComponent(txt)+'">WhatsApp</a>':'')+'</div>'; }); });
   h+='</div></div></div>';
   // notas
-  if(nts.length){ h+='<div class="sect">O que as clientes disseram <small>últimos 90 dias</small></div><div class="rlist">'+nts.filter(function(x){ return x.com; }).slice(0,15).map(function(x){ return '<div class="rrow" style="--c:'+corNota(x.nota)+'"><div><div class="nm"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+esc(x.n||'')+' <small class="p-sem">'+dataBRc(x.d)+'</small></div><div class="coment">“'+esc(x.com)+'”</div></div></div>'; }).join('')+'</div>'; }
+  if(nts.length){ h+='<div class="sect">O que as clientes disseram <small>últimos 90 dias</small></div><div class="rlist">'+nts.filter(function(x){ return x.com; }).slice(0,limDe('mnts',15)).map(function(x){ return '<div class="rrow" style="--c:'+corNota(x.nota)+'"><div><div class="nm"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+esc(x.n||'')+' <small class="p-sem">'+dataBRc(x.d)+'</small></div><div class="coment">“'+esc(x.com)+'”</div></div></div>'; }).join('')+'</div>'+maisHTML('mnts', nts.filter(function(x){ return x.com; }).length, 15, 'renderMinha()'); }
   // serviços
   var it=M.itens||[];
-  h+='<div class="sect">Seus serviços em '+mesLabel(PROF.mes)+' <small>'+n0(it.length)+'</small></div><div class="tw"><div class="tscroll" style="max-height:480px"><table><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">Regra</th><th class="r">Comissão (est.)</th></tr></thead><tbody>';
+  h+='<div class="sect">Seus serviços em '+mesLabel(PROF.mes)+' <small>'+n0(it.length)+'</small></div><div class="tw"><div class="tscroll"><table><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th class="r">Valor (est.)</th><th class="r">Regra</th><th class="r">Comissão (est.)</th></tr></thead><tbody>';
   if(!it.length) h+='<tr><td colspan="6" class="empty">Nenhum serviço no mês.</td></tr>';
   it.forEach(function(x){ h+='<tr><td>'+dataBRc(x.d)+'</td><td>'+esc(x.c)+'</td><td>'+esc((x.s||'').toLowerCase())+(x.q>1?' ×'+x.q:'')+'</td><td class="r">'+brl2(x.v)+'</td><td class="r">'+(x.r?esc(x.r):'<span class="p-sem">—</span>')+'</td><td class="r">'+(x.cm==null?'<span class="p-sem">—</span>':brl2(x.cm))+'</td></tr>'; });
   h+='</tbody></table></div></div><div class="nota">Valores estimados pelo preço de tabela de cada serviço. O valor oficial da sua comissão é o do fechamento feito pela gestão.</div>';
@@ -4392,7 +4445,7 @@ function renderAcessos(){
   L.forEach(function(p){
     var em=porProf[p]||[];
     h+='<tr><td><b>'+esc(nomeProf(p))+'</b> <small class="p-sem">'+esc(p)+'</small></td><td>'+(em.length?em.map(function(e){ return '<span class="ov" style="margin:2px">'+esc(e)+' <button class="ibtn" data-e="'+esc(e)+'" onclick="removerAcesso(this.dataset.e)">✕</button></span>'; }).join(''):'<span class="p-sem">—</span>')+'</td>';
-    h+='<td><span class="pg-pay"><input type="email" placeholder="nome@gmail.com" data-p="'+esc(p)+'" style="width:210px"><button class="btn btn-sm" onclick="addAcesso(this.previousElementSibling)">Liberar</button></span></td><td class="r"><button class="btn btn-sm btn-ghost" data-p="'+esc(p)+'" onclick="verComo(this.dataset.p)">Ver como ela</button></td></tr>';
+    h+='<td><span class="pg-pay"><input type="email" placeholder="nome@gmail.com" data-p="'+esc(p)+'" style="width:210px;max-width:46vw"><button class="btn btn-sm" onclick="addAcesso(this.previousElementSibling)">Liberar</button></span></td><td class="r"><button class="btn btn-sm btn-ghost" data-p="'+esc(p)+'" onclick="verComo(this.dataset.p)">Ver como ela</button></td></tr>';
   });
   if(!L.length) h+='<tr><td colspan="4" class="empty">A lista de profissionais aparece depois que o robô ler o cadastro do Zelo.</td></tr>';
   h+='</tbody></table></div></div>';
@@ -4474,7 +4527,7 @@ function renderFicha(){
   h+='<div class="fi-pref"><div><span class="klabel">Serviços que mais faz</span><div>'+top(S,4).map(function(s){ return '<span class="pill p-mut">'+esc(s.toLowerCase())+' · '+S[s]+'</span>'; }).join(' ')+'</div></div>';
   h+='<div><span class="klabel">Com quem</span><div>'+top(P,3).map(function(p){ return '<span class="pill p-mut">'+esc(nomeProf(p))+' · '+P[p]+'</span>'; }).join(' ')+'</div></div></div>';
   h+=fichaExtras(c);
-  if(nts.length) h+='<div class="sect" style="margin-top:14px">Notas de satisfação</div>'+nts.sort(function(a,b){ return b.data.localeCompare(a.data); }).slice(0,5).map(function(x){ return '<div class="fi-nota"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+dataBRc(x.data)+(x.comentario?' · <i>“'+esc(x.comentario)+'”</i>':'')+'</div>'; }).join('');
+  if(nts.length) h+='<div class="sect" style="margin-top:14px">Notas de satisfação</div>'+nts.sort(function(a,b){ return b.data.localeCompare(a.data); }).slice(0,limDe('fnts',5)).map(function(x){ return '<div class="fi-nota"><span class="nota-n" style="background:'+corNota(x.nota)+'">'+x.nota+'</span> '+dataBRc(x.data)+(x.comentario?' · <i>“'+esc(x.comentario)+'”</i>':'')+'</div>'; }).join('')+maisHTML('fnts', nts.length, 5, 'renderFicha()');
   h+='<div class="sect" style="margin-top:14px">Histórico de atendimentos <small>'+n0(q)+' visita(s)'+(falta?' · carregando detalhes…':'')+'</small></div><div class="fi-hist">';
   V.forEach(function(v){
     var L=det[v.d], w=['dom','seg','ter','qua','qui','sex','sáb'][s2d(v.d).getDay()];
@@ -5171,6 +5224,44 @@ function gravar(col, id, dados, merge){
   var ref=id?db.collection(col).doc(id):db.collection(col).doc();
   return ref.set(dados, {merge:merge!==false});
 }
+// ---- tabelas: rótulos para virar cartão no celular; tabela muito larga (13+ colunas) rola de lado dentro dela
+function prepararTabelas(raiz){
+  Array.prototype.forEach.call((raiz||document).querySelectorAll('table:not([data-tp])'), function(t){
+    var hr=t.tHead && t.tHead.rows.length ? t.tHead.rows[t.tHead.rows.length-1] : null; if(!hr) return;
+    var rot=[]; Array.prototype.forEach.call(hr.cells, function(c){ var tx=(c.textContent||'').replace(/[▲▼]/g,'').trim(); for(var k=0;k<(c.colSpan||1);k++) rot.push(tx); });
+    t.setAttribute('data-tp','1');
+    var sc=t.closest('.tscroll');
+    if(rot.length>12){ t.classList.add('tlarga'); return; }
+    t.classList.add('tcard');
+    var achouT1=false;
+    Array.prototype.forEach.call(t.tBodies, function(tb){ Array.prototype.forEach.call(tb.rows, function(tr){
+      if(tr.cells.length===1 && (tr.cells[0].colSpan||1)>1){ tr.classList.add('tfull'); return; }
+      var i=0, t1=false;
+      Array.prototype.forEach.call(tr.cells, function(td){ var l=rot[i]||''; td.setAttribute('data-l', l); if(!t1 && l && l!=='#'){ td.classList.add('t1'); t1=true; } i+=(td.colSpan||1); });
+    }); });
+  });
+}
+// só rola de lado a tabela que não cabe mesmo (a página nunca rola de lado)
+function checarLargura(){
+  Array.prototype.forEach.call(document.querySelectorAll('.tscroll'), function(sc){
+    var t=sc.querySelector('table'); if(!t || !sc.offsetParent) return;
+    sc.classList.remove('rolax');
+    if(t.offsetWidth > sc.clientWidth+2) sc.classList.add('rolax');
+  });
+}
+var _tpPend=false;
+function vigiarTabelas(){
+  if(!window.MutationObserver) return;
+  new MutationObserver(function(){ if(_tpPend) return; _tpPend=true; (window.requestAnimationFrame||setTimeout)(function(){ _tpPend=false; prepararTabelas(document); checarLargura(); }); })
+    .observe(document.body, {childList:true, subtree:true});
+  prepararTabelas(document);
+}
+// notebook (até 1400 px): menu sempre encolhido (abre ao passar o mouse); a preferência de fixar vale só em tela maior
+var PIN_PREF=true;
+function aplicarPin(){ var sd=document.getElementById('sidebar'); if(sd) sd.classList.toggle('pin', PIN_PREF && window.innerWidth>1400); }
+var LIM={};
+function limDe(k, d){ return LIM[k]||d; }
+function maisHTML(k, total, d, fn){ var l=limDe(k,d); return total>l ? '<div class="more"><button class="btn btn-sm btn-ghost" onclick="LIM[\''+k+'\']='+l+'+'+d+';'+fn+'">Mostrar mais ('+(total-l)+')</button></div>' : ''; }
 function falhou(e){ toast('Não salvou: '+(e.code||e.message),'err'); }
 function abrirGav(id, html){
   var g=document.getElementById(id);
@@ -5507,8 +5598,8 @@ function renderIndic(){
   var cand=candidatasIndica();
   if(cand.length){
     h+='<div class="sect" style="margin-top:18px">Quem convidar <small>nota 9 ou 10 nos últimos 6 meses e clientes fiéis que vieram nos últimos 60 dias — ainda sem convite</small></div><div class="rlist">';
-    cand.slice(0,30).forEach(function(c){ h+='<div class="rrow" style="--c:var(--primary)"><div><div class="nm">'+lkCli(c.i,c.n)+'</div><div class="info">'+(c.nota?'deu nota '+c.nota+' · ':'')+c.q+' visita(s) em 12 meses</div></div><div class="acts"><button class="btn btn-sm btn-wa" data-i="'+esc(c.i)+'" data-n="'+esc(c.n)+'" data-c="'+esc(c.c)+'" onclick="convidarIndica(this.dataset.i,this.dataset.n,this.dataset.c)">Enviar convite</button></div></div>'; });
-    h+='</div>'+(cand.length>30?'<div class="khint">+ '+(cand.length-30)+' — use o envio em sequência lá em cima.</div>':'');
+    cand.slice(0,limDe('icand',30)).forEach(function(c){ h+='<div class="rrow" style="--c:var(--primary)"><div><div class="nm">'+lkCli(c.i,c.n)+'</div><div class="info">'+(c.nota?'deu nota '+c.nota+' · ':'')+c.q+' visita(s) em 12 meses</div></div><div class="acts"><button class="btn btn-sm btn-wa" data-i="'+esc(c.i)+'" data-n="'+esc(c.n)+'" data-c="'+esc(c.c)+'" onclick="convidarIndica(this.dataset.i,this.dataset.n,this.dataset.c)">Enviar convite</button></div></div>'; });
+    h+='</div>'+maisHTML('icand', cand.length, 30, 'renderIndic()');
   }
   h+='<div class="sect" style="margin-top:18px">Gerar código para outra cliente</div><div class="card">'+buscaCliHTML('ig','pickConvite')+'</div>';
   h+='<div class="nota">Cada cliente tem um código só dela (ex.: ANA27). A amiga fala o código na recepção, que registra aqui. Quando a amiga é atendida, o robô marca <b>veio</b> e o prêmio fica pendente até alguém marcar <b>Prêmio dado</b>. Os prêmios não são lançados no Zelo — combine na recepção como aplicar.</div>';
@@ -5622,7 +5713,7 @@ function renderPesq(r){
   // comentários
   [['q9','O que mais gostaram'],['q10','O que podemos melhorar'],['q8','Sobre preços de bebidas e serviços']].forEach(function(t){
     var C=L.filter(function(x){ return String(x[t[0]]||'').trim().length>1; });
-    h+='<div class="sect">'+t[1]+' <small>'+n0(C.length)+'</small></div><div class="rlist">'+(C.length?C.slice(0,15).map(function(x){ return '<div class="rrow" style="--c:var(--border)"><div><div class="coment" style="margin:0">“'+esc(x[t[0]])+'”</div><div class="info">'+(x.cn?lkCli(x.ci,x.cn)+' · ':'')+dataBRc(x.data)+(x.p&&x.p.length?' · '+esc(x.p.map(nomeProf).join(', ')):'')+' · experiência '+x.q1+'/5</div></div><div></div></div>'; }).join(''):'<div class="card empty">Nada no período.</div>')+'</div>';
+    h+='<div class="sect">'+t[1]+' <small>'+n0(C.length)+'</small></div><div class="rlist">'+(C.length?C.slice(0,limDe('pq'+t[0],15)).map(function(x){ return '<div class="rrow" style="--c:var(--border)"><div><div class="coment" style="margin:0">“'+esc(x[t[0]])+'”</div><div class="info">'+(x.cn?lkCli(x.ci,x.cn)+' · ':'')+dataBRc(x.data)+(x.p&&x.p.length?' · '+esc(x.p.map(nomeProf).join(', ')):'')+' · experiência '+x.q1+'/5</div></div><div></div></div>'; }).join(''):'<div class="card empty">Nada no período.</div>')+'</div>'+maisHTML('pq'+t[0], C.length, 15, 'renderSat()');
   });
   h+='<div class="nota">A pesquisa roda no tablet da recepção (<b>voox1956.com.br/avaliacao</b>, com o login da recepção). As perguntas são as mesmas do formulário do Google. No final, toda cliente vê o QR code para avaliar a Voox no Google, qualquer que seja a nota — o Google não permite convidar só quem gostou.</div>';
   return h;
@@ -5755,7 +5846,7 @@ function renderBase(){
     h+='<div class="fbar"><input type="search" class="cf-busca" placeholder="Buscar nome ou celular" value="'+esc(BASE.busca)+'" oninput="BASE.busca=this.value;clearTimeout(BASE.t);BASE.t=setTimeout(renderBase,250)"><div class="seg seg-wrap">'
       +[['todas','Todas'],['ativas','Vieram em 24 meses'],['inativas','Sem visita em 24 meses'],['semcel','Sem celular'],['celinv','Celular inválido'],['nasc','Com nascimento'],['mkt','Aceitam marketing']].map(function(x){ return '<button class="'+(BASE.filtro===x[0]?'on':'')+'" onclick="setBaseFiltro(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div></div>';
     h+='<div class="khint" style="margin:0 0 8px">'+n0(F.length)+' cadastro(s) · o Excel baixa exatamente esta lista + a aba de duplicidades</div>';
-    h+='<div class="tw"><div class="tscroll" style="max-height:640px"><table><thead><tr><th>Nome</th><th>Celular</th><th>Fixo</th><th>E-mail</th><th>Nascimento</th><th class="r">Visitas 24m</th><th class="r">Última visita</th><th class="r">Código</th></tr></thead><tbody>'
+    h+='<div class="tw"><div class="tscroll"><table><thead><tr><th>Nome</th><th>Celular</th><th>Fixo</th><th>E-mail</th><th>Nascimento</th><th class="r">Visitas 24m</th><th class="r">Última visita</th><th class="r">Código</th></tr></thead><tbody>'
       +F.slice(0,BASE.lim).map(function(o){ return '<tr><td>'+lkCli(o.i,o.n)+(o.vip?' <span class="pill p-ok">VIP</span>':'')+'</td><td>'+(o.cel?fmtCel(o.cel)+(o.celOk?'':' <span class="pill p-bad">inválido</span>'):'')+'</td><td>'+esc(o.fx)+'</td><td>'+esc(o.em)+'</td><td>'+(o.nasc?dataBRc(o.nasc):'')+'</td><td class="r">'+(o.q||'')+'</td><td class="r">'+(o.u?dataBRc(o.u):'')+'</td><td class="r p-sem">'+esc(o.cod||o.i)+'</td></tr>'; }).join('')
       +'</tbody></table></div></div>';
     if(F.length>BASE.lim) h+='<button class="btn btn-ghost" style="margin-top:10px" onclick="BASE.lim+=500;renderBase()">Mostrar mais ('+n0(F.length-BASE.lim)+')</button>';
@@ -6054,7 +6145,7 @@ function ciclosHTML(){
   Object.keys(man).forEach(function(s){ if(!C.some(function(c){ return c.s===s; })) C.push({s:s, auto:0, n:0, lista:0}); });
   var h='<details class="card msgcard" style="margin-top:16px"><summary>Ciclo de cada serviço <small class="p-sem">de quantos em quantos dias a cliente costuma voltar</small></summary>';
   h+='<div class="khint" style="margin:6px 0 10px">O automático vem do histórico (mediana entre repetições). Preencha para trocar; <b>0</b> = não chamar para esse serviço. Vale a partir da próxima rodada do robô.</div>';
-  h+='<div class="tw"><div class="tscroll" style="max-height:420px"><table><thead><tr><th>Serviço</th><th class="r">Automático</th><th class="r">Amostras</th><th class="r">Na lista</th><th class="r" style="width:120px">Usar (dias)</th></tr></thead><tbody>';
+  h+='<div class="tw"><div class="tscroll"><table><thead><tr><th>Serviço</th><th class="r">Automático</th><th class="r">Amostras</th><th class="r">Na lista</th><th class="r" style="width:120px">Usar (dias)</th></tr></thead><tbody>';
   C.forEach(function(c){ h+='<tr><td>'+esc(c.s.toLowerCase())+'</td><td class="r">'+(c.auto?c.auto+' dias':'—')+'</td><td class="r">'+n0(c.n)+'</td><td class="r">'+n0(c.lista)+'</td><td class="r"><input class="inp-mini cic-in" type="number" min="0" max="365" data-s="'+esc(c.s)+'" value="'+(man[c.s]!=null?man[c.s]:'')+'" placeholder="'+(c.auto||'—')+'"></td></tr>'; });
   h+='</tbody></table></div></div><div class="msgrow"><span>Adicionar outro serviço:</span><input type="text" id="cic-novo" placeholder="nome do serviço" style="max-width:220px"><input type="number" id="cic-novo-d" placeholder="dias" style="max-width:90px"><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarCiclos()">Salvar ciclos</button></div></details>';
   return h;
@@ -6075,7 +6166,7 @@ function dadosDemoRet(){
 }
 
 // ---------------------------------------------------------------- start
-(function(){ var on=true; try{ on=(localStorage.getItem('voox_painel_pin')!=='0'); }catch(e){} if(on) document.getElementById('sidebar').classList.add('pin'); })();
+(function(){ var on=true; try{ on=(localStorage.getItem('voox_painel_pin')!=='0'); }catch(e){} PIN_PREF=on; aplicarPin(); window.addEventListener('resize', function(){ clearTimeout(window._pinT); window._pinT=setTimeout(function(){ aplicarPin(); checarLargura(); },120); }); vigiarTabelas(); })();
 aplicarModo(modoAtual());
 
 if(DEMO){
