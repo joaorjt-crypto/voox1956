@@ -190,6 +190,11 @@ html[data-theme] .seg select.on{background:var(--primary-strong);color:#fff;font
 .cup-info{font-size:13px;color:var(--muted);margin-top:2px}
 .cup-acts{display:flex;gap:8px;margin:12px 0 6px;flex-wrap:wrap}
 .cup-acts input{flex:1;min-width:180px}
+.of-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.of-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--primary-strong);color:#fff;font-size:12.5px;font-weight:600}
+.of-chip button{background:none;border:none;color:#fff;font-size:15px;line-height:1;cursor:pointer;padding:0 4px;opacity:.8}
+.of-add{display:flex;gap:6px}
+.of-add input{flex:1}
 .sel-area{height:28px;font-size:12px;padding:2px 6px;width:auto;min-width:150px}
 html[data-theme="dark"] .seg select option{background:#1c1c1f}
 .seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
@@ -1827,7 +1832,7 @@ function renderAniv(){
   var hojeDM=hojeISO().slice(8,10)+'/'+hojeISO().slice(5,7);
   var h='';
   if(podePainel()){
-    h+='<details class="card msgcard"><summary>Mensagem de aniversário</summary><textarea id="msg-aniv">'+esc(mensagemAniv||MSG_ANIV_PADRAO)+'</textarea><div class="msgrow"><span>Use <b>{nome}</b> para o primeiro nome.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarMsgAniv()">Salvar mensagem</button></div></details>';
+    h+='<details class="card msgcard"><summary>Mensagem de aniversário</summary><textarea id="msg-aniv">'+esc(mensagemAniv||MSG_ANIV_PADRAO)+'</textarea><div class="msgrow"><span>Use <b>{nome}</b> para o primeiro nome, <b>{codigo}</b> para o código único dela, <b>{validade}</b> e <b>{desconto}</b> (desconto e validade em Códigos de desconto). Sem {codigo}, o código vai no fim.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarMsgAniv()">Salvar mensagem</button></div></details>';
   }
   h+=barraSeq('aniv')+botaoSeq('aniv');
   h+='<div class="sect">Aniversariantes da semana <small>'+lista.length+' cliente(s) com aniversário cadastrado no Zelo</small></div>';
@@ -1836,17 +1841,19 @@ function renderAniv(){
   lista.forEach(function(a){
     var env=a.enviadoAno===ano, hj=a.dia===hojeDM;
     h+='<div class="rrow" style="--c:'+(env?'var(--green)':hj?'var(--primary)':'var(--amber)')+'"><div><div class="nm">'+lkCli(a.id,a.nome)+'</div><div class="info">Aniversário '+esc(a.dia||'—')+(hj?' · <b>hoje</b>':'')+(a.cel?'':' · sem celular válido no Zelo')+'</div>';
-    if(env) h+='<div class="tags"><span class="pill p-ok">Mensagem enviada</span>'+(a.enviadoPor?'<span class="pill p-mut">por '+esc(a.enviadoPor.split('@')[0])+'</span>':'')+'</div>';
-    h+='</div><div class="acts">'+(a.cel?'<button class="btn btn-sm '+(env?'btn-ghost':'btn-wa')+'" onclick="enviarAniv(\''+a.id+'\')">'+(env?'Reenviar':'WhatsApp')+'</button>':'')+'</div></div>';
+    if(env){ var cx=a.cupom&&CUP[a.cupom], cs=cupomStatus(cx); h+='<div class="tags"><span class="pill p-ok">Mensagem enviada</span>'+(a.enviadoPor?'<span class="pill p-mut">por '+esc(a.enviadoPor.split('@')[0])+'</span>':'')+(a.cupom?'<span class="pill '+(cx?CUP_ST[cs][1]:'p-mut')+'">código '+esc(a.cupom)+(cx?' · '+CUP_ST[cs][0].toLowerCase():'')+'</span>':'')+'</div>'; }
+    h+=anotFix(a.id)+'</div><div class="acts">'+btnOferta(a.id,a.nome)+btnAnot(a.id,a.nome)+(a.cel?'<button class="btn btn-sm '+(env?'btn-ghost':'btn-wa')+'" onclick="enviarAniv(\''+a.id+'\')">'+(env?'Reenviar':'WhatsApp')+'</button>':'')+'</div></div>';
   });
   h+='</div>';
   document.getElementById('page-aniv').innerHTML=h;
 }
 function enviarAniv(id){
   var a=aniversarios[id]; if(!a||!a.cel) return;
-  var txt=(mensagemAniv||MSG_ANIV_PADRAO).replace(/\{nome\}/g, a.primeiro||(a.nome||'').split(' ')[0]);
+  var cp=gerarCupom(id, a.nome, a.cel, 'aniv');
+  var txt=textoComCupom((mensagemAniv||MSG_ANIV_PADRAO).replace(/\{nome\}/g, a.primeiro||(a.nome||'').split(' ')[0]), cp);
   abrirWhats(a.cel, txt);
-  var campos={enviadoAno:hojeISO().slice(0,4), enviadoEm:new Date().toISOString(), enviadoPor:email||'demo'};
+  gravarOferta(id, a.nome, {s:'ANIVERSÁRIO (DESCONTO '+cp.desc+')', camp:'aniv', canal:'whats', res:'sem_resposta', obs:'código '+cp.cod});
+  var campos={enviadoAno:hojeISO().slice(0,4), enviadoEm:new Date().toISOString(), enviadoPor:email||'demo', cupom:cp.cod};
   if(DEMO){ Object.assign(aniversarios[id], campos); renderAniv(); return; }
   db.collection('voox_aniversarios').doc(id).update(campos).catch(function(e){ toast('Não marcou como enviada: '+(e.code||e.message),'err'); });
 }
@@ -3536,10 +3543,12 @@ function renderAreasServ(){
 // ================================================================ CUPONS DE DESCONTO (código único por cliente, conferido na recepção)
 // voox_cupons/{CODIGO} -> {ci, nome, cel, camp:'reativ', desc, validade:'AAAA-MM-DD', criadoEm, por, usado, usadoEm, usadoPor, usadoNome, obs}
 // voox_config/cupom    -> {desc:'20%', dias:30}
-var CUP={}, CUPCFG={desc:'20%', dias:30}, CUPV={filtro:'ativos', q:'', achado:null, buscando:false};
+var CUP={}, CUPCFG={desc:'20%', dias:30, anivDesc:'15%', anivDias:30}, CUPV={filtro:'ativos', camp:'', q:'', achado:null, buscando:false};
 var CUP_LETRAS='ACDEFHJKMNPRTUVWXY3479';
 function novoCodigoCupom(){ var c; do{ c='VX'; for(var i=0;i<5;i++) c+=CUP_LETRAS[Math.floor(Math.random()*CUP_LETRAS.length)]; } while(CUP[c]); return c; }
 function cupomStatus(x){ if(!x) return 'nao'; if(x.cancelado) return 'cancelado'; if(x.usado) return 'usado'; if(x.validade && x.validade<hojeISO()) return 'vencido'; return 'ativo'; }
+var CUP_CAMP={reativ:'Reativação', aniv:'Aniversário'};
+function cupCfgDe(camp){ return camp==='aniv' ? {desc:CUPCFG.anivDesc||'15%', dias:+CUPCFG.anivDias||30} : {desc:CUPCFG.desc||'20%', dias:+CUPCFG.dias||30}; }
 var CUP_ST={ativo:['Válido','p-ok'], usado:['Já usado','p-mut'], vencido:['Vencido','p-bad'], cancelado:['Cancelado','p-mut'], nao:['Não existe','p-bad']};
 // cupom válido que a cliente já tem nesta campanha (reenvio usa o mesmo)
 function cupomDe(ci, camp){
@@ -3550,7 +3559,7 @@ function cupomDe(ci, camp){
 // cria (ou reaproveita) e devolve {cod, validade, desc}
 function gerarCupom(ci, nome, cel, camp){
   var k=cupomDe(ci, camp); if(k) return {cod:k, validade:CUP[k].validade, desc:CUP[k].desc};
-  var cod=novoCodigoCupom(), d={ci:String(ci), nome:nome||'', cel:cel||'', camp:camp||'reativ', desc:CUPCFG.desc||'20%', validade:addDias(hojeISO(), +CUPCFG.dias||30), criadoEm:new Date().toISOString(), por:email||'demo', usado:false};
+  var cf=cupCfgDe(camp), cod=novoCodigoCupom(), d={ci:String(ci), nome:nome||'', cel:cel||'', camp:camp||'reativ', desc:cf.desc, validade:addDias(hojeISO(), cf.dias), criadoEm:new Date().toISOString(), por:email||'demo', usado:false};
   CUP[cod]=d;
   if(!DEMO) db.collection('voox_cupons').doc(cod).set(d).catch(function(e){ delete CUP[cod]; toast('O código '+cod+' não foi salvo ('+(e.code||e.message)+'). Não envie de novo antes de conferir.','err'); });
   return {cod:cod, validade:d.validade, desc:d.desc};
@@ -3576,14 +3585,14 @@ function renderCupom(){
     h+='<div class="card kclick'+(CUPV.filtro===x[0]?' on':'')+'" onclick="CUPV.filtro=\''+x[0]+'\';renderCupom()"><div class="klabel">'+x[1]+'</div><div class="kval">'+n0(x[2])+'</div><div class="khint">'+x[3]+'</div></div>';
   });
   h+='</div>';
-  if(gest) h+='<details class="card msgcard" style="margin-top:14px"><summary>Desconto e validade dos novos códigos</summary><div class="pac-f" style="margin-top:10px"><label>Desconto<input id="cup-desc" type="text" value="'+esc(CUPCFG.desc||'')+'" placeholder="20%"></label><label>Validade (dias)<input id="cup-dias" type="number" min="1" max="365" value="'+esc(String(CUPCFG.dias||30))+'"></label></div><div class="fbar" style="margin:8px 0 0"><span class="khint">Vale para os próximos códigos. Na mensagem da Reativação use <b>{codigo}</b>, <b>{validade}</b> e <b>{desconto}</b>.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarCupCfg()">Salvar</button></div></details>';
+  if(gest) h+='<details class="card msgcard" style="margin-top:14px"><summary>Desconto e validade dos novos códigos</summary><div class="klabel" style="margin:12px 0 0">Reativação</div><div class="pac-f" style="margin-top:6px"><label>Desconto<input id="cup-desc" type="text" value="'+esc(CUPCFG.desc||'')+'" placeholder="20%"></label><label>Validade (dias)<input id="cup-dias" type="number" min="1" max="365" value="'+esc(String(CUPCFG.dias||30))+'"></label></div><div class="klabel" style="margin:12px 0 0">Aniversário</div><div class="pac-f" style="margin-top:6px"><label>Desconto<input id="cup-adesc" type="text" value="'+esc(CUPCFG.anivDesc||'')+'" placeholder="15% ou R$ 30"></label><label>Validade (dias)<input id="cup-adias" type="number" min="1" max="365" value="'+esc(String(CUPCFG.anivDias||30))+'"></label></div><div class="fbar" style="margin:8px 0 0"><span class="khint">Vale para os próximos códigos. Nas mensagens da Reativação e do Aniversário use <b>{codigo}</b>, <b>{validade}</b> e <b>{desconto}</b>.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarCupCfg()">Salvar</button></div></details>';
   var map={ativos:'ativo', usados:'usado', vencidos:'vencido'};
-  var L=ks.filter(function(k){ return CUPV.filtro==='todos' || cupomStatus(CUP[k])===map[CUPV.filtro]; }).sort(function(a,b){ var x=CUP[a], y=CUP[b]; return String(y.usadoEm||y.criadoEm).localeCompare(String(x.usadoEm||x.criadoEm)); });
-  h+='<div class="sect">Códigos <small>'+n0(L.length)+'</small></div><div class="rlist">';
+  var L=ks.filter(function(k){ return (!CUPV.camp || (CUP[k].camp||'reativ')===CUPV.camp) && (CUPV.filtro==='todos' || cupomStatus(CUP[k])===map[CUPV.filtro]); }).sort(function(a,b){ var x=CUP[a], y=CUP[b]; return String(y.usadoEm||y.criadoEm).localeCompare(String(x.usadoEm||x.criadoEm)); });
+  h+='<div class="sect" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Códigos <small>'+n0(L.length)+'</small><span style="flex:1"></span><div class="seg">'+[['','Todos'],['reativ','Reativação'],['aniv','Aniversário']].map(function(o){ return '<button class="'+(CUPV.camp===o[0]?'on':'')+'" onclick="CUPV.camp=\''+o[0]+'\';renderCupom()">'+o[1]+'</button>'; }).join('')+'</div></div><div class="rlist">';
   h+=L.length?L.slice(0,300).map(function(k){ var x=CUP[k], s=cupomStatus(x);
-    return '<div class="rrow" style="--c:'+(s==='ativo'?'var(--green)':s==='vencido'?'var(--red)':'var(--muted)')+'"><div><div class="nm"><span class="ind-cod">'+esc(k)+'</span> '+lkCli(x.ci,x.nome)+'</div><div class="info">'+esc(x.desc||'')+' · enviado '+dataBR(x.criadoEm)+' · válido até '+dataBR(x.validade)+(x.usado?' · usado '+dataBR(x.usadoEm)+(x.usadoNome?' ('+esc(x.usadoNome)+')':''):'')+(x.obs?' · <i>'+esc(x.obs)+'</i>':'')+'</div></div><div class="acts"><span class="pill '+CUP_ST[s][1]+'">'+CUP_ST[s][0]+'</span></div></div>';
+    return '<div class="rrow" style="--c:'+(s==='ativo'?'var(--green)':s==='vencido'?'var(--red)':'var(--muted)')+'"><div><div class="nm"><span class="ind-cod">'+esc(k)+'</span> '+lkCli(x.ci,x.nome)+'</div><div class="info">'+esc(CUP_CAMP[x.camp||'reativ']||'')+' · '+esc(x.desc||'')+' · enviado '+dataBR(x.criadoEm)+' · válido até '+dataBR(x.validade)+(x.usado?' · usado '+dataBR(x.usadoEm)+(x.usadoNome?' ('+esc(x.usadoNome)+')':''):'')+(x.obs?' · <i>'+esc(x.obs)+'</i>':'')+'</div></div><div class="acts"><span class="pill '+CUP_ST[s][1]+'">'+CUP_ST[s][0]+'</span></div></div>';
   }).join(''):'<div class="card empty">Nenhum código '+(CUPV.filtro==='todos'?'enviado ainda.':'com esse filtro.')+'</div>';
-  h+='</div><div class="nota">Cada cliente recebe um código só dela pela Reativação. Na hora de pagar, a recepção confere aqui: se aparecer <b>Válido</b>, dá o desconto no Zelo e aperta <b>Confirmar uso</b> — assim o código não vale de novo.</div>';
+  h+='</div><div class="nota">Cada cliente recebe um código só dela pela Reativação ou pelo Aniversário. Na hora de pagar, a recepção confere aqui: se aparecer <b>Válido</b>, dá o desconto no Zelo e aperta <b>Confirmar uso</b> — assim o código não vale de novo.</div>';
   el.innerHTML=h;
 }
 function cupomResultado(){
@@ -3593,7 +3602,7 @@ function cupomResultado(){
   if(s==='nao') return '<div class="cup-box bad"><b>'+esc(a.cod)+'</b> — esse código não existe. Confira se digitou certo.</div>';
   var h='<div class="cup-box '+(s==='ativo'?'ok':'bad')+'"><div class="cup-top"><span class="pill '+CUP_ST[s][1]+'">'+CUP_ST[s][0]+'</span> <b>'+esc(a.cod)+'</b></div>';
   h+='<div class="cup-nm">'+lkCli(x.ci,x.nome)+'</div>';
-  h+='<div class="cup-info">Desconto: <b>'+esc(x.desc||'')+'</b> · válido até <b>'+dataBRc(x.validade)+'</b> · enviado em '+dataBRc(String(x.criadoEm).slice(0,10))+'</div>';
+  h+='<div class="cup-info">'+esc(CUP_CAMP[x.camp||'reativ']||'')+' · desconto: <b>'+esc(x.desc||'')+'</b> · válido até <b>'+dataBRc(x.validade)+'</b> · enviado em '+dataBRc(String(x.criadoEm).slice(0,10))+'</div>';
   if(s==='usado') h+='<div class="cup-info">Usado em '+dataBRc(String(x.usadoEm).slice(0,10))+(x.usadoNome?' por '+esc(x.usadoNome):'')+(x.obs?' · '+esc(x.obs):'')+'</div>';
   if(s==='vencido') h+='<div class="cup-info">Venceu — o desconto não vale mais (a gestão decide se aceita).</div>';
   if(s==='ativo') h+='<div class="cup-acts"><input id="cup-obs" type="text" maxlength="120" placeholder="Observação (opcional) — ex.: serviço feito"><button class="btn" onclick="usarCupom(\''+esc(a.cod)+'\')">Confirmar uso</button></div><div class="khint">Confira se é a própria cliente (o nome acima) antes de dar o desconto.</div>';
@@ -3616,15 +3625,16 @@ function usarCupom(cod){
   db.collection('voox_cupons').doc(cod).set(u, {merge:true}).then(fim).catch(falhou);
 }
 function salvarCupCfg(){
-  var d={desc:String(document.getElementById('cup-desc').value||'').trim()||'20%', dias:Math.max(1, Math.min(365, parseInt(document.getElementById('cup-dias').value,10)||30))};
+  function dd(id){ return Math.max(1, Math.min(365, parseInt(document.getElementById(id).value,10)||30)); }
+  var d={desc:String(document.getElementById('cup-desc').value||'').trim()||'20%', dias:dd('cup-dias'), anivDesc:String(document.getElementById('cup-adesc').value||'').trim()||'15%', anivDias:dd('cup-adias')};
   if(DEMO){ CUPCFG=d; renderCupom(); toast('Salvo.'); return; }
   db.collection('voox_config').doc('cupom').set(d, {merge:true}).then(function(){ toast('Salvo. Vale para os próximos códigos.'); }).catch(falhou);
 }
 function assinarCupons(){
   if(DEMO) return;
-  unsubs.push(db.collection('voox_config').doc('cupom').onSnapshot(function(s){ if(s.exists) CUPCFG=Object.assign({desc:'20%', dias:30}, s.data()); renderCupom(); }, function(){}));
+  unsubs.push(db.collection('voox_config').doc('cupom').onSnapshot(function(s){ if(s.exists) CUPCFG=Object.assign({desc:'20%', dias:30, anivDesc:'15%', anivDias:30}, s.data()); renderCupom(); }, function(){}));
   unsubs.push(db.collection('voox_cupons').where('criadoEm','>=', addDias(hojeISO(),-183)).limit(4000).onSnapshot(function(snap){
-    CUP={}; snap.forEach(function(d){ CUP[d.id]=d.data(); }); renderCupom(); if(viewAtual==='reativ') renderLista();
+    CUP={}; snap.forEach(function(d){ CUP[d.id]=d.data(); }); renderCupom(); if(viewAtual==='reativ') renderLista(); if(viewAtual==='aniv') renderAniv();
   }, function(err){ var el=document.getElementById('page-cupom'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler os códigos ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
 }
 function dadosDemoCupom(){
@@ -5825,13 +5835,14 @@ function ofertaBloco(cid, nome, compacto){
   }
   var S=servicosConhecidos();
   h+='<div class="of-nova"><div class="klabel" style="margin:10px 0 6px">Registrar oferta</div>';
-  h+='<input type="text" id="of-s" list="of-dl" placeholder="Serviço oferecido (ex.: limpeza de pele)" value="'+esc(OFV.sug||'')+'" autocomplete="off"><datalist id="of-dl">'+S.map(function(s){ return '<option value="'+esc(s)+'">'; }).join('')+'</datalist>';
-  h+='<div class="seg" style="margin-top:8px">'+Object.keys(OF_CANAL).map(function(k){ return '<button class="'+(OFV.canal===k?'on':'')+'" onclick="OFV.canal=\''+k+'\';reOferta()">'+OF_CANAL[k]+'</button>'; }).join('')+'</div>';
-  h+='<div class="seg seg-wrap" style="margin-top:8px">'+Object.keys(OF_RES).map(function(k){ return '<button class="'+(OFV.res===k?'on':'')+'" onclick="OFV.res=\''+k+'\';reOferta()">'+OF_RES[k][0]+'</button>'; }).join('')+'</div>';
+  h+='<div class="of-chips" style="display:none"></div><div class="of-add"><input type="text" id="of-s" list="of-dl" placeholder="Serviço oferecido (ex.: limpeza de pele)" value="'+esc(OFV.sug||'')+'" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();ofAdd(this)}" onchange="if(this.value&&servicosConhecidos().indexOf(this.value)>=0)ofAdd(this)"><button type="button" class="btn btn-sm btn-ghost" onclick="ofAdd(this.previousElementSibling)" title="Adicionar mais um serviço">+ Adicionar</button></div><datalist id="of-dl">'+S.map(function(s){ return '<option value="'+esc(s)+'">'; }).join('')+'</datalist>';
+  h+='<div class="seg" style="margin-top:8px">'+Object.keys(OF_CANAL).map(function(k){ return '<button class="'+(OFV.canal===k?'on':'')+'" onclick="OFV.canal=\''+k+'\';segOn(this)">'+OF_CANAL[k]+'</button>'; }).join('')+'</div>';
+  h+='<div class="seg seg-wrap" style="margin-top:8px">'+Object.keys(OF_RES).map(function(k){ return '<button class="'+(OFV.res===k?'on':'')+'" onclick="OFV.res=\''+k+'\';segOn(this)">'+OF_RES[k][0]+'</button>'; }).join('')+'</div>';
   h+='<input type="text" id="of-obs" maxlength="200" placeholder="Observação (opcional) — ex.: quer depois do verão" style="margin-top:8px">';
-  h+='<div class="fbar" style="margin:8px 0 0"><span style="flex:1"></span><button class="btn btn-sm" data-c="'+esc(cid)+'" data-n="'+esc(nome||'')+'" onclick="salvarOferta(this.dataset.c,this.dataset.n)">Registrar</button></div></div>';
+  h+='<div class="fbar" style="margin:8px 0 0"><span style="flex:1"></span><button class="btn btn-sm" data-c="'+esc(cid)+'" data-n="'+esc(nome||'')+'" onclick="salvarOferta(this.dataset.c,this.dataset.n,this)">Registrar</button></div></div>';
   return h;
 }
+function segOn(b){ Array.prototype.forEach.call(b.parentNode.children, function(e){ e.classList.toggle('on', e===b); }); }
 function abrirOferta(cid, nome, sug){
   OFV.cid=String(cid); OFV.nome=nome||''; if(sug!==undefined) OFV.sug=sug;
   abrirGav('ofgav', gavTopo('Ofertas e abordagens', esc(nome))+ofertaBloco(OFV.cid, OFV.nome)+'<div class="nota">Registre toda vez que oferecer um serviço — na recepção, durante o atendimento, por WhatsApp ou telefone. Assim ninguém oferece a mesma coisa de novo cedo demais. Os envios das campanhas entram aqui sozinhos.</div>');
@@ -5841,6 +5852,13 @@ function reOferta(){
   var s=document.getElementById('of-s'), o=document.getElementById('of-obs'), sv=s?s.value:'', ov=o?o.value:'';
   OFV.sug=sv; abrirOferta(OFV.cid, OFV.nome); document.getElementById('of-s').value=sv; document.getElementById('of-obs').value=ov;
 }
+function gravarOfertas(cid, nome, itens, msg){
+  cid=String(cid||''); if(!cid || !itens.length) return;
+  if(DEMO){ OFER[cid]=OFER[cid]||{n:nome, itens:[]}; itens.forEach(function(x){ OFER[cid].itens.push(x); }); reOfertaTudo(); if(msg) toast(msg); return; }
+  var FV=firebase.firestore.FieldValue;
+  db.collection('voox_ofertas').doc(cid).set({n:nome||'', itens:FV.arrayUnion.apply(FV, itens), atualizadoEm:itens[0].em}, {merge:true})
+    .then(function(){ if(msg) toast(msg); }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
+}
 function gravarOferta(cid, nome, item, msg){
   cid=String(cid||''); if(!cid) return;
   item=Object.assign({id:uid8(), por:email, nm:nome_logado(), em:new Date().toISOString()}, item);
@@ -5848,9 +5866,27 @@ function gravarOferta(cid, nome, item, msg){
   db.collection('voox_ofertas').doc(cid).set({n:nome||'', itens:firebase.firestore.FieldValue.arrayUnion(item), atualizadoEm:item.em}, {merge:true})
     .then(function(){ if(msg) toast(msg); }).catch(function(e){ if(msg) toast('Não salvou: '+(e.code||e.message),'err'); });
 }
-function salvarOferta(cid, nome){
-  var s=String(document.getElementById('of-s').value||'').trim(); if(s.length<3){ toast('Qual serviço foi oferecido?','err'); document.getElementById('of-s').focus(); return; }
-  gravarOferta(cid, nome, {s:s.toUpperCase(), canal:OFV.canal, res:OFV.res, obs:String(document.getElementById('of-obs').value||'').trim().slice(0,200)}, 'Oferta registrada.');
+// vários serviços na mesma oferta: cada um vira um registro (mesmo canal, resultado e observação)
+function ofBox(el){ return el && el.closest ? el.closest('.of-nova') : document.querySelector('.of-nova'); }
+function ofLista(box){ try{ return JSON.parse(box.dataset.l||'[]'); }catch(e){ return []; } }
+function ofDesenhar(box){
+  var L=ofLista(box), c=box.querySelector('.of-chips');
+  c.innerHTML=L.map(function(x,i){ return '<span class="of-chip">'+esc(x.toLowerCase())+'<button type="button" onclick="ofTirar(this,'+i+')" title="Tirar">×</button></span>'; }).join('');
+  c.style.display=L.length?'':'none';
+}
+function ofAdd(inp){
+  var box=ofBox(inp), v=String(inp.value||'').trim().toUpperCase(); if(v.length<3){ inp.focus(); return; }
+  var L=ofLista(box); if(L.indexOf(v)<0) L.push(v); box.dataset.l=JSON.stringify(L); inp.value=''; ofDesenhar(box); inp.focus();
+}
+function ofTirar(b, i){ var box=ofBox(b), L=ofLista(box); L.splice(i,1); box.dataset.l=JSON.stringify(L); ofDesenhar(box); }
+function salvarOferta(cid, nome, btn){
+  var box=ofBox(btn), inp=box.querySelector('#of-s'), L=ofLista(box), s=String(inp.value||'').trim().toUpperCase();
+  if(s.length>=3 && L.indexOf(s)<0) L.push(s);
+  if(!L.length){ toast('Qual serviço foi oferecido?','err'); inp.focus(); return; }
+  var obs=String(box.querySelector('#of-obs').value||'').trim().slice(0,200), em=new Date().toISOString();
+  var itens=L.map(function(x){ return {id:uid8(), por:email, nm:nome_logado(), em:em, s:x, canal:OFV.canal, res:OFV.res, obs:obs}; });
+  gravarOfertas(cid, nome, itens, L.length>1?L.length+' ofertas registradas.':'Oferta registrada.');
+  box.dataset.l='[]'; inp.value=''; ofDesenhar(box);
   OFV.sug=''; if(nivel==='prof') fecharGav('ofgav');
 }
 function resOferta(cid, id, r){
