@@ -163,6 +163,8 @@ html[data-theme="light"] .robo-menu{background:#fbf7f1}
 .kpis.k6{grid-template-columns:repeat(3,1fr)}
 #r-stats{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .kpis.k4{grid-template-columns:repeat(4,1fr)}
+.kpis.k5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1400px){.kpis.k5{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:1100px){.kpis.k4{grid-template-columns:repeat(2,1fr)}}
 .card.agora{border-style:dashed}
 .p-sem{color:var(--muted)}
@@ -238,7 +240,7 @@ html[data-theme="light"] .heat .hc{background:color-mix(in srgb, var(--s1) calc(
 .heat-leg{display:flex;align-items:center;gap:8px;justify-content:flex-end;font-size:11px;color:var(--muted);margin-top:10px}
 .heat-leg i{width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--card-2),var(--s1))}
 .a-info{background:rgba(90,169,255,.10);border:1px solid rgba(90,169,255,.35);color:var(--blue)}
-@media(max-width:600px){.kpis.k6,.kpis.k4,.kpis{grid-template-columns:repeat(2,1fr)} .fcomp{display:none} .kpis>.card:last-child:nth-child(odd){grid-column:span 2}}
+@media(max-width:600px){.kpis.k6,.kpis.k5,.kpis.k4,.kpis{grid-template-columns:repeat(2,1fr)} .fcomp{display:none} .kpis>.card:last-child:nth-child(odd){grid-column:span 2}}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:15px;box-shadow:var(--shadow);min-width:0}
 .klabel{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
 .kval{font-size:23px;font-weight:700;margin-top:7px;letter-spacing:-.6px;white-space:nowrap}
@@ -3714,6 +3716,19 @@ var ENV_CAMP={reativ:'Reativação', aniv:'Aniversário', retorno:'Hora de volta
 function envLocal(em){ var d=new Date(em); if(isNaN(d)) return {d:String(em||'').slice(0,10), h:String(em||'').slice(11,16)}; return {d:d2s(d), h:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}; }
 function envNomeCamp(c){ return ENV_CAMP[c] || ('Oportunidades · '+(typeof nomeCamp==='function'?nomeCamp(c):c)); }
 var ENVD=[];   // demonstração
+// quem agendou depois da mensagem: voox_conv/novos {desde, c:{cliente:["quando-o-robô-viu|data do horário"]}}
+var CONV=null, CONV_ON=false, CONV_DIAS=30;
+var CONV_SEM={conf:1, pos:1, premio:1};   // campanhas em que "agendou" não faz sentido (ela já tinha horário)
+function assinarConv(){ if(CONV_ON || DEMO) return; CONV_ON=true; unsubs.push(db.collection('voox_conv').doc('novos').onSnapshot(function(s){ CONV=s.exists?s.data():{c:{}}; renderEnvios(); }, function(e){ CONV={c:{}, erro:e.code||e.message}; renderEnvios(); })); }
+// devolve {quando, para} do 1º horário marcado até 30 dias depois do contato; null = não agendou; undefined = não dá para saber
+function convDe(camp, ci, em){
+  if(CONV_SEM[camp] || !CONV) return undefined;
+  var t0=new Date(em).getTime(); if(isNaN(t0)) return undefined;
+  if(CONV.desde && t0 < new Date(CONV.desde).getTime()) return undefined;
+  var lim=t0+CONV_DIAS*864e5, L=(CONV.c||{})[String(ci)]||[], ach=null;
+  L.forEach(function(x){ var p=x.split('|'), t=new Date(p[0]).getTime(); if(t>t0 && t<=lim && (!ach || t<ach.t)) ach={t:t, quando:p[0], para:p[1]||''}; });
+  return ach;
+}
 function logEnvio(camp, ci, nome, obs){
   var d={camp:camp, ci:String(ci||''), nome:String(nome||''), em:new Date().toISOString(), por:email||'demo', nm:nome_logado()};
   if(obs) d.obs=String(obs).slice(0,120);
@@ -3762,7 +3777,9 @@ function envLinhas(de, ate){
 }
 function renderEnvios(){
   if(viewAtual!=='envios') return;
+  assinarConv();
   var el=document.getElementById('page-envios'), r=envIntervalo(), X=envLinhas(r[0], r[1]), Lt=X.L;
+  Lt.forEach(function(x){ x.cv=convDe(x.camp, x.ci, x.em); });
   var pessoas={}; Lt.forEach(function(x){ pessoas[x.quem]=(pessoas[x.quem]||0)+1; });
   var L=ENV.quem?Lt.filter(function(x){ return x.quem===ENV.quem; }):Lt;
   var h='<div class="fbar"><div class="seg">'+[['hoje','Hoje'],['sem','Esta semana'],['sempass','Semana passada'],['mes','Este mês'],['mespass','Mês passado'],['30','30 dias'],['datas','Datas…']].map(function(o){ return '<button class="'+(ENV.per===o[0]?'on':'')+'" onclick="setEnvPer(\''+o[0]+'\')">'+o[1]+'</button>'; }).join('')+'</div>';
@@ -3774,29 +3791,34 @@ function renderEnvios(){
   if(ENV.erro) h+='<div class="alert a-warn"><span>⚠ Não consegui ler parte dos contatos ('+esc(ENV.erro)+'). Publique as regras novas do Firestore.</span></div>';
   // por campanha
   var por={}, cli={};
-  L.forEach(function(x){ var c=por[x.camp]||(por[x.camp]={camp:x.camp, n:0, cli:{}, quem:{}, L:[]}); c.n++; c.cli[x.ci||x.nome]=1; c.quem[x.quem]=(c.quem[x.quem]||0)+1; c.L.push(x); cli[x.ci||x.nome]=1; });
+  var cvOk={}, cvBase={};
+  L.forEach(function(x){ var c=por[x.camp]||(por[x.camp]={camp:x.camp, n:0, cli:{}, quem:{}, L:[], ag:{}, base:{}}); var k=x.ci||x.nome; c.n++; c.cli[k]=1; c.quem[x.quem]=(c.quem[x.quem]||0)+1; c.L.push(x); cli[k]=1;
+    if(x.cv!==undefined){ c.base[k]=1; cvBase[k]=1; if(x.cv){ c.ag[k]=1; cvOk[k]=1; } } });
   var C=Object.keys(por).map(function(k){ return por[k]; }).sort(function(a,b){ return b.n-a.n; });
   var dias=Math.max(1, nDias(r[0], r[1]));
-  h+='<div class="grid kpis k4">';
+  var nb=Object.keys(cvBase).length, na=Object.keys(cvOk).length;
+  h+='<div class="grid kpis k5">';
   h+='<div class="card"><div class="klabel">Contatos</div><div class="kval">'+n0(L.length)+'</div><div class="khint">'+(L.length/dias).toFixed(1).replace('.',',')+' por dia</div></div>';
   h+='<div class="card"><div class="klabel">Clientes diferentes</div><div class="kval">'+n0(Object.keys(cli).length)+'</div><div class="khint">algumas recebem mais de uma campanha</div></div>';
   h+='<div class="card"><div class="klabel">Campanhas usadas</div><div class="kval">'+n0(C.length)+'</div><div class="khint">'+(C[0]?'mais usada: '+esc(envNomeCamp(C[0].camp)):'—')+'</div></div>';
+  h+='<div class="card"><div class="klabel">Agendaram depois</div><div class="kval" style="color:var(--green)">'+(nb?n0(na):'—')+'</div><div class="khint">'+(nb?pct(na/nb)+' das '+n0(nb)+' chamadas · até '+CONV_DIAS+' dias depois':(CONV?'sem contatos medidos ainda':'carregando…'))+'</div></div>';
   var top=Object.keys(pessoas).sort(function(a,b){ return pessoas[b]-pessoas[a]; });
   h+='<div class="card"><div class="klabel">Quem mais acionou</div><div class="kval" style="font-size:20px">'+(top[0]?esc(top[0]):'—')+'</div><div class="khint">'+(top.length?top.slice(0,3).map(function(p){ return esc(p)+' '+pessoas[p]; }).join(' · '):'ninguém no período')+'</div></div></div>';
-  h+='<div class="tw" style="margin-top:14px"><div class="tscroll"><table class="tsv"><thead><tr><th>Campanha</th><th class="r">Contatos</th><th class="r">Clientes</th><th>Quem enviou</th><th style="width:36px"></th></tr></thead><tbody>';
-  if(!C.length) h+='<tr><td colspan="5" class="empty">Nenhum contato registrado no período.</td></tr>';
+  h+='<div class="tw" style="margin-top:14px"><div class="tscroll"><table class="tsv"><thead><tr><th>Campanha</th><th class="r">Contatos</th><th class="r">Clientes</th><th class="r">Agendaram</th><th class="r">%</th><th>Quem enviou</th><th style="width:36px"></th></tr></thead><tbody>';
+  if(!C.length) h+='<tr><td colspan="7" class="empty">Nenhum contato registrado no período.</td></tr>';
   C.forEach(function(c){
     var ab=ENV.aberto===c.camp;
-    h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-c="'+esc(c.camp)+'" onclick="ENV.aberto=ENV.aberto===this.dataset.c?null:this.dataset.c;renderEnvios()"><td><b>'+esc(envNomeCamp(c.camp))+'</b></td><td class="r" style="font-weight:700">'+n0(c.n)+'</td><td class="r">'+n0(Object.keys(c.cli).length)+'</td><td>'+Object.keys(c.quem).sort(function(a,b){ return c.quem[b]-c.quem[a]; }).map(function(p){ return esc(p)+' <b>'+c.quem[p]+'</b>'; }).join(' · ')+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
+    h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-c="'+esc(c.camp)+'" onclick="ENV.aberto=ENV.aberto===this.dataset.c?null:this.dataset.c;renderEnvios()"><td><b>'+esc(envNomeCamp(c.camp))+'</b></td><td class="r" style="font-weight:700">'+n0(c.n)+'</td><td class="r">'+n0(Object.keys(c.cli).length)+'</td>'+(function(){ var b=Object.keys(c.base).length, a=Object.keys(c.ag).length; return CONV_SEM[c.camp]?'<td class="r p-sem">—</td><td class="r p-sem">—</td>':'<td class="r" style="font-weight:700;color:var(--green)">'+(b?n0(a):'—')+'</td><td class="r">'+(b?pct(a/b):'—')+'</td>'; })()+'<td>'+Object.keys(c.quem).sort(function(a,b){ return c.quem[b]-c.quem[a]; }).map(function(p){ return esc(p)+' <b>'+c.quem[p]+'</b>'; }).join(' · ')+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
     if(ab){
       var lim=ENV.lim[c.camp]||100;
-      h+='<tr class="sv-det"><td colspan="5"><div class="sv-panel"><table class="tdet"><thead><tr><th>Quando</th><th>Cliente</th><th>Quem</th>'+(c.camp==='manual'?'<th>Canal</th><th>Resultado</th>':'')+'<th>Detalhe</th></tr></thead><tbody>'
-        +c.L.slice(0,lim).map(function(x){ return '<tr><td>'+dataBRc(envLocal(x.em).d)+' <small class="p-sem">'+envLocal(x.em).h+'</small></td><td>'+lkCli(x.ci,x.nome)+'</td><td>'+esc(x.quem)+'</td>'+(c.camp==='manual'?'<td>'+esc((OF_CANAL||{})[x.canal]||x.canal||'')+'</td><td>'+esc(((OF_RES||{})[x.res]||[''])[0])+'</td>':'')+'<td>'+esc(x.det||'')+'</td></tr>'; }).join('')
+      var semCv=!!CONV_SEM[c.camp];
+      h+='<tr class="sv-det"><td colspan="7"><div class="sv-panel"><table class="tdet"><thead><tr><th>Quando</th><th>Cliente</th><th>Quem</th>'+(c.camp==='manual'?'<th>Canal</th><th>Resultado</th>':'')+(semCv?'':'<th>Agendou?</th>')+'<th>Detalhe</th></tr></thead><tbody>'
+        +c.L.slice(0,lim).map(function(x){ return '<tr><td>'+dataBRc(envLocal(x.em).d)+' <small class="p-sem">'+envLocal(x.em).h+'</small></td><td>'+lkCli(x.ci,x.nome)+'</td><td>'+esc(x.quem)+'</td>'+(c.camp==='manual'?'<td>'+esc((OF_CANAL||{})[x.canal]||x.canal||'')+'</td><td>'+esc(((OF_RES||{})[x.res]||[''])[0])+'</td>':'')+(semCv?'':'<td>'+(x.cv?'<span class="pill p-ok">sim · '+dataBR(envLocal(x.cv.quando).d)+(x.cv.para?' p/ '+dataBR(x.cv.para):'')+'</span>':x.cv===null?'<span class="p-sem">ainda não</span>':'<span class="p-sem" title="Contato antes de o robô começar a medir">—</span>')+'</td>')+'<td>'+esc(x.det||'')+'</td></tr>'; }).join('')
         +'</tbody></table>'+(c.L.length>lim?'<div class="more"><button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();ENV.lim[\''+c.camp+'\']='+(lim+200)+';renderEnvios()">Mostrar mais ('+(c.L.length-lim)+')</button></div>':'')+'</div></td></tr>';
     }
   });
   h+='</tbody></table></div></div>';
-  h+='<div class="nota">Cada clique em <b>WhatsApp</b> numa campanha conta como um contato, com quem estava logado e a hora. Reenvio conta de novo. <b>Ofertas registradas à mão</b> são as do botão 💬 (presencial, telefone ou WhatsApp). Confirmações, pós-atendimento, horários vagos, faltosas e Indique uma amiga passaram a ser registrados a partir desta versão; as outras campanhas já tinham histórico. Clique numa campanha para ver o nome das clientes.</div>';
+  h+='<div class="nota"><b>Agendaram</b>: clientes diferentes que marcaram horário em até '+CONV_DIAS+' dias depois do contato (o robô compara a agenda do Zelo a cada 15 minutos e anota o horário novo). Vale para contatos feitos depois que o robô começou a medir'+(CONV&&CONV.desde?' ('+dataBRc(envLocal(CONV.desde).d)+')':'')+'; antes disso aparece —. Remarcação de horário também conta como agendamento. Confirmação, pós-atendimento e aviso de prêmio não entram (a cliente já tinha horário). Cada clique em <b>WhatsApp</b> numa campanha conta como um contato, com quem estava logado e a hora. Reenvio conta de novo. <b>Ofertas registradas à mão</b> são as do botão 💬 (presencial, telefone ou WhatsApp). Confirmações, pós-atendimento, horários vagos, faltosas e Indique uma amiga passaram a ser registrados a partir desta versão; as outras campanhas já tinham histórico. Clique numa campanha para ver o nome das clientes.</div>';
   el.innerHTML=h;
 }
 function excelEnvios(){
@@ -3804,15 +3826,19 @@ function excelEnvios(){
   toast('Gerando o Excel…');
   carregarSheetJS().then(function(){
     var por={}; L.forEach(function(x){ var c=por[x.camp]||(por[x.camp]={n:0, cli:{}, quem:{}}); c.n++; c.cli[x.ci||x.nome]=1; c.quem[x.quem]=(c.quem[x.quem]||0)+1; });
-    var A=[['Campanha','Contatos','Clientes diferentes','Quem enviou']].concat(Object.keys(por).sort(function(a,b){ return por[b].n-por[a].n; }).map(function(k){ var c=por[k]; return [envNomeCamp(k), c.n, Object.keys(c.cli).length, Object.keys(c.quem).map(function(p){ return p+' '+c.quem[p]; }).join(', ')]; }));
-    var B=[['Data','Hora','Campanha','Cliente','Quem enviou','Canal','Detalhe']].concat(L.map(function(x){ var lc=envLocal(x.em); return [dataBRc(lc.d), lc.h, envNomeCamp(x.camp), x.nome, x.quem, ((OF_CANAL||{})[x.canal]||x.canal||''), x.det||'']; }));
+    L.forEach(function(x){ x.cv=convDe(x.camp, x.ci, x.em); var c=por[x.camp], k=x.ci||x.nome; c.base=c.base||{}; c.ag=c.ag||{}; if(x.cv!==undefined){ c.base[k]=1; if(x.cv) c.ag[k]=1; } });
+    var A=[['Campanha','Contatos','Clientes diferentes','Agendaram depois','% agendaram','Quem enviou']].concat(Object.keys(por).sort(function(a,b){ return por[b].n-por[a].n; }).map(function(k){ var c=por[k], b=Object.keys(c.base).length, a=Object.keys(c.ag).length; return [envNomeCamp(k), c.n, Object.keys(c.cli).length, CONV_SEM[k]||!b?'':a, CONV_SEM[k]||!b?'':Math.round(a/b*1000)/10+'%', Object.keys(c.quem).map(function(p){ return p+' '+c.quem[p]; }).join(', ')]; }));
+    var B=[['Data','Hora','Campanha','Cliente','Quem enviou','Canal','Agendou depois','Horário marcado para','Detalhe']].concat(L.map(function(x){ var lc=envLocal(x.em); return [dataBRc(lc.d), lc.h, envNomeCamp(x.camp), x.nome, x.quem, ((OF_CANAL||{})[x.canal]||x.canal||''), x.cv?'sim':x.cv===null?'não':'', x.cv&&x.cv.para?dataBRc(x.cv.para.slice(0,10)):'', x.det||'']; }));
     var wb=XLSX.utils.book_new(), s1=XLSX.utils.aoa_to_sheet(A), s2=XLSX.utils.aoa_to_sheet(B);
-    s1['!cols']=[{wch:38},{wch:10},{wch:18},{wch:60}]; s2['!cols']=[{wch:11},{wch:7},{wch:34},{wch:36},{wch:18},{wch:12},{wch:40}];
+    s1['!cols']=[{wch:38},{wch:10},{wch:18},{wch:60}]; s1['!cols']=[{wch:38},{wch:10},{wch:18},{wch:16},{wch:12},{wch:60}]; s2['!cols']=[{wch:11},{wch:7},{wch:34},{wch:36},{wch:18},{wch:12},{wch:14},{wch:18},{wch:40}];
     XLSX.utils.book_append_sheet(wb, s1, 'Por campanha'); XLSX.utils.book_append_sheet(wb, s2, 'Contatos');
     XLSX.writeFile(wb, 'Contatos_recepcao_'+r[0]+'_a_'+r[1]+'.xlsx');
   }).catch(function(e){ toast('Não gerou o Excel: '+(e.message||e),'err'); });
 }
 function dadosDemoEnvios(){
+  setTimeout(function(){ var c={}; ENVD.forEach(function(x,i){ if(i%3===0){ var t=new Date(new Date(x.em).getTime()+ (i%5+1)*3600e3*7); (c[x.ci]=c[x.ci]||[]).push(t.toISOString()+'|'+addDias(t.toISOString().slice(0,10), 3)+'T14:00'); } });
+    Object.keys(OFER).forEach(function(k){ (OFER[k].itens||[]).forEach(function(x,i){ if(i%2===0){ var t=new Date(new Date(x.em).getTime()+86400e3); (c[k]=c[k]||[]).push(t.toISOString()+'|'+t.toISOString().slice(0,10)+'T10:00'); } }); });
+    CONV={c:c, desde:addDias(hojeISO(),-40)+'T08:00'}; }, 0);
   var h=hojeISO(), quem=['Recepção','Adriana','Jonathan'], cs=['conf','pos','vaga','falta','indica'], nomes=cliLista.filter(function(c){ return c.c; }).slice(0,40);
   for(var i=0;i<140;i++){ var c=nomes[i%nomes.length]; if(!c) break; var d=addDias(h,-(i%25)); ENVD.push({camp:cs[i%5===0?2:i%3===0?1:i%7===0?3:i%11===0?4:0], ci:c.i, nome:c.n, em:d+'T'+String(9+i%9).padStart(2,'0')+':'+String((i*7)%60).padStart(2,'0')+':00.000Z', por:'demo', nm:quem[i%3]}); }
 }
