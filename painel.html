@@ -747,6 +747,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <button class="navbtn prof-only" data-p="minha" onclick="nav('minha')" style="display:none"><span class="side-ico">◉</span><span class="lbl">Meu painel</span></button>
     <button class="navbtn gestao-only" data-p="painel" onclick="nav('painel')"><span class="side-ico">◷</span><span class="lbl">Painel</span></button>
     <button class="navbtn gestao-only" data-p="semana" onclick="nav('semana')"><span class="side-ico">▣</span><span class="lbl">Resumo da semana</span></button>
+    <button class="navbtn gestao-only" data-p="envios" onclick="nav('envios')"><span class="side-ico">✆</span><span class="lbl">Contatos da recepção</span></button>
     <button class="navbtn gestao-only" data-p="prof" onclick="nav('prof')"><span class="side-ico">☺</span><span class="lbl">Profissionais</span></button>
     <button class="navbtn gestao-only" data-p="metas" onclick="nav('metas')"><span class="side-ico">◎</span><span class="lbl">Metas da equipe</span></button>
     <button class="navbtn gestao-only" data-p="agenda" onclick="nav('agenda')"><span class="side-ico">▦</span><span class="lbl">Agenda</span></button>
@@ -817,6 +818,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div class="page" id="page-pac"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-indic"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-cupom"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-envios"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-minha"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-pagar"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-com"><div class="empty">Carregando…</div></div>
@@ -1259,6 +1261,7 @@ var TITULOS = {
   retorno:['Hora de voltar', 'Clientes chegando no ciclo de cada serviço — e para encher semana fraca'],
   pac:    ['Pacotes', 'Sessões compradas, quanto falta e quem renovar'],
   indic:  ['Indique uma amiga', 'Códigos de indicação, amigas que vieram e prêmios'],
+  envios: ['Contatos da recepção', 'Quantas vezes cada campanha foi usada, por quem e com quais clientes'],
   cupom:  ['Códigos de desconto', 'Confira o código que a cliente recebeu e marque como usado'],
   falt:   ['Faltosas', 'Clientes que costumam faltar — peça sinal ou confirme antes'],
   minha:  ['Meu painel', 'Sua agenda, seus serviços e o que as clientes disseram'],
@@ -1342,6 +1345,7 @@ function nav(v){
   if(v==='base') renderBase();
   if(v==='indic') renderIndic();
   if(v==='cupom') renderCupom();
+  if(v==='envios') renderEnvios();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
@@ -2030,6 +2034,7 @@ function setDataConf(d){ dataConf=d; renderConfirm(); }
 function enviarConf(id){
   var c=confirm_[id], it=c.itens||[];
   abrirWhats(c.cel, preencher(textoMsg('textoConfirm'), {nome:c.primeiro||c.nome, quando:quandoData(c.data), hora:(it[0]||{}).hora||'', servicos:it.map(function(i){ return i.servico.toLowerCase(); }).join(' e ')}));
+  logEnvio('conf', c.cliente, c.nome);
   var campos={enviadoEm:new Date().toISOString(), enviadoPor:email||'demo'}; if(!c.status) campos.status='enviado';
   atualizarDoc('voox_confirmacoes', id, campos, confirm_);
 }
@@ -2071,6 +2076,7 @@ function enviarPos(id){
   var c=posat[id], link=(MSG.linkAvaliacao||'').trim();
   if(!link && !confirm('O link de avaliação do Google ainda não foi cadastrado. Enviar assim mesmo?')) return;
   abrirWhats(c.cel, preencher(textoMsg('textoPos'), {nome:c.primeiro||c.nome, quando:quandoData(c.data), link:link||'', nota:c.tk?LINK_NOTA+c.tk:(link||'')}));
+  logEnvio('pos', c.cliente, c.nome);
   atualizarDoc('voox_posatend', id, {enviado:true, enviadoEm:new Date().toISOString(), enviadoPor:email||'demo'}, posat);
   if(c.tk && !DEMO) db.collection('voox_notas').doc(c.tk).update({enviado:true, enviadoEm:new Date().toISOString()}).catch(function(){});
 }
@@ -3699,6 +3705,118 @@ function dadosDemoCupom(){
        'VXH9CEN':{ci:'d11', nome:'GABRIELA TEIXEIRA', camp:'reativ', desc:'20%', validade:addDias(h,-2), criadoEm:addDias(h,-32)+'T09:00', por:'demo', usado:false}};
 }
 
+// ================================================================ CONTATOS DA RECEPÇÃO (quantas vezes cada campanha foi usada, e com quem)
+// Fontes: voox_ofertas (Reativação, Aniversário, Oportunidades, Hora de voltar, Pacotes e ofertas registradas à mão)
+//       + voox_envios/{auto} -> {camp, ci, nome, em, por, nm, obs}  (Confirmação, Pós-atendimento, Horários vagos, Faltosas, Indique uma amiga)
+var ENV={cache:{}, carregando:{}, L:null, aberto:null, per:'mes', de:'', ate:'', quem:'', lim:{}};
+try{ var _ev=JSON.parse(localStorage.getItem('voox_envios_ui')||'null'); if(_ev){ ENV.per=_ev.per||'mes'; ENV.de=_ev.de||''; ENV.ate=_ev.ate||''; } }catch(e){}
+var ENV_CAMP={reativ:'Reativação', aniv:'Aniversário', retorno:'Hora de voltar', pacote:'Renovação de pacote', conf:'Confirmação de horário', pos:'Pós-atendimento (avaliação)', vaga:'Horários vagos', falta:'Faltosas', indica:'Indique uma amiga · convite', premio:'Indique uma amiga · aviso de prêmio', manual:'Ofertas registradas à mão'};
+function envLocal(em){ var d=new Date(em); if(isNaN(d)) return {d:String(em||'').slice(0,10), h:String(em||'').slice(11,16)}; return {d:d2s(d), h:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}; }
+function envNomeCamp(c){ return ENV_CAMP[c] || ('Oportunidades · '+(typeof nomeCamp==='function'?nomeCamp(c):c)); }
+var ENVD=[];   // demonstração
+function logEnvio(camp, ci, nome, obs){
+  var d={camp:camp, ci:String(ci||''), nome:String(nome||''), em:new Date().toISOString(), por:email||'demo', nm:nome_logado()};
+  if(obs) d.obs=String(obs).slice(0,120);
+  if(DEMO){ ENVD.push(d); return; }
+  db.collection('voox_envios').add(d).catch(function(e){ console.warn('envio não registrado:', e.code||e.message); });
+  Object.keys(ENV.cache).forEach(function(k){ ENV.cache[k].push(d); });
+}
+function envIntervalo(){
+  var h=hojeISO(), sg=segunda(h), m=h.slice(0,7), p=ENV.per;
+  if(p==='hoje') return [h,h];
+  if(p==='sem') return [sg,h];
+  if(p==='sempass') return [addDias(sg,-7), addDias(sg,-1)];
+  if(p==='mespass'){ var mp=addMes(m,-1); return [mp+'-01', fimMes(mp)]; }
+  if(p==='30') return [addDias(h,-29), h];
+  if(p==='datas' && ENV.de && ENV.ate) return ENV.de<=ENV.ate?[ENV.de,ENV.ate]:[ENV.ate,ENV.de];
+  return [m+'-01', h];
+}
+function setEnvPer(p){ ENV.per=p; ENV.aberto=null; ENV.lim={}; if(p==='datas' && !ENV.de){ var r=envIntervalo(); ENV.de=hojeISO().slice(0,7)+'-01'; ENV.ate=hojeISO(); } try{ localStorage.setItem('voox_envios_ui', JSON.stringify({per:ENV.per, de:ENV.de, ate:ENV.ate})); }catch(e){} renderEnvios(); }
+function setEnvDatas(){ ENV.de=document.getElementById('ev-de').value; ENV.ate=document.getElementById('ev-ate').value; setEnvPer('datas'); }
+function envCarregar(de, ate){
+  var k=de+'|'+ate; if(DEMO){ return ENVD.slice(); }
+  if(ENV.cache[k]) return ENV.cache[k];
+  if(!ENV.carregando[k]){
+    ENV.carregando[k]=true;
+    db.collection('voox_envios').where('em','>=',addDias(de,-1)).where('em','<=',addDias(ate,1)+'~').limit(10000).get().then(function(s){
+      var L=[]; s.forEach(function(d){ L.push(d.data()); }); ENV.cache[k]=L; delete ENV.carregando[k]; renderEnvios();
+    }).catch(function(e){ delete ENV.carregando[k]; ENV.cache[k]=[]; ENV.erro=e.code||e.message; renderEnvios(); });
+  }
+  return null;
+}
+// todas as linhas do período: {camp, ci, nome, em, quem, det, canal}
+function envLinhas(de, ate){
+  var L=[];
+  Object.keys(OFER||{}).forEach(function(cid){
+    var o=OFER[cid]||{};
+    (o.itens||[]).forEach(function(x){
+      var lc=envLocal(x.em), d=lc.d; if(!x.em || d<de || d>ate) return;
+      var camp=x.camp||'manual';
+      L.push({camp:camp, ci:cid, nome:o.n||'', em:x.em, quem:x.nm||String(x.por||'').split('@')[0], det:(camp==='manual'||camp==='retorno'?String(x.s||'').toLowerCase():'')+(x.obs?(camp==='manual'||camp==='retorno'?' · ':'')+x.obs:''), canal:x.canal||'whats', res:x.res});
+    });
+  });
+  var E=envCarregar(de, ate);
+  (E||[]).forEach(function(x){ var d=envLocal(x.em).d; if(d<de || d>ate) return; L.push({camp:x.camp, ci:x.ci, nome:x.nome, em:x.em, quem:x.nm||String(x.por||'').split('@')[0], det:x.obs||'', canal:'whats'}); });
+  L.sort(function(a,b){ return String(b.em).localeCompare(String(a.em)); });
+  return {L:L, carregando:E===null};
+}
+function renderEnvios(){
+  if(viewAtual!=='envios') return;
+  var el=document.getElementById('page-envios'), r=envIntervalo(), X=envLinhas(r[0], r[1]), Lt=X.L;
+  var pessoas={}; Lt.forEach(function(x){ pessoas[x.quem]=(pessoas[x.quem]||0)+1; });
+  var L=ENV.quem?Lt.filter(function(x){ return x.quem===ENV.quem; }):Lt;
+  var h='<div class="fbar"><div class="seg">'+[['hoje','Hoje'],['sem','Esta semana'],['sempass','Semana passada'],['mes','Este mês'],['mespass','Mês passado'],['30','30 dias'],['datas','Datas…']].map(function(o){ return '<button class="'+(ENV.per===o[0]?'on':'')+'" onclick="setEnvPer(\''+o[0]+'\')">'+o[1]+'</button>'; }).join('')+'</div>';
+  if(ENV.per==='datas') h+='<span class="rp-datas"><input type="date" id="ev-de" value="'+esc(ENV.de)+'" max="'+hojeISO()+'" onchange="setEnvDatas()"> a <input type="date" id="ev-ate" value="'+esc(ENV.ate)+'" max="'+hojeISO()+'" onchange="setEnvDatas()"></span>';
+  else h+='<span class="khint">'+dataBRc(r[0])+' a '+dataBRc(r[1])+'</span>';
+  h+='<select style="width:auto" onchange="ENV.quem=this.value;ENV.lim={};renderEnvios()"><option value="">Toda a equipe</option>'+Object.keys(pessoas).sort().map(function(p){ return '<option value="'+esc(p)+'"'+(ENV.quem===p?' selected':'')+'>'+esc(p)+' ('+pessoas[p]+')</option>'; }).join('')+'</select>';
+  h+='<span style="flex:1"></span><button class="btn btn-sm btn-ghost" onclick="excelEnvios()">⬇ Excel</button></div>';
+  if(X.carregando) h+='<div class="alert a-info"><span>◇ Carregando os contatos do período…</span></div>';
+  if(ENV.erro) h+='<div class="alert a-warn"><span>⚠ Não consegui ler parte dos contatos ('+esc(ENV.erro)+'). Publique as regras novas do Firestore.</span></div>';
+  // por campanha
+  var por={}, cli={};
+  L.forEach(function(x){ var c=por[x.camp]||(por[x.camp]={camp:x.camp, n:0, cli:{}, quem:{}, L:[]}); c.n++; c.cli[x.ci||x.nome]=1; c.quem[x.quem]=(c.quem[x.quem]||0)+1; c.L.push(x); cli[x.ci||x.nome]=1; });
+  var C=Object.keys(por).map(function(k){ return por[k]; }).sort(function(a,b){ return b.n-a.n; });
+  var dias=Math.max(1, nDias(r[0], r[1]));
+  h+='<div class="grid kpis k4">';
+  h+='<div class="card"><div class="klabel">Contatos</div><div class="kval">'+n0(L.length)+'</div><div class="khint">'+(L.length/dias).toFixed(1).replace('.',',')+' por dia</div></div>';
+  h+='<div class="card"><div class="klabel">Clientes diferentes</div><div class="kval">'+n0(Object.keys(cli).length)+'</div><div class="khint">algumas recebem mais de uma campanha</div></div>';
+  h+='<div class="card"><div class="klabel">Campanhas usadas</div><div class="kval">'+n0(C.length)+'</div><div class="khint">'+(C[0]?'mais usada: '+esc(envNomeCamp(C[0].camp)):'—')+'</div></div>';
+  var top=Object.keys(pessoas).sort(function(a,b){ return pessoas[b]-pessoas[a]; });
+  h+='<div class="card"><div class="klabel">Quem mais acionou</div><div class="kval" style="font-size:20px">'+(top[0]?esc(top[0]):'—')+'</div><div class="khint">'+(top.length?top.slice(0,3).map(function(p){ return esc(p)+' '+pessoas[p]; }).join(' · '):'ninguém no período')+'</div></div></div>';
+  h+='<div class="tw" style="margin-top:14px"><div class="tscroll"><table class="tsv"><thead><tr><th>Campanha</th><th class="r">Contatos</th><th class="r">Clientes</th><th>Quem enviou</th><th style="width:36px"></th></tr></thead><tbody>';
+  if(!C.length) h+='<tr><td colspan="5" class="empty">Nenhum contato registrado no período.</td></tr>';
+  C.forEach(function(c){
+    var ab=ENV.aberto===c.camp;
+    h+='<tr class="sv-row'+(ab?' aberto':'')+'" data-c="'+esc(c.camp)+'" onclick="ENV.aberto=ENV.aberto===this.dataset.c?null:this.dataset.c;renderEnvios()"><td><b>'+esc(envNomeCamp(c.camp))+'</b></td><td class="r" style="font-weight:700">'+n0(c.n)+'</td><td class="r">'+n0(Object.keys(c.cli).length)+'</td><td>'+Object.keys(c.quem).sort(function(a,b){ return c.quem[b]-c.quem[a]; }).map(function(p){ return esc(p)+' <b>'+c.quem[p]+'</b>'; }).join(' · ')+'</td><td class="r sv-seta">'+(ab?'▾':'▸')+'</td></tr>';
+    if(ab){
+      var lim=ENV.lim[c.camp]||100;
+      h+='<tr class="sv-det"><td colspan="5"><div class="sv-panel"><table class="tdet"><thead><tr><th>Quando</th><th>Cliente</th><th>Quem</th>'+(c.camp==='manual'?'<th>Canal</th><th>Resultado</th>':'')+'<th>Detalhe</th></tr></thead><tbody>'
+        +c.L.slice(0,lim).map(function(x){ return '<tr><td>'+dataBRc(envLocal(x.em).d)+' <small class="p-sem">'+envLocal(x.em).h+'</small></td><td>'+lkCli(x.ci,x.nome)+'</td><td>'+esc(x.quem)+'</td>'+(c.camp==='manual'?'<td>'+esc((OF_CANAL||{})[x.canal]||x.canal||'')+'</td><td>'+esc(((OF_RES||{})[x.res]||[''])[0])+'</td>':'')+'<td>'+esc(x.det||'')+'</td></tr>'; }).join('')
+        +'</tbody></table>'+(c.L.length>lim?'<div class="more"><button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();ENV.lim[\''+c.camp+'\']='+(lim+200)+';renderEnvios()">Mostrar mais ('+(c.L.length-lim)+')</button></div>':'')+'</div></td></tr>';
+    }
+  });
+  h+='</tbody></table></div></div>';
+  h+='<div class="nota">Cada clique em <b>WhatsApp</b> numa campanha conta como um contato, com quem estava logado e a hora. Reenvio conta de novo. <b>Ofertas registradas à mão</b> são as do botão 💬 (presencial, telefone ou WhatsApp). Confirmações, pós-atendimento, horários vagos, faltosas e Indique uma amiga passaram a ser registrados a partir desta versão; as outras campanhas já tinham histórico. Clique numa campanha para ver o nome das clientes.</div>';
+  el.innerHTML=h;
+}
+function excelEnvios(){
+  var r=envIntervalo(), L=envLinhas(r[0], r[1]).L.filter(function(x){ return !ENV.quem || x.quem===ENV.quem; });
+  toast('Gerando o Excel…');
+  carregarSheetJS().then(function(){
+    var por={}; L.forEach(function(x){ var c=por[x.camp]||(por[x.camp]={n:0, cli:{}, quem:{}}); c.n++; c.cli[x.ci||x.nome]=1; c.quem[x.quem]=(c.quem[x.quem]||0)+1; });
+    var A=[['Campanha','Contatos','Clientes diferentes','Quem enviou']].concat(Object.keys(por).sort(function(a,b){ return por[b].n-por[a].n; }).map(function(k){ var c=por[k]; return [envNomeCamp(k), c.n, Object.keys(c.cli).length, Object.keys(c.quem).map(function(p){ return p+' '+c.quem[p]; }).join(', ')]; }));
+    var B=[['Data','Hora','Campanha','Cliente','Quem enviou','Canal','Detalhe']].concat(L.map(function(x){ var lc=envLocal(x.em); return [dataBRc(lc.d), lc.h, envNomeCamp(x.camp), x.nome, x.quem, ((OF_CANAL||{})[x.canal]||x.canal||''), x.det||'']; }));
+    var wb=XLSX.utils.book_new(), s1=XLSX.utils.aoa_to_sheet(A), s2=XLSX.utils.aoa_to_sheet(B);
+    s1['!cols']=[{wch:38},{wch:10},{wch:18},{wch:60}]; s2['!cols']=[{wch:11},{wch:7},{wch:34},{wch:36},{wch:18},{wch:12},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, s1, 'Por campanha'); XLSX.utils.book_append_sheet(wb, s2, 'Contatos');
+    XLSX.writeFile(wb, 'Contatos_recepcao_'+r[0]+'_a_'+r[1]+'.xlsx');
+  }).catch(function(e){ toast('Não gerou o Excel: '+(e.message||e),'err'); });
+}
+function dadosDemoEnvios(){
+  var h=hojeISO(), quem=['Recepção','Adriana','Jonathan'], cs=['conf','pos','vaga','falta','indica'], nomes=cliLista.filter(function(c){ return c.c; }).slice(0,40);
+  for(var i=0;i<140;i++){ var c=nomes[i%nomes.length]; if(!c) break; var d=addDias(h,-(i%25)); ENVD.push({camp:cs[i%5===0?2:i%3===0?1:i%7===0?3:i%11===0?4:0], ci:c.i, nome:c.n, em:d+'T'+String(9+i%9).padStart(2,'0')+':'+String((i*7)%60).padStart(2,'0')+':00.000Z', por:'demo', nm:quem[i%3]}); }
+}
+
 // ================================================================ utilidades de período (Margem, Satisfação)
 var PRESETS_P = [['30','30 dias'],['mes','Este mês'],['mespass','Mês anterior'],['90','90 dias'],['ano','Este ano'],['12m','12 meses']];
 function carregarPerP(v, padrao){ var P={preset:padrao, de:'', ate:''}; try{ var x=JSON.parse(localStorage.getItem('voox_per_'+v)||'null'); if(x&&x.preset) P=x; }catch(e){} return P; }
@@ -4215,6 +4333,7 @@ function setDataVaga(d){ dataVaga=d; renderVagas(); }
 function chamarVaga(cid, prof){
   var V=VAGAS[dataVaga], P=(V.profs||[]).filter(function(p){ return p.p===prof; })[0], c=P && (P.cands||[]).filter(function(x){ return x.id===cid; })[0]; if(!c) return;
   abrirWhats(c.cel, preencher(textoMsg('textoVaga'), {nome:c.primeiro||c.n, prof:nomeProf(prof), quando:quandoData(dataVaga), horarios:horasTxt(P.gaps), servico:(c.s||'').toLowerCase()}));
+  logEnvio('vaga', cid, c.n, nomeProf(prof)+' · '+quandoData(dataVaga));
   var marca={em:new Date().toISOString(), por:email||'demo', p:prof};
   if(DEMO){ V.chamados=V.chamados||{}; V.chamados[cid]=marca; renderVagas(); return; }
   var upd={}; upd['chamados.'+cid]=marca;
@@ -4320,7 +4439,7 @@ function renderFalt(){
   h+='</div><div class="nota">Falta = horário marcado em que a cliente não apareceu (status "faltou" no Zelo), nos últimos 6 meses. Cancelamentos aparecem só como informação, porque o Zelo não diz com quanta antecedência foram feitos. Na aba Confirmações, essas clientes ganham a etiqueta "costuma faltar".</div>';
   el.innerHTML=h;
 }
-function enviarFalt(i){ var o=FALTMAP[i]; if(!o||!o.c) return; abrirWhats(o.c, preencher(textoMsg('textoFalta'), {nome:o.primeiro||o.n, quando:o.prox?quandoProx(o.prox):'no próximo agendamento'})); }
+function enviarFalt(i){ var o=FALTMAP[i]; if(!o||!o.c) return; logEnvio('falta', i, o.n); abrirWhats(o.c, preencher(textoMsg('textoFalta'), {nome:o.primeiro||o.n, quando:o.prox?quandoProx(o.prox):'no próximo agendamento'})); }
 
 // ================================================================ RESUMO DA SEMANA
 var SEM = { ini:'' };
@@ -4753,7 +4872,7 @@ var NIVEIS = [
   ['prof','Profissional','Só o painel dela: agenda, serviços, meta e notas']
 ];
 var CFG_ABAS = [
-  {g:'Gestão', gestao:true, abas:[['painel','Painel'],['semana','Resumo da semana'],['prof','Profissionais'],['metas','Metas da equipe'],['agenda','Agenda'],['serv','Serviços feitos'],['sat','Satisfação'],['vendas','Mês a mês']]},
+  {g:'Gestão', gestao:true, abas:[['painel','Painel'],['semana','Resumo da semana'],['envios','Contatos da recepção'],['prof','Profissionais'],['metas','Metas da equipe'],['agenda','Agenda'],['serv','Serviços feitos'],['sat','Satisfação'],['vendas','Mês a mês']]},
   {g:'Financeiro', gestao:true, fin:true, abas:[['fin','Dashboard'],['lanc','Lançamentos'],['pagar','Contas a pagar'],['com','Comissões'],['marg','Margem por serviço'],['conc','Conferência Zelo'],['cgs','Contas gerenciais']]},
   {g:'Clientes', abas:[['cli','Clientes',1],['base','Base de clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['retorno','Hora de voltar'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga'],['cupom','Códigos de desconto']]}
 ];
@@ -5532,6 +5651,7 @@ function convidarIndica(cid, cn, cel){
   if(!cel){ toast('Cliente sem celular.','err'); return; }
   var w=MODO_SEQ;   // abre o WhatsApp no mesmo clique (o navegador bloqueia janela aberta depois de esperar o banco)
   var c=codigoDe(cid)||novoCodigo(cn), P=premios();
+  logEnvio('indica', cid, cn, 'código '+c);
   abrirWhats(cel, preencher(textoMsg('textoIndica'), {nome:nomeCurto(cn), codigo:c, premioAmiga:P.premioAmiga, premioVoce:P.premioVoce}));
   var d=Object.assign({ci:String(cid), cn:cn, cel:cel, criadoEm:new Date().toISOString(), por:email}, INDC[c]||{}, {conviteEm:new Date().toISOString(), convitePor:email});
   INDC[c]=d;
@@ -5639,6 +5759,7 @@ function stIndic(id, st){
 }
 function avisarPremio(id){
   var x=INDI[id], P=premios(); if(!x.icel) return;
+  logEnvio('premio', x.ici, x.icn, 'amiga: '+(x.nome||''));
   abrirWhats(x.icel, preencher(textoMsg('textoIndicaPremio'), {nome:nomeCurto(x.icn), amiga:nomeCurto(x.nome), premioVoce:P.premioVoce}));
   if(DEMO){ x.avisadaEm=new Date().toISOString(); return; }
   gravar('voox_indicacoes', id, {avisadaEm:new Date().toISOString()}).catch(function(){});
@@ -6184,7 +6305,7 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoCupom(); dadosDemoPrev(); dadosDemoRet(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoCupom(); dadosDemoEnvios(); dadosDemoPrev(); dadosDemoRet(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
