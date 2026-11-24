@@ -93,12 +93,13 @@ textarea:focus{outline:none;border-color:var(--gold)}
 <!-- recepção escolhe a cliente -->
 <section class="tela" id="t-rec">
   <div class="rec-top"><h3>Quem vai avaliar?</h3><button class="btn btn-l" style="padding:10px 14px;font-size:15px" onclick="telaCheia()">Tela cheia</button><button class="btn btn-l" style="padding:10px 14px;font-size:15px" onclick="sair()">Sair</button></div>
+  <div style="width:100%;max-width:820px;display:flex;flex-direction:column;align-items:stretch;gap:6px;margin-bottom:22px">
+    <button class="btn" style="padding:26px;font-size:22px" onclick="iniciar(null)">Avaliação sem identificar a cliente</button>
+    <div class="mini" id="rec-info" style="text-align:center"></div>
+  </div>
+  <div class="mini" style="width:100%;max-width:820px;margin-bottom:8px">Ou escolha a cliente da agenda de hoje:</div>
   <input class="busca" id="busca" type="search" placeholder="Buscar cliente de hoje" oninput="pintarLista()">
   <div class="lista" id="lista"></div>
-  <div style="margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:4px">
-    <button class="btn btn-l" onclick="iniciar(null)">Avaliação sem identificar a cliente</button>
-    <div class="mini" id="rec-info"></div>
-  </div>
 </section>
 
 <!-- boas-vindas da cliente -->
@@ -182,7 +183,7 @@ function telaCheia(){ var d=document.documentElement; try{ (d.requestFullscreen|
 function pintarLista(){
   var q=chave(document.getElementById('busca').value), box=document.getElementById('lista');
   var L=AG.filter(function(c){ return !q || chave(c.n).indexOf(q)>=0; });
-  if(!AG.length){ box.innerHTML='<div class="vazio">A agenda de hoje ainda não chegou do Zelo.<br>Use "Avaliação sem identificar a cliente" abaixo.</div>'; return; }
+  if(!AG.length){ box.innerHTML='<div class="vazio">A agenda de hoje ainda não chegou do Zelo.<br>Use "Avaliação sem identificar a cliente" acima.</div>'; return; }
   box.innerHTML=L.length?L.map(function(c,i){ return '<button class="cli" data-i="'+AG.indexOf(c)+'" onclick="iniciar(AG[this.dataset.i])"><span class="h">'+esc(c.h)+'</span><span><div class="n">'+esc(cap(c.n))+'</div><div class="s">'+esc(c.s.map(function(x){ return x.toLowerCase(); }).join(', '))+' · '+esc(c.p.map(nomeProf).join(', '))+'</div></span>'+(FEITAS[c.i]?'<span class="ok">já avaliou hoje</span>':'')+'</button>'; }).join(''):'<div class="vazio">Ninguém com esse nome na agenda de hoje.</div>';
 }
 function iniciar(c){
