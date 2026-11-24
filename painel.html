@@ -200,7 +200,19 @@ html[data-theme] .seg select.on{background:var(--primary-strong);color:#fff;font
 .of-add input{flex:1}
 .prev-t tr.prev-pass td{color:var(--muted)}
 .prev-t tr.prev-pass td:first-child{font-style:italic}
-.vip-s{font-size:.85em;margin-left:3px;filter:saturate(1.2)}
+.vip-s{font-size:.85em;margin-left:3px;filter:saturate(1.2);white-space:nowrap}
+.vip-s small{font-size:.75em;font-weight:700;color:var(--amber);margin-left:1px}
+.vip-rk{display:inline-block;min-width:34px;font-weight:700;color:var(--amber)}
+.fila-f{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+.fila-f label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted);min-width:0}
+.fila-f .ff-cli{grid-column:span 2}.fila-f .ff-obs{grid-column:span 2}
+.fila-f small a{color:var(--primary)}
+.fila-sel{display:flex;align-items:center;gap:8px;min-height:38px;padding:6px 10px;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-weight:600}
+.fila-pos{display:inline-block;min-width:28px;font-weight:700;color:var(--primary)}
+.fila-vaga{margin-top:10px;padding:10px 12px;border:1px dashed var(--amber);border-radius:12px}
+.fv-it{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0;font-size:13px}
+@media(max-width:900px){.fila-f{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.fila-f{grid-template-columns:1fr}.fila-f .ff-cli,.fila-f .ff-obs{grid-column:auto}}
 .sel-area{height:28px;font-size:12px;padding:2px 6px;width:auto;min-width:150px}
 html[data-theme="dark"] .seg select option{background:#1c1c1f}
 .seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
@@ -770,6 +782,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <button class="navbtn gestao-only" data-p="base" onclick="nav('base')"><span class="side-ico">⊞</span><span class="lbl">Base de clientes</span></button>
     <button class="navbtn" data-p="conf" onclick="nav('conf')"><span class="side-ico">☎</span><span class="lbl">Confirmações</span><span class="cnt" id="cntConf" style="display:none">0</span></button>
     <button class="navbtn" data-p="falt" onclick="nav('falt')"><span class="side-ico">⚠</span><span class="lbl">Faltosas</span><span class="cnt" id="cntFalt" style="display:none">0</span></button>
+    <button class="navbtn" data-p="fila" onclick="nav('fila')"><span class="side-ico">☰</span><span class="lbl">Fila de espera</span><span class="cnt" id="cntFila" style="display:none">0</span></button>
     <button class="navbtn" data-p="vagas" onclick="nav('vagas')"><span class="side-ico">◷</span><span class="lbl">Horários vagos</span></button>
     <button class="navbtn" data-p="pos" onclick="nav('pos')"><span class="side-ico">♡</span><span class="lbl">Pós-atendimento</span><span class="cnt" id="cntPos" style="display:none">0</span></button>
     <button class="navbtn" data-p="reativ" onclick="nav('reativ')"><span class="side-ico">↺</span><span class="lbl">Reativação</span><span class="cnt" id="cntReativ" style="display:none">0</span></button>
@@ -822,6 +835,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div class="page" id="page-pac"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-indic"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-cupom"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-fila"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-vip"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-envios"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-minha"><div class="empty">Carregando…</div></div>
@@ -1082,6 +1096,7 @@ function assinar(){
   assinarAreas();
   assinarCupons();
   assinarVip();
+  assinarFila();
   unsubs.push(db.collection('voox_config').doc('ciclos').onSnapshot(function(snap){ CICLOS={}; ((snap.exists&&snap.data().itens)||[]).forEach(function(x){ CICLOS[x.s]=x.d; }); renderRetorno(); }, function(){}));
   unsubs.push(db.collection('voox_ofertas').limit(5000).onSnapshot(function(snap){ OFER={}; snap.forEach(function(d){ OFER[d.id]=d.data(); }); reOfertaTudo(); }, function(err){ console.warn('ofertas:', err.code||err.message); }));
   unsubs.push(db.collection('voox_pacotes').limit(3000).onSnapshot(function(snap){ setPac(snap); renderPac(); if(viewAtual==='conf') renderConfirm(); if(FICHA.nome) renderFicha(); }, function(err){ var el=document.getElementById('page-pac'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler os pacotes ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
@@ -1278,6 +1293,7 @@ var TITULOS = {
   retorno:['Hora de voltar', 'Clientes chegando no ciclo de cada serviço — e para encher semana fraca'],
   pac:    ['Pacotes', 'Sessões compradas, quanto falta e quem renovar'],
   indic:  ['Indique uma amiga', 'Códigos de indicação, amigas que vieram e prêmios'],
+  fila:   ['Fila de espera', 'Quem quer horário: VIP Ouro primeiro, depois por ordem de contato'],
   vip:    ['Clientes VIP', 'As clientes Ouro: quem está sumindo, agrados e boas-vindas'],
   envios: ['Contatos da recepção', 'Quantas vezes cada campanha foi usada, por quem e com quais clientes'],
   cupom:  ['Códigos de desconto', 'Confira o código que a cliente recebeu e marque como usado'],
@@ -1365,6 +1381,7 @@ function nav(v){
   if(v==='cupom') renderCupom();
   if(v==='envios') renderEnvios();
   if(v==='vip') renderVip();
+  if(v==='fila') renderFila();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
@@ -3729,7 +3746,7 @@ function dadosDemoCupom(){
 //       + voox_envios/{auto} -> {camp, ci, nome, em, por, nm, obs}  (Confirmação, Pós-atendimento, Horários vagos, Faltosas, Indique uma amiga)
 var ENV={cache:{}, carregando:{}, L:null, aberto:null, per:'mes', de:'', ate:'', quem:'', lim:{}};
 try{ var _ev=JSON.parse(localStorage.getItem('voox_envios_ui')||'null'); if(_ev){ ENV.per=_ev.per||'mes'; ENV.de=_ev.de||''; ENV.ate=_ev.ate||''; } }catch(e){}
-var ENV_CAMP={reativ:'Reativação', aniv:'Aniversário', retorno:'Hora de voltar', pacote:'Renovação de pacote', conf:'Confirmação de horário', pos:'Pós-atendimento (avaliação)', vaga:'Horários vagos', falta:'Faltosas', indica:'Indique uma amiga · convite', premio:'Indique uma amiga · aviso de prêmio', manual:'Ofertas registradas à mão', vipboas:'Boas-vindas VIP Ouro'};
+var ENV_CAMP={reativ:'Reativação', aniv:'Aniversário', retorno:'Hora de voltar', pacote:'Renovação de pacote', conf:'Confirmação de horário', pos:'Pós-atendimento (avaliação)', vaga:'Horários vagos', falta:'Faltosas', indica:'Indique uma amiga · convite', premio:'Indique uma amiga · aviso de prêmio', manual:'Ofertas registradas à mão', vipboas:'Boas-vindas VIP Ouro', fila:'Fila de espera (aviso de vaga)'};
 function envLocal(em){ var d=new Date(em); if(isNaN(d)) return {d:String(em||'').slice(0,10), h:String(em||'').slice(11,16)}; return {d:d2s(d), h:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}; }
 function envNomeCamp(c){ return ENV_CAMP[c] || ('Oportunidades · '+(typeof nomeCamp==='function'?nomeCamp(c):c)); }
 var ENVD=[];   // demonstração
@@ -3871,10 +3888,11 @@ var VIPCFG={pct:3, minVis:6, agradoCada:5, anivDesc:'25%'};
 MSG_PADRAO.textoVipBoasVindas='Oi, {nome}! Você agora é cliente Ouro da Voox 1956 ⭐ É o nosso jeito de agradecer por estar sempre com a gente. A partir de agora você tem prioridade nos horários mais disputados, presente especial no aniversário e alguns mimos nas suas visitas. Obrigada por escolher a Voox!';
 function ehVip(ci){ return !!(ci && VIP.map[String(ci)]); }
 function vipRank(ci){ return ehVip(ci)?1:0; }
-function vipSelo(ci){ return ehVip(ci)?' <span class="vip-s" title="Cliente VIP Ouro">⭐</span>':''; }
+function vipSelo(ci){ if(!ehVip(ci)) return ''; var x=VIP.map[String(ci)]; return ' <span class="vip-s" title="Cliente VIP Ouro'+(x.rk?' · nº '+x.rk+' no ranking':'')+'">⭐'+(x.rk?'<small>'+x.rk+'</small>':'')+'</span>'; }
+function vipRk(ci){ var x=VIP.map[String(ci)]; return x?(x.rk||9999):0; }
 function setVip(d){
-  d=d||{}; VIP.L=d.itens||[]; VIP.map={}; VIP.L.forEach(function(x){ VIP.map[String(x.ci)]=x; });
-  VIP.entradas=d.entradas||[]; VIP.saidas=d.saidas||[]; VIP.mes=d.mes||''; VIP.atualizadoEm=d.atualizadoEm||''; VIP.ok=true;
+  VIP.semDoc=!d; d=d||{}; VIP.L=d.itens||[]; VIP.map={}; VIP.L.forEach(function(x){ VIP.map[String(x.ci)]=x; });
+  VIP.entradas=d.entradas||[]; VIP.saidas=d.saidas||[]; VIP.mes=d.mes||''; VIP.periodo=d.periodo||null; VIP.atualizadoEm=d.atualizadoEm||''; VIP.ok=true;
   var cnt=document.getElementById('cntVip'); if(cnt){ var n=vipSumindo().length; cnt.textContent=n; cnt.style.display=n?'':'none'; }
   if(viewAtual==='vip') renderVip();
 }
@@ -3896,7 +3914,7 @@ function setVipFiltro(f){ VIP.filtro=f; renderVip(); }
 function renderVip(){
   if(viewAtual!=='vip') return;
   var el=document.getElementById('page-vip'), gest=podePainel();
-  if(!VIP.ok){ el.innerHTML='<div class="card empty">'+(VIP.erro?'Sem permissão para ler a lista VIP ('+esc(VIP.erro)+'). Publique as regras novas do Firestore.':'A lista VIP aparece depois que o robô rodar a versão nova (rodada completa: 6h17, 12h17 ou 18h17).')+'</div>'; return; }
+  if(!VIP.ok || VIP.semDoc){ el.innerHTML='<div class="card empty">'+(VIP.erro?'Sem permissão para ler a lista VIP ('+esc(VIP.erro)+'). Publique as regras novas do Firestore.':'A lista VIP ainda não foi gerada. Ela aparece depois que o robô novo (zelo_sync.py desta versão) fizer uma <b>rodada completa</b> — 6h17, 12h17 ou 18h17, ou rodando o workflow <b>zelo-sync</b> à mão no GitHub (Actions → zelo-sync → Run workflow). O botão "Atualizar agora" não gera a lista VIP.')+'</div>'; return; }
   var sum=vipSumindo(), pend=VIP.L.filter(function(x){ return vipAgrado(x).pend>0; }), novas=VIP.entradas.filter(function(x){ return ehVip(x.ci); });
   var h='<div class="grid kpis k4">';
   [['todas','Clientes VIP Ouro',VIP.L.length,(VIP.est&&gest?'a partir de '+brl(VIP.est.corte)+' em 12 meses · '+VIPCFG.minVis+'+ visitas':'as que mais gastam no ano')],
@@ -3910,16 +3928,16 @@ function renderVip(){
   var L=VIP.L.slice();
   if(VIP.filtro==='sumindo') L=sum; else if(VIP.filtro==='agrado') L=pend; else if(VIP.filtro==='novas') L=L.filter(function(x){ return novas.some(function(n){ return n.ci===x.ci; }); });
   var q=chaveTxt(VIP.q||''); if(q) L=L.filter(function(x){ return chaveTxt(x.n+' '+x.p+' '+x.s).indexOf(q)>=0; });
-  L.sort(function(a,b){ return VIP.filtro==='sumindo' ? (vipDiasSem(b)-vipLimite(b))-(vipDiasSem(a)-vipLimite(a)) : (vipDiasSem(a)||0)-(vipDiasSem(b)||0) || a.n.localeCompare(b.n); });
+  L.sort(function(a,b){ return VIP.filtro==='sumindo' ? (vipDiasSem(b)-vipLimite(b))-(vipDiasSem(a)-vipLimite(a)) : ((a.rk||9999)-(b.rk||9999)) || a.n.localeCompare(b.n); });
   h+='<div class="fbar" style="margin-top:14px"><input type="search" placeholder="Buscar VIP, profissional ou serviço" value="'+esc(VIP.q||'')+'" oninput="VIP.q=this.value;clearTimeout(VIP._t);VIP._t=setTimeout(renderVip,250)" style="flex:1;min-width:200px;height:34px"></div>';
   var tit={todas:'Todas as VIP Ouro', sumindo:'VIP sumindo — chame com mensagem pessoal, não de campanha', agrado:'Agrado a entregar na próxima visita', novas:'Novas Ouro este mês'}[VIP.filtro];
-  h+='<div class="sect">'+tit+' <small>'+n0(L.length)+'</small></div><div class="rlist">';
+  h+='<div class="sect">'+tit+' <small>'+n0(L.length)+(VIP.mes?' · ranking de '+mesLabel(VIP.mes):'')+'</small></div><div class="rlist">';
   var lim=limDe('vip',60);
   h+=L.length?L.slice(0,lim).map(vipLinha).join(''):'<div class="card empty">'+(VIP.filtro==='sumindo'?'Nenhuma VIP sumida. 👏':'Ninguém aqui.')+'</div>';
   h+='</div>'+maisHTML('vip', L.length, 60, 'renderVip()');
   if(VIP.saidas.length && gest) h+='<div class="sect">Saíram do Ouro este mês <small>'+VIP.saidas.length+'</small></div><div class="khint">'+VIP.saidas.map(function(x){ return lkCli(x.ci,x.n); }).join(' · ')+'</div>';
   if(gest){ var ex=Object.keys(VIP.aj.excluir||{}); if(ex.length) h+='<div class="sect">Tiradas do VIP à mão <small>'+ex.length+'</small></div><div class="rlist">'+ex.map(function(ci){ var x=VIP.aj.excluir[ci]; return '<div class="rrow" style="--c:var(--muted)"><div><div class="nm">'+lkCli(ci,x.n)+'</div><div class="info">tirada por '+esc(String(x.por||'').split('@')[0])+' em '+dataBR(x.em)+'</div></div><div class="acts"><button class="btn btn-sm btn-ghost" data-c="'+esc(ci)+'" onclick="vipDesfazer(this.dataset.c)">Voltar para o VIP</button></div></div>'; }).join('')+'</div>'; }
-  h+='<div class="nota"><b>Quem é VIP Ouro</b>: as '+VIPCFG.pct+'% das clientes que mais gastaram nos últimos 12 meses e vieram pelo menos '+VIPCFG.minVis+' vezes. O robô recalcula no dia 1 de cada mês; quem fica abaixo do corte 2 meses seguidos sai'+(gest?' (a gestão pode incluir ou tirar à mão)':'')+'. <b>Sumindo</b>: sem vir há mais que o dobro do intervalo de costume. <b>Agrado</b>: a cada '+VIPCFG.agradoCada+' visitas desde que virou Ouro. O selo ⭐ aparece ao lado do nome em todo o painel.'+(VIP.atualizadoEm?' Atualizado '+dataBR(VIP.atualizadoEm)+'.':'')+'</div>';
+  h+='<div class="nota"><b>Quem é VIP Ouro</b>: as '+VIPCFG.pct+'% das clientes que mais gastaram nos 12 meses fechados'+(VIP.periodo?' ('+dataBRc(VIP.periodo[0])+' a '+dataBRc(VIP.periodo[1])+')':'')+' e vieram pelo menos '+VIPCFG.minVis+' vezes. <b>#</b> = posição no ranking do mês (1 = quem mais gastou). A lista e o ranking são calculados no dia 1 e ficam fixos o mês inteiro; quem fica abaixo do corte 2 meses seguidos sai'+(gest?' (a gestão pode incluir ou tirar à mão)':'')+'. <b>Sumindo</b>: sem vir há mais que o dobro do intervalo de costume. <b>Agrado</b>: a cada '+VIPCFG.agradoCada+' visitas desde que virou Ouro. O selo ⭐ aparece ao lado do nome em todo o painel.'+(VIP.atualizadoEm?' Atualizado '+dataBR(VIP.atualizadoEm)+'.':'')+'</div>';
   el.innerHTML=h;
 }
 function vipLinha(x){
@@ -3930,7 +3948,7 @@ function vipLinha(x){
   if(nova) tags+=c.boasVindasEm?'<span class="pill p-mut">boas-vindas enviada '+dataBR(c.boasVindasEm)+'</span>':'<span class="pill p-warn">nova Ouro — falta a boas-vindas</span>';
   if(!x.auto) tags+='<span class="pill p-blue">incluída à mão</span>';
   if(x.risco) tags+='<span class="pill p-warn" title="Ficou abaixo do corte no último cálculo; sai se ficar abaixo de novo no próximo mês">em risco de sair</span>';
-  var h='<div class="rrow" style="--c:'+(sum?'var(--red)':'var(--amber)')+'"><div><div class="nm">'+lkCli(x.ci,x.n)+'</div>';
+  var h='<div class="rrow" style="--c:'+(sum?'var(--red)':'var(--amber)')+'"><div><div class="nm">'+(x.rk?'<span class="vip-rk">#'+x.rk+'</span> ':'')+lkCli(x.ci,x.n)+'</div>';
   var inf=[]; if(x.s) inf.push('faz <b>'+esc(x.s.toLowerCase())+'</b>'+(x.p?' com '+esc(nomeProf(x.p)):'')); if(x.ult) inf.push('última visita '+dataBR(x.ult)+' ('+fmtSumida(d)+')'); if(x.q12) inf.push(n0(x.q12)+' visitas em 12 meses'); inf.push('Ouro desde '+dataBR(x.desde));
   h+='<div class="info">'+inf.join(' · ')+'</div>';
   h+='<div class="tags">'+tags+'</div>'+anotFix(x.ci)+ultimaOferta(x.ci)+'</div><div class="acts">'+btnOferta(x.ci,x.n)+btnAnot(x.ci,x.n);
@@ -3979,11 +3997,141 @@ function vipBoasVindas(ci){
 function demoVipAplicar(){ var base=VIP._base||[]; var ex=VIP.aj.excluir||{}, inc=VIP.aj.incluir||{}; var L=base.filter(function(x){ return !ex[x.ci]; }); Object.keys(inc).forEach(function(ci){ if(!L.some(function(x){ return x.ci===ci; })) L.push({ci:ci, n:inc[ci].n, cel:'', desde:hojeISO(), auto:false, ult:'', iv:0, q12:0, vis:0, s:'', p:''}); }); setVip({itens:L, entradas:VIP.entradas, saidas:VIP.saidas, mes:hojeISO().slice(0,7), atualizadoEm:hojeISO()+'T10:00'}); }
 function dadosDemoVip(){
   var L=cliLista.slice().sort(function(a,b){ return (b.vs||[]).length-(a.vs||[]).length; }).slice(0,14), h=hojeISO();
-  var it=L.map(function(c,i){ var ult=c.u||addDias(h,-(i*9)); return {ci:String(c.i), n:c.n, cel:c.c||'', desde:addDias(h,-(30+i*20)), auto:i!==3, ult:i===2||i===7?addDias(h,-70-i):ult, iv:9+i%5, q12:(c.vs||[]).length, vis:(i*3)%13, s:['MANICURE','ESCOVA MEDIA','RETOQUE RAIZ','PODOLOGIA'][i%4], p:['ANA (MAN)','CARLA (CAB)','GABI (SOB)','EVA (POD)'][i%4], risco:i===9?1:0}; });
+  var it=L.map(function(c,i){ var ult=c.u||addDias(h,-(i*9)); return {ci:String(c.i), n:c.n, cel:c.c||'', desde:addDias(h,-(30+i*20)), auto:i!==3, ult:i===2||i===7?addDias(h,-70-i):ult, iv:9+i%5, q12:(c.vs||[]).length, vis:(i*3)%13, s:['MANICURE','ESCOVA MEDIA','RETOQUE RAIZ','PODOLOGIA'][i%4], p:['ANA (MAN)','CARLA (CAB)','GABI (SOB)','EVA (POD)'][i%4], risco:i===9?1:0, rk:i===3?0:i+1}; });
   VIP._base=it; VIP.est={corte:4120, ativas:3520, elegiveis:14, mes:h.slice(0,7)};
   VIP.entradas=[{ci:it[0].ci, n:it[0].n, mes:h.slice(0,7)},{ci:it[5].ci, n:it[5].n, mes:h.slice(0,7)}]; VIP.saidas=[{ci:'x200', n:'FERNANDA ALVES', mes:h.slice(0,7)}];
   VIP.ctrl[it[5].ci]={boasVindasEm:addDias(h,-2)+'T10:00'};
   setVip({itens:it, entradas:VIP.entradas, saidas:VIP.saidas, mes:h.slice(0,7), atualizadoEm:h+'T10:00'});
+}
+
+// ================================================================ FILA DE ESPERA
+// voox_fila/{id} -> {ci, nome, cel, serv, prof (''=qualquer), qt:'data'|'entre'|'qualquer', de, ate, turno:'manha'|'tarde'|'qualquer', obs,
+//                    criadoEm, por, nm, st:'esperando'|'chamada'|'agendou'|'desistiu', chamadaEm, chamadaPor, chamadas, agendouEm, agPara, autoAg, fimEm, fimPor}
+// Ordem: VIP Ouro primeiro (pelo ranking), depois quem entrou antes. O robô tira da fila sozinho quem ganhou horário novo no Zelo.
+var FILA={L:[], ok:false, st:'esperando', dia:'', prof:'', q:'', form:{qt:'data', turno:'qualquer', prof:''}, cli:null};
+var FILA_ST={esperando:['Esperando','var(--amber)'], chamada:['Chamada — aguardando resposta','var(--blue)'], agendou:['Agendou','var(--green)'], desistiu:['Desistiu / não quer mais','var(--muted)']};
+var FILA_TURNO={qualquer:'qualquer horário', manha:'manhã', tarde:'tarde'};
+MSG_PADRAO.textoFila='Oi, {nome}! Aqui é da Voox 1956 😊 Abriu um horário {quando}{comprof} para {servico}. Você tinha pedido para avisar — quer que eu reserve pra você? É só responder aqui.';
+function assinarFila(){
+  if(DEMO) return;
+  var lim=addDias(hojeISO(),-60);
+  unsubs.push(db.collection('voox_fila').where('criadoEm','>=',lim).limit(3000).onSnapshot(function(s){
+    FILA.L=[]; s.forEach(function(d){ FILA.L.push(Object.assign({id:d.id}, d.data())); }); FILA.ok=true; contarFila(); if(viewAtual==='fila') renderFila(); if(viewAtual==='vagas') renderVagas();
+  }, function(e){ FILA.erro=e.code||e.message; FILA.ok=true; if(viewAtual==='fila') renderFila(); }));
+}
+function contarFila(){ var n=FILA.L.filter(function(x){ return x.st==='esperando' && filaValida(x); }).length, c=document.getElementById('cntFila'); if(c){ c.textContent=n; c.style.display=n?'':'none'; } }
+function filaValida(x){ return !(x.qt==='data' && x.de && x.de<hojeISO()) && !(x.qt==='entre' && x.ate && x.ate<hojeISO()); }
+// serve para o dia d (e a profissional p)?
+function filaServe(x, d, p){
+  if(d){ if(x.qt==='data' && x.de!==d) return false; if(x.qt==='entre' && ((x.de && d<x.de) || (x.ate && d>x.ate))) return false; }
+  if(p && x.prof && x.prof!==p) return false;
+  return true;
+}
+function filaOrdem(a,b){ var va=vipRk(a.ci), vb=vipRk(b.ci); if(!!va!==!!vb) return va?-1:1; if(va && vb && va!==vb) return va-vb; return String(a.criadoEm).localeCompare(String(b.criadoEm)); }
+function filaQuando(x){ var t=x.qt==='data'?'dia '+dataBRc(x.de)+' ('+['dom','seg','ter','qua','qui','sex','sáb'][s2d(x.de).getDay()]+')':x.qt==='entre'?(x.de?dataBR(x.de):'hoje')+' a '+(x.ate?dataBR(x.ate):'—'):'qualquer dia'; return t+(x.turno&&x.turno!=='qualquer'?' · '+FILA_TURNO[x.turno]:''); }
+function profsConhecidos(){ var o={}; (RET.itens||[]).forEach(function(x){ if(x.p) o[x.p]=1; }); (VIP.L||[]).forEach(function(x){ if(x.p) o[x.p]=1; }); Object.keys(VAGAS||{}).forEach(function(d){ ((VAGAS[d]||{}).profs||[]).forEach(function(p){ o[p.p]=1; }); }); return Object.keys(o).filter(function(p){ return p && p!=='—'; }).sort(function(a,b){ return nomeProf(a).localeCompare(nomeProf(b)); }); }
+function renderFila(){
+  if(viewAtual!=='fila') return;
+  var el=document.getElementById('page-fila'), hoje=hojeISO();
+  var cont={esperando:0, chamada:0, agendou:0, desistiu:0}; FILA.L.forEach(function(x){ if(x.st==='esperando' && !filaValida(x)) return; if(cont[x.st]!=null) cont[x.st]++; });
+  var h='<div class="grid kpis k4">';
+  Object.keys(FILA_ST).forEach(function(k){ h+='<div class="card kclick'+(FILA.st===k?' on':'')+'" onclick="FILA.st=\''+k+'\';renderFila()"><div class="klabel">'+FILA_ST[k][0].split(' —')[0]+'</div><div class="kval">'+n0(cont[k])+'</div><div class="khint">'+{esperando:'na fila agora', chamada:'avisadas da vaga', agendou:'conseguiram horário (60 dias)', desistiu:'saíram da fila (60 dias)'}[k]+'</div></div>'; });
+  h+='</div>';
+  // formulário
+  var F=FILA.form, profs=profsConhecidos(), S=servicosConhecidos();
+  h+='<details class="card msgcard" id="fila-novo"'+(FILA.abrirForm?' open':'')+' style="margin-top:14px"><summary>➕ Colocar cliente na fila</summary><div class="fila-f">';
+  h+='<label class="ff-cli">Cliente'+(FILA.cli?'<div class="fila-sel">'+esc(FILA.cli.n)+(FILA.cli.c?' · '+esc(fmtCel(FILA.cli.c)):'')+vipSelo(FILA.cli.i)+' <button type="button" class="lk" onclick="FILA.cli=null;FILA.abrirForm=true;renderFila()">trocar</button></div>':buscaCliHTML('fl','filaPick')+'<small>Cliente nova? <a href="#" onclick="filaNova();return false">digitar nome e celular</a></small>')+'</label>';
+  h+='<label>Serviço<input id="fl-s" list="fl-dl" placeholder="Ex.: escova média" autocomplete="off"><datalist id="fl-dl">'+S.map(function(s){ return '<option value="'+esc(s)+'">'; }).join('')+'</datalist></label>';
+  h+='<label>Profissional<select id="fl-p"><option value="">Qualquer uma</option>'+profs.map(function(p){ return '<option value="'+esc(p)+'"'+(F.prof===p?' selected':'')+'>'+esc(nomeProf(p))+'</option>'; }).join('')+'</select></label>';
+  h+='<label>Quando<select id="fl-qt" onchange="FILA.form.qt=this.value;filaQt()"><option value="data"'+(F.qt==='data'?' selected':'')+'>Num dia específico</option><option value="entre"'+(F.qt==='entre'?' selected':'')+'>Entre duas datas</option><option value="qualquer"'+(F.qt==='qualquer'?' selected':'')+'>Qualquer dia</option></select></label>';
+  h+='<label id="fl-del">'+(F.qt==='entre'?'De':'Dia')+'<input type="date" id="fl-de" min="'+hoje+'" value="'+esc(F.de||'')+'"></label><label id="fl-atl"'+(F.qt==='entre'?'':' style="display:none"')+'>Até<input type="date" id="fl-ate" min="'+hoje+'" value="'+esc(F.ate||'')+'"></label>';
+  h+='<label>Turno<select id="fl-t"><option value="qualquer">Qualquer horário</option><option value="manha">Manhã</option><option value="tarde">Tarde</option></select></label>';
+  h+='<label class="ff-obs">Observação<input id="fl-o" maxlength="160" placeholder="Ex.: só depois das 15h; quer com a Carla se der"></label>';
+  h+='</div><div class="fbar" style="margin:10px 0 0"><span class="khint">A cliente entra no fim da fila — VIP Ouro passa na frente das demais.</span><span style="flex:1"></span><button class="btn" onclick="filaSalvar()">Colocar na fila</button></div></details>';
+  // filtros
+  h+='<div class="fbar" style="margin-top:14px"><label class="khint" style="display:flex;align-items:center;gap:6px">Serve para o dia <input type="date" style="width:auto" value="'+esc(FILA.dia)+'" onchange="FILA.dia=this.value;renderFila()">'+(FILA.dia?'<button class="lk" onclick="FILA.dia=\'\';renderFila()">limpar</button>':'')+'</label>';
+  h+='<select style="width:auto" onchange="FILA.prof=this.value;renderFila()"><option value="">Todas as profissionais</option>'+profs.map(function(p){ return '<option value="'+esc(p)+'"'+(FILA.prof===p?' selected':'')+'>'+esc(nomeProf(p))+'</option>'; }).join('')+'</select>';
+  h+='<input type="search" placeholder="Buscar cliente ou serviço" value="'+esc(FILA.q)+'" oninput="FILA.q=this.value;clearTimeout(FILA._t);FILA._t=setTimeout(renderFila,250)" style="flex:1;min-width:180px;height:34px"></div>';
+  if(FILA.erro) h+='<div class="alert a-warn"><span>⚠ Não consegui ler a fila ('+esc(FILA.erro)+'). Publique as regras novas do Firestore.</span></div>';
+  var q=chaveTxt(FILA.q);
+  var L=FILA.L.filter(function(x){ return x.st===FILA.st && (x.st!=='esperando' || filaValida(x)) && filaServe(x, FILA.dia, FILA.prof) && (!q || chaveTxt(x.nome+' '+x.serv).indexOf(q)>=0); });
+  if(FILA.st==='esperando' || FILA.st==='chamada') L.sort(filaOrdem); else L.sort(function(a,b){ return String(b.agendouEm||b.fimEm||'').localeCompare(String(a.agendouEm||a.fimEm||'')); });
+  var venc=FILA.L.filter(function(x){ return x.st==='esperando' && !filaValida(x); });
+  h+='<div class="sect">'+FILA_ST[FILA.st][0]+' <small>'+n0(L.length)+(FILA.st==='esperando'?' · VIP Ouro primeiro, depois por ordem de contato':'')+'</small></div><div class="rlist">';
+  var lim=limDe('fila',80);
+  h+=L.length?L.slice(0,lim).map(function(x,i){ return filaLinha(x, (FILA.st==='esperando'||FILA.st==='chamada')?i+1:0); }).join(''):'<div class="card empty">'+(FILA.st==='esperando'?'Ninguém na fila'+(FILA.dia||FILA.prof?' para esse filtro':'')+'.':'Ninguém aqui.')+'</div>';
+  h+='</div>'+maisHTML('fila', L.length, 80, 'renderFila()');
+  if(FILA.st==='esperando' && venc.length) h+='<div class="khint" style="margin-top:8px">'+venc.length+' pedido(s) com data que já passou ficaram fora da lista. <a href="#" onclick="filaLimparVencidos();return false">Marcar como desistiu</a></div>';
+  h+='<details class="card msgcard" style="margin-top:14px"><summary>Mensagem do WhatsApp para avisar da vaga</summary><textarea id="ed-textoFila">'+esc(textoMsg('textoFila'))+'</textarea><div class="msgrow"><span>Use <b>{nome}</b>, <b>{servico}</b>, <b>{quando}</b> (o dia que você escolher ao chamar) e <b>{comprof}</b> (" com a Fulana").</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarCampoMsg(\'textoFila\')">Salvar mensagem</button></div></details>';
+  h+='<div class="nota">Quando a cliente da fila marca horário no Zelo, o robô tira ela da fila sozinho (marca <b>Agendou</b>) em até 15 minutos. Em <b>Horários vagos</b>, cada buraco na agenda mostra quem da fila serve para aquele dia e profissional.</div>';
+  el.innerHTML=h;
+  var t=document.getElementById('fl-t'); if(t) t.value=F.turno||'qualquer';
+}
+function filaLinha(x, pos){
+  var vip=ehVip(x.ci), dias=diasDesde(x.criadoEm), cor=vip?'var(--amber)':FILA_ST[x.st][1];
+  var h='<div class="rrow" style="--c:'+cor+'"><div><div class="nm">'+(pos?'<span class="fila-pos">'+pos+'º</span> ':'')+(x.ci?lkCli(x.ci,x.nome):esc(x.nome))+(vip?' <span class="pill p-warn">VIP Ouro'+(vipRk(x.ci)&&vipRk(x.ci)<9999?' · #'+vipRk(x.ci):'')+' — prioridade</span>':'')+'</div>';
+  h+='<div class="info"><b>'+esc(String(x.serv||'').toLowerCase())+'</b>'+(x.prof?' com '+esc(nomeProf(x.prof)):' · qualquer profissional')+' · '+filaQuando(x)+(x.obs?' · <i>'+esc(x.obs)+'</i>':'')+'</div>';
+  var tags='<span class="pill p-mut">na fila desde '+dataBR(x.criadoEm)+' '+envLocal(x.criadoEm).h+(dias?' ('+dias+(dias===1?' dia':' dias')+')':'')+' · por '+esc(x.nm||String(x.por||'').split('@')[0])+'</span>';
+  if(x.chamadaEm) tags+='<span class="pill p-blue">chamada '+dataBR(x.chamadaEm)+' '+envLocal(x.chamadaEm).h+(x.chamadas>1?' ('+x.chamadas+'×)':'')+'</span>';
+  if(x.st==='agendou') tags+='<span class="pill p-ok">agendou'+(x.agPara?' para '+dataBR(x.agPara)+' '+String(x.agPara).slice(11,16):'')+(x.autoAg?' · visto no Zelo':'')+'</span>';
+  h+='<div class="tags">'+tags+'</div>'+anotFix(x.ci)+'</div><div class="acts">'+(x.ci?btnOferta(x.ci,x.nome)+btnAnot(x.ci,x.nome):'');
+  if(x.st==='esperando'||x.st==='chamada'){
+    if(x.cel) h+='<button class="btn btn-sm btn-wa" data-i="'+esc(x.id)+'" onclick="filaChamar(this.dataset.i)">'+(x.st==='chamada'?'Chamar de novo':'Avisar vaga')+'</button>';
+    h+='<button class="btn btn-sm" data-i="'+esc(x.id)+'" onclick="filaSt(this.dataset.i,\'agendou\')">Agendou</button><button class="btn btn-sm btn-ghost" data-i="'+esc(x.id)+'" onclick="filaSt(this.dataset.i,\'desistiu\')">Desistiu</button>';
+  } else h+='<button class="btn btn-sm btn-ghost" data-i="'+esc(x.id)+'" onclick="filaSt(this.dataset.i,\'esperando\')">Voltar para a fila</button>';
+  return h+'</div></div>';
+}
+function filaQt(){ var q=FILA.form.qt; document.getElementById('fl-atl').style.display=q==='entre'?'':'none'; var dl=document.getElementById('fl-del'); dl.style.display=q==='qualquer'?'none':''; dl.firstChild.nodeValue=q==='entre'?'De':'Dia'; }
+function filaPick(ds){ FILA.cli={i:String(ds.i), n:ds.n, c:ds.c||''}; FILA.abrirForm=true; filaGuardarForm(); renderFila(); }
+function filaNova(){ var n=prompt('Nome da cliente:'); if(!n) return; var c=limpaCel(prompt('Celular com DDD (só números):')||''); FILA.cli={i:'', n:n.trim().toUpperCase(), c:c}; FILA.abrirForm=true; filaGuardarForm(); renderFila(); }
+function filaGuardarForm(){ function v(id){ var e=document.getElementById(id); return e?e.value:''; } var F=FILA.form; F.serv=v('fl-s')||F.serv; F.prof=v('fl-p'); F.de=v('fl-de'); F.ate=v('fl-ate'); F.turno=v('fl-t')||'qualquer'; F.obs=v('fl-o'); }
+function filaSalvar(){
+  filaGuardarForm(); var F=FILA.form, c=FILA.cli, serv=String(document.getElementById('fl-s').value||F.serv||'').trim();
+  if(!c){ toast('Escolha a cliente.','err'); return; }
+  if(serv.length<3){ toast('Qual serviço ela quer?','err'); document.getElementById('fl-s').focus(); return; }
+  if(F.qt!=='qualquer' && !F.de){ toast('Escolha o dia.','err'); return; }
+  if(F.qt==='entre' && !F.ate){ toast('Escolha até quando.','err'); return; }
+  var dup=FILA.L.filter(function(x){ return (x.st==='esperando'||x.st==='chamada') && ((c.i && x.ci===c.i) || (!c.i && x.nome===c.n)); })[0];
+  if(dup && !confirm(c.n+' já está na fila ('+String(dup.serv||'').toLowerCase()+', '+filaQuando(dup)+'). Colocar de novo?')) return;
+  var d={ci:c.i||'', nome:c.n, cel:c.c||'', serv:serv.toUpperCase(), prof:F.prof||'', qt:F.qt, de:F.qt==='qualquer'?'':F.de, ate:F.qt==='entre'?F.ate:'', turno:F.turno||'qualquer', obs:String(F.obs||'').trim().slice(0,160),
+         criadoEm:new Date().toISOString(), por:email||'demo', nm:nome_logado(), st:'esperando'};
+  var fim=function(){ FILA.cli=null; FILA.form={qt:F.qt, turno:'qualquer', prof:''}; FILA.abrirForm=false; toast(d.nome+' entrou na fila'+(ehVip(d.ci)?' (VIP Ouro — na frente)':'')+'.'); renderFila(); };
+  if(DEMO){ FILA.L.push(Object.assign({id:uid8()}, d)); contarFila(); fim(); return; }
+  db.collection('voox_fila').add(d).then(fim).catch(falhou);
+}
+function filaGrava(id, campos, msg){
+  var x=FILA.L.filter(function(o){ return o.id===id; })[0]; if(!x) return;
+  if(DEMO){ Object.assign(x, campos); contarFila(); renderFila(); if(viewAtual==='vagas') renderVagas(); if(msg) toast(msg); return; }
+  db.collection('voox_fila').doc(id).set(campos, {merge:true}).then(function(){ if(msg) toast(msg); }).catch(falhou);
+}
+function filaSt(id, st){
+  var agora=new Date().toISOString(), c={st:st};
+  if(st==='agendou'){ c.agendouEm=agora; c.autoAg=false; c.fimPor=email||'demo'; }
+  else if(st==='desistiu'){ c.fimEm=agora; c.fimPor=email||'demo'; }
+  filaGrava(id, c, st==='esperando'?'Voltou para a fila (mantém a posição original).':st==='agendou'?'Marcada como agendou.':'Marcada como desistiu.');
+}
+function filaChamar(id, dia, prof){
+  var x=FILA.L.filter(function(o){ return o.id===id; })[0]; if(!x||!x.cel) return;
+  var d=dia||(x.qt==='data'?x.de:''), p=prof||x.prof;
+  var txt=preencher(textoMsg('textoFila'), {nome:nomeCurto(x.nome), servico:String(x.serv||'').toLowerCase(), quando:d?quandoData(d):'nos próximos dias', comprof:p?' com a '+nomeProf(p):'', prof:p?nomeProf(p):''});
+  logEnvio('fila', x.ci||'', x.nome, String(x.serv||'').toLowerCase()+(d?' · '+dataBR(d):''));
+  abrirWhats(x.cel, txt);
+  filaGrava(id, {st:'chamada', chamadaEm:new Date().toISOString(), chamadaPor:email||'demo', chamadas:(+x.chamadas||0)+1});
+}
+function filaLimparVencidos(){ FILA.L.filter(function(x){ return x.st==='esperando' && !filaValida(x); }).forEach(function(x){ filaGrava(x.id, {st:'desistiu', fimEm:new Date().toISOString(), fimPor:'data passou'}); }); toast('Pedidos vencidos tirados da fila.'); }
+// bloco dentro de Horários vagos: quem da fila serve para este dia e profissional
+function filaNaVaga(dia, prof){
+  var L=FILA.L.filter(function(x){ return (x.st==='esperando'||x.st==='chamada') && filaValida(x) && filaServe(x, dia, prof); }).sort(filaOrdem);
+  if(!L.length) return '';
+  return '<div class="fila-vaga"><div class="klabel" style="margin:0 0 6px">Na fila de espera para este dia ('+L.length+')</div>'+L.slice(0,5).map(function(x,i){
+    return '<div class="fv-it"><span class="fila-pos">'+(i+1)+'º</span> '+(x.ci?lkCli(x.ci,x.nome):esc(x.nome))+' <small class="p-sem">'+esc(String(x.serv||'').toLowerCase())+(x.prof?'':' · qualquer prof.')+(x.turno&&x.turno!=='qualquer'?' · '+FILA_TURNO[x.turno]:'')+(x.st==='chamada'?' · já chamada':'')+'</small>'+(x.cel?' <button class="btn btn-sm btn-wa" data-i="'+esc(x.id)+'" data-d="'+esc(dia)+'" data-p="'+esc(prof)+'" onclick="filaChamar(this.dataset.i,this.dataset.d,this.dataset.p)">Avisar</button>':'')+'</div>';
+  }).join('')+(L.length>5?'<div class="khint">+ '+(L.length-5)+' na fila — veja em Fila de espera.</div>':'')+'</div>';
+}
+function dadosDemoFila(){
+  var h=hojeISO(), L=cliLista.filter(function(c){ return c.c; }), vipId=(VIP.L[1]||{}).ci, sv=['ESCOVA MEDIA','MANICURE','CORTE FEMININO','RETOQUE RAIZ','DEPILAÇÃO VIRILHA'], ps=['CARLA (CAB)','ANA (MAN)','','GABI (SOB)',''];
+  for(var i=0;i<9;i++){ var c=i===6&&vipId?{i:vipId,n:VIP.map[vipId].n,c:VIP.map[vipId].cel||'51999990000'}:L[i+20]; if(!c) break;
+    FILA.L.push({id:'f'+i, ci:String(c.i), nome:c.n, cel:c.c, serv:sv[i%5], prof:ps[i%5], qt:i%3===0?'qualquer':i%3===1?'data':'entre', de:i%3===0?'':addDias(h,1+(i%4)), ate:i%3===2?addDias(h,10):'', turno:['qualquer','tarde','manha'][i%3], obs:i===2?'só depois das 15h':'', criadoEm:addDias(h,-(9-i))+'T1'+(i%9)+':20:00.000Z', por:'demo', nm:['Recepção','Adriana'][i%2], st:i===7?'chamada':i===8?'agendou':'esperando', chamadaEm:i===7?addDias(h,-1)+'T14:00:00.000Z':undefined, agendouEm:i===8?addDias(h,-1)+'T15:00:00.000Z':undefined, agPara:i===8?addDias(h,3)+'T10:00':undefined, autoAg:i===8}); }
+  FILA.ok=true; contarFila();
 }
 
 // ================================================================ utilidades de período (Margem, Satisfação)
@@ -4480,6 +4628,7 @@ function renderVagas(){
   if(!profs.length) h+='<div class="card empty">Agenda cheia neste dia — nenhum buraco de 45 minutos ou mais.</div>';
   profs.forEach(function(p){
     h+='<div class="card vg-prof"><div class="vg-top"><div><div class="nm">'+esc(nomeProf(p.p))+' <small class="p-sem">'+esc(p.p)+'</small></div><div class="vg-gaps">'+p.gaps.map(function(g){ return '<span class="pill '+(g.borda?'p-mut':'p-ok')+'" title="'+(g.borda?'Início/fim do dia: confira se ela trabalha nesse horário':'Buraco entre atendimentos')+'">'+g.i+'–'+g.f+' · '+(g.min>=60?Math.floor(g.min/60)+'h'+(g.min%60?String(g.min%60).padStart(2,'0'):''):g.min+' min')+(g.borda?' ?':'')+'</span>'; }).join('')+'</div></div></div>';
+    h+=filaNaVaga(dataVaga, p.p);
     var C=(p.cands||[]).slice().sort(function(a,b){ return vipRank(b.id)-vipRank(a.id); });
     if(!C.length) h+='<div class="khint" style="padding:8px 0 2px">Nenhuma cliente dela no tempo de voltar. Use a Reativação ou as Oportunidades.</div>';
     else {
@@ -5043,7 +5192,7 @@ var NIVEIS = [
 var CFG_ABAS = [
   {g:'Gestão', gestao:true, abas:[['painel','Painel'],['semana','Resumo da semana'],['envios','Contatos da recepção'],['prof','Profissionais'],['metas','Metas da equipe'],['agenda','Agenda'],['serv','Serviços feitos'],['sat','Satisfação'],['vendas','Mês a mês']]},
   {g:'Financeiro', gestao:true, fin:true, abas:[['fin','Dashboard'],['lanc','Lançamentos'],['pagar','Contas a pagar'],['com','Comissões'],['marg','Margem por serviço'],['conc','Conferência Zelo'],['cgs','Contas gerenciais']]},
-  {g:'Clientes', abas:[['cli','Clientes',1],['base','Base de clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['retorno','Hora de voltar'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga'],['vip','Clientes VIP'],['cupom','Códigos de desconto']]}
+  {g:'Clientes', abas:[['cli','Clientes',1],['base','Base de clientes',1],['conf','Confirmações'],['falt','Faltosas'],['fila','Fila de espera'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['retorno','Hora de voltar'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga'],['vip','Clientes VIP'],['cupom','Códigos de desconto']]}
 ];
 var FIN_ABAS = {}; CFG_ABAS[1].abas.forEach(function(a){ FIN_ABAS[a[0]]=1; });
 function nivelNome(n){ var x=NIVEIS.filter(function(v){ return v[0]===n; })[0]; return x?x[1]:'—'; }
@@ -6474,7 +6623,7 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoCupom(); dadosDemoEnvios(); dadosDemoVip(); dadosDemoPrev(); dadosDemoRet(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoCupom(); dadosDemoEnvios(); dadosDemoVip(); dadosDemoFila(); dadosDemoPrev(); dadosDemoRet(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
