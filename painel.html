@@ -200,6 +200,7 @@ html[data-theme] .seg select.on{background:var(--primary-strong);color:#fff;font
 .of-add input{flex:1}
 .prev-t tr.prev-pass td{color:var(--muted)}
 .prev-t tr.prev-pass td:first-child{font-style:italic}
+.vip-s{font-size:.85em;margin-left:3px;filter:saturate(1.2)}
 .sel-area{height:28px;font-size:12px;padding:2px 6px;width:auto;min-width:150px}
 html[data-theme="dark"] .seg select option{background:#1c1c1f}
 .seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
@@ -777,6 +778,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <button class="navbtn" data-p="aniv" onclick="nav('aniv')"><span class="side-ico">✿</span><span class="lbl">Aniversariantes</span><span class="cnt" id="cntAniv" style="display:none">0</span></button>
     <button class="navbtn" data-p="pac" onclick="nav('pac')"><span class="side-ico">▤</span><span class="lbl">Pacotes</span><span class="cnt" id="cntPac" style="display:none">0</span></button>
     <button class="navbtn" data-p="indic" onclick="nav('indic')"><span class="side-ico">❦</span><span class="lbl">Indique uma amiga</span></button>
+    <button class="navbtn" data-p="vip" onclick="nav('vip')"><span class="side-ico">★</span><span class="lbl">Clientes VIP</span><span class="cnt" id="cntVip" style="display:none">0</span></button>
     <button class="navbtn" data-p="cupom" onclick="nav('cupom')"><span class="side-ico">%</span><span class="lbl">Códigos de desconto</span></button>
     <div class="side-sec lbl admin-only">Admin</div>
     <button class="navbtn admin-only" data-p="config" onclick="nav('config')"><span class="side-ico">⚙</span><span class="lbl">Configurações</span><span class="cnt" id="cntCfg" style="display:none">0</span></button>
@@ -820,6 +822,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div class="page" id="page-pac"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-indic"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-cupom"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-vip"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-envios"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-minha"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-pagar"><div class="empty">Carregando…</div></div>
@@ -866,6 +869,9 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
           <span style="flex:1"></span>
           <button class="btn btn-sm" onclick="salvarMensagem()">Salvar mensagem</button>
         </div>
+        <div class="klabel" style="margin:16px 0 6px">⭐ Mensagem para VIP Ouro <small style="text-transform:none;letter-spacing:0">(vazio = usa a de cima)</small></div>
+        <textarea id="ed-textoReativVip" placeholder="Ex.: {nome}, aqui é a Vivian da Voox. Sentimos sua falta! Guardei um horário especial pra você..."></textarea>
+        <div class="msgrow"><span>Mais pessoal, para as clientes Ouro. Mesmos campos: {nome}, {codigo}, {validade}, {desconto}.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarMsgVip()">Salvar mensagem VIP</button></div>
       </details>
       <div id="r-seq"></div>
       <div class="sect" id="r-titulo">Clientes</div>
@@ -1075,6 +1081,7 @@ function assinar(){
   unsubs.push(db.collection('voox_retorno').doc('semanas').onSnapshot(function(snap){ RSEM=snap.exists?snap.data():null; renderRetorno(); if(viewAtual==='painel') renderPainel(); }, function(){}));
   assinarAreas();
   assinarCupons();
+  assinarVip();
   unsubs.push(db.collection('voox_config').doc('ciclos').onSnapshot(function(snap){ CICLOS={}; ((snap.exists&&snap.data().itens)||[]).forEach(function(x){ CICLOS[x.s]=x.d; }); renderRetorno(); }, function(){}));
   unsubs.push(db.collection('voox_ofertas').limit(5000).onSnapshot(function(snap){ OFER={}; snap.forEach(function(d){ OFER[d.id]=d.data(); }); reOfertaTudo(); }, function(err){ console.warn('ofertas:', err.code||err.message); }));
   unsubs.push(db.collection('voox_pacotes').limit(3000).onSnapshot(function(snap){ setPac(snap); renderPac(); if(viewAtual==='conf') renderConfirm(); if(FICHA.nome) renderFicha(); }, function(err){ var el=document.getElementById('page-pac'); if(el) el.innerHTML='<div class="card empty">Sem permissão para ler os pacotes ('+esc(err.code||err.message)+'). Publique as regras novas do Firestore.</div>'; }));
@@ -1124,6 +1131,7 @@ function assinar(){
     if(snap.exists && snap.data().texto) mensagem = snap.data().texto;
     if(snap.exists && snap.data().textoAniv) mensagemAniv = snap.data().textoAniv;
     MSG = snap.exists ? snap.data() : {}; renderMsgs();
+    var tv=document.getElementById('ed-textoReativVip'); if(tv && document.activeElement!==tv) tv.value=MSG.textoReativVip||'';
     mensagemCarregada = true;
     var ta=document.getElementById('msg-txt');
     if(document.activeElement!==ta) ta.value=mensagem;
@@ -1154,6 +1162,12 @@ function atualizarCliente(id, campos, desfazer){
   }).catch(function(e){ toast('Não salvou: '+(e.code||e.message),'err'); });
 }
 
+function salvarMsgVip(){
+  var t=String(document.getElementById('ed-textoReativVip').value||'').trim();
+  if(t && t.length<20){ toast('Mensagem muito curta.','err'); return; }
+  if(DEMO){ MSG.textoReativVip=t; toast('Salvo (demonstração).'); return; }
+  db.collection('voox_config').doc('mensagem').set({textoReativVip:t, atualizadoEm:new Date().toISOString(), por:email}, {merge:true}).then(function(){ toast(t?'Mensagem VIP salva.':'Mensagem VIP apagada — usa a normal.'); }).catch(falhou);
+}
 function salvarMensagem(){
   var txt=document.getElementById('msg-txt').value.trim();
   if(txt.length<20){ toast('Mensagem muito curta.','err'); return; }
@@ -1215,7 +1229,8 @@ function enviar(id, reenvio){
   var c=clientes[id]; if(!c) return;
   if(!c.cel){ toast('Cliente sem celular válido no Zelo.','err'); return; }
   var cp=gerarCupom(id, c.nome, c.cel, 'reativ');
-  abrirWhats(c.cel, textoComCupom(mensagem.replace(/\{nome\}/g, c.primeiro || (c.nome||'').split(' ')[0]), cp));
+  var base=(ehVip(id) && (MSG.textoReativVip||'').trim()) ? MSG.textoReativVip : mensagem;
+  abrirWhats(c.cel, textoComCupom(base.replace(/\{nome\}/g, c.primeiro || (c.nome||'').split(' ')[0]), cp));
   gravarOferta(id, c.nome, {s:'REATIVAÇÃO (VOLTE A NOS VISITAR)', camp:'reativ', canal:'whats', res:'sem_resposta', obs:'código '+cp.cod});
   atualizarCliente(id, { enviado:true, enviadoEm:new Date().toISOString(), enviadoPor:email||'demo', cupom:cp.cod }, reenvio ? 'Reenvio registrado.' : (c.primeiro||c.nome)+' marcada como enviada.');
 }
@@ -1263,6 +1278,7 @@ var TITULOS = {
   retorno:['Hora de voltar', 'Clientes chegando no ciclo de cada serviço — e para encher semana fraca'],
   pac:    ['Pacotes', 'Sessões compradas, quanto falta e quem renovar'],
   indic:  ['Indique uma amiga', 'Códigos de indicação, amigas que vieram e prêmios'],
+  vip:    ['Clientes VIP', 'As clientes Ouro: quem está sumindo, agrados e boas-vindas'],
   envios: ['Contatos da recepção', 'Quantas vezes cada campanha foi usada, por quem e com quais clientes'],
   cupom:  ['Códigos de desconto', 'Confira o código que a cliente recebeu e marque como usado'],
   falt:   ['Faltosas', 'Clientes que costumam faltar — peça sinal ou confirme antes'],
@@ -1348,6 +1364,7 @@ function nav(v){
   if(v==='indic') renderIndic();
   if(v==='cupom') renderCupom();
   if(v==='envios') renderEnvios();
+  if(v==='vip') renderVip();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
@@ -2156,7 +2173,7 @@ var SEQCFG = {
     ctx: function(){ return 'enviar'; },
     pend: function(){
       return Object.keys(clientes).map(function(id){ return Object.assign({id:id}, clientes[id]); }).filter(function(c){ return estado(c)==='enviar' && c.cel && reativNoPer(c); })
-        .sort(function(a,b){ return (a.prioridade-b.prioridade) || (b.n-a.n) || (diasDesde(a.ult)-diasDesde(b.ult)); }).map(function(c){ return c.id; });
+        .sort(function(a,b){ return (vipRank(b.id)-vipRank(a.id)) || (a.prioridade-b.prioridade) || (b.n-a.n) || (diasDesde(a.ult)-diasDesde(b.ult)); }).map(function(c){ return c.id; });
     },
     livre: function(id){ var c=clientes[id]; return c && estado(c)==='enviar' && c.cel; },
     item: function(id){ var c=clientes[id]; return {nome:c.nome, info:(c.servico||'')+' · última visita há '+fmtSumida(diasDesde(c.ult))+' · costumava vir a cada '+c.intervalo+' dias'}; },
@@ -3611,7 +3628,7 @@ var CUP_LETRAS='ACDEFHJKMNPRTUVWXY3479';
 function novoCodigoCupom(){ var c; do{ c='VX'; for(var i=0;i<5;i++) c+=CUP_LETRAS[Math.floor(Math.random()*CUP_LETRAS.length)]; } while(CUP[c]); return c; }
 function cupomStatus(x){ if(!x) return 'nao'; if(x.cancelado) return 'cancelado'; if(x.usado) return 'usado'; if(x.validade && x.validade<hojeISO()) return 'vencido'; return 'ativo'; }
 var CUP_CAMP={reativ:'Reativação', aniv:'Aniversário'};
-function cupCfgDe(camp){ return camp==='aniv' ? {desc:CUPCFG.anivDesc||'15%', dias:+CUPCFG.anivDias||30} : {desc:CUPCFG.desc||'20%', dias:+CUPCFG.dias||30}; }
+function cupCfgDe(camp, ci){ if(camp==='aniv' && ci && typeof ehVip==='function' && ehVip(ci)) return {desc:VIPCFG.anivDesc||'25%', dias:+CUPCFG.anivDias||30}; return camp==='aniv' ? {desc:CUPCFG.anivDesc||'15%', dias:+CUPCFG.anivDias||30} : {desc:CUPCFG.desc||'20%', dias:+CUPCFG.dias||30}; }
 var CUP_ST={ativo:['Válido','p-ok'], usado:['Já usado','p-mut'], vencido:['Vencido','p-bad'], cancelado:['Cancelado','p-mut'], nao:['Não existe','p-bad']};
 // cupom válido que a cliente já tem nesta campanha (reenvio usa o mesmo)
 function cupomDe(ci, camp){
@@ -3622,7 +3639,7 @@ function cupomDe(ci, camp){
 // cria (ou reaproveita) e devolve {cod, validade, desc}
 function gerarCupom(ci, nome, cel, camp){
   var k=cupomDe(ci, camp); if(k) return {cod:k, validade:CUP[k].validade, desc:CUP[k].desc};
-  var cf=cupCfgDe(camp), cod=novoCodigoCupom(), d={ci:String(ci), nome:nome||'', cel:cel||'', camp:camp||'reativ', desc:cf.desc, validade:addDias(hojeISO(), cf.dias), criadoEm:new Date().toISOString(), por:email||'demo', usado:false};
+  var cf=cupCfgDe(camp, ci), cod=novoCodigoCupom(), d={ci:String(ci), nome:nome||'', cel:cel||'', camp:camp||'reativ', desc:cf.desc, validade:addDias(hojeISO(), cf.dias), criadoEm:new Date().toISOString(), por:email||'demo', usado:false};
   CUP[cod]=d;
   if(!DEMO) db.collection('voox_cupons').doc(cod).set(d).catch(function(e){ delete CUP[cod]; toast('O código '+cod+' não foi salvo ('+(e.code||e.message)+'). Não envie de novo antes de conferir.','err'); });
   return {cod:cod, validade:d.validade, desc:d.desc};
@@ -3712,7 +3729,7 @@ function dadosDemoCupom(){
 //       + voox_envios/{auto} -> {camp, ci, nome, em, por, nm, obs}  (Confirmação, Pós-atendimento, Horários vagos, Faltosas, Indique uma amiga)
 var ENV={cache:{}, carregando:{}, L:null, aberto:null, per:'mes', de:'', ate:'', quem:'', lim:{}};
 try{ var _ev=JSON.parse(localStorage.getItem('voox_envios_ui')||'null'); if(_ev){ ENV.per=_ev.per||'mes'; ENV.de=_ev.de||''; ENV.ate=_ev.ate||''; } }catch(e){}
-var ENV_CAMP={reativ:'Reativação', aniv:'Aniversário', retorno:'Hora de voltar', pacote:'Renovação de pacote', conf:'Confirmação de horário', pos:'Pós-atendimento (avaliação)', vaga:'Horários vagos', falta:'Faltosas', indica:'Indique uma amiga · convite', premio:'Indique uma amiga · aviso de prêmio', manual:'Ofertas registradas à mão'};
+var ENV_CAMP={reativ:'Reativação', aniv:'Aniversário', retorno:'Hora de voltar', pacote:'Renovação de pacote', conf:'Confirmação de horário', pos:'Pós-atendimento (avaliação)', vaga:'Horários vagos', falta:'Faltosas', indica:'Indique uma amiga · convite', premio:'Indique uma amiga · aviso de prêmio', manual:'Ofertas registradas à mão', vipboas:'Boas-vindas VIP Ouro'};
 function envLocal(em){ var d=new Date(em); if(isNaN(d)) return {d:String(em||'').slice(0,10), h:String(em||'').slice(11,16)}; return {d:d2s(d), h:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}; }
 function envNomeCamp(c){ return ENV_CAMP[c] || ('Oportunidades · '+(typeof nomeCamp==='function'?nomeCamp(c):c)); }
 var ENVD=[];   // demonstração
@@ -3841,6 +3858,132 @@ function dadosDemoEnvios(){
     CONV={c:c, desde:addDias(hojeISO(),-40)+'T08:00'}; }, 0);
   var h=hojeISO(), quem=['Recepção','Adriana','Jonathan'], cs=['conf','pos','vaga','falta','indica'], nomes=cliLista.filter(function(c){ return c.c; }).slice(0,40);
   for(var i=0;i<140;i++){ var c=nomes[i%nomes.length]; if(!c) break; var d=addDias(h,-(i%25)); ENVD.push({camp:cs[i%5===0?2:i%3===0?1:i%7===0?3:i%11===0?4:0], ci:c.i, nome:c.n, em:d+'T'+String(9+i%9).padStart(2,'0')+':'+String((i*7)%60).padStart(2,'0')+':00.000Z', por:'demo', nm:quem[i%3]}); }
+}
+
+// ================================================================ CLIENTES VIP (Ouro)
+// voox_vip/lista   {itens:[{ci,n,cel,desde,auto,ult,iv,q12,vis,s,p,risco}], entradas:[{ci,n,mes}], saidas:[...], mes}  (robô; recepção lê)
+// voox_vip/estado  {corte, ativas, elegiveis, pct, minVis, membros...}  (robô; só gestão)
+// voox_vip/ajustes {incluir:{ci:{n,por,em}}, excluir:{ci:{n,por,em}}}    (gestão)
+// voox_vip_ctrl/{ci} {agrados, ultAgrado, agradoPor, boasVindasEm, boasVindasPor}  (recepção)
+// voox_config/vip  {pct, minVis, agradoCada, anivDesc}
+var VIP={L:[], map:{}, ok:false, entradas:[], saidas:[], est:null, aj:{incluir:{}, excluir:{}}, ctrl:{}, filtro:'todas', q:''};
+var VIPCFG={pct:3, minVis:6, agradoCada:5, anivDesc:'25%'};
+MSG_PADRAO.textoVipBoasVindas='Oi, {nome}! Você agora é cliente Ouro da Voox 1956 ⭐ É o nosso jeito de agradecer por estar sempre com a gente. A partir de agora você tem prioridade nos horários mais disputados, presente especial no aniversário e alguns mimos nas suas visitas. Obrigada por escolher a Voox!';
+function ehVip(ci){ return !!(ci && VIP.map[String(ci)]); }
+function vipRank(ci){ return ehVip(ci)?1:0; }
+function vipSelo(ci){ return ehVip(ci)?' <span class="vip-s" title="Cliente VIP Ouro">⭐</span>':''; }
+function setVip(d){
+  d=d||{}; VIP.L=d.itens||[]; VIP.map={}; VIP.L.forEach(function(x){ VIP.map[String(x.ci)]=x; });
+  VIP.entradas=d.entradas||[]; VIP.saidas=d.saidas||[]; VIP.mes=d.mes||''; VIP.atualizadoEm=d.atualizadoEm||''; VIP.ok=true;
+  var cnt=document.getElementById('cntVip'); if(cnt){ var n=vipSumindo().length; cnt.textContent=n; cnt.style.display=n?'':'none'; }
+  if(viewAtual==='vip') renderVip();
+}
+function assinarVip(){
+  if(DEMO) return;
+  unsubs.push(db.collection('voox_vip').doc('lista').onSnapshot(function(s){ setVip(s.exists?s.data():null); }, function(e){ VIP.erro=e.code||e.message; if(viewAtual==='vip') renderVip(); }));
+  unsubs.push(db.collection('voox_config').doc('vip').onSnapshot(function(s){ if(s.exists) VIPCFG=Object.assign({pct:3, minVis:6, agradoCada:5, anivDesc:'25%'}, s.data()); if(viewAtual==='vip') renderVip(); }, function(){}));
+  unsubs.push(db.collection('voox_vip_ctrl').limit(2000).onSnapshot(function(s){ VIP.ctrl={}; s.forEach(function(d){ VIP.ctrl[d.id]=d.data(); }); if(viewAtual==='vip') renderVip(); }, function(){}));
+  if(podePainel()){
+    unsubs.push(db.collection('voox_vip').doc('estado').onSnapshot(function(s){ VIP.est=s.exists?s.data():null; if(viewAtual==='vip') renderVip(); }, function(){}));
+    unsubs.push(db.collection('voox_vip').doc('ajustes').onSnapshot(function(s){ VIP.aj=Object.assign({incluir:{}, excluir:{}}, s.exists?s.data():{}); if(viewAtual==='vip') renderVip(); }, function(){}));
+  }
+}
+function vipDiasSem(x){ return x.ult?diasDesde(x.ult):null; }
+function vipLimite(x){ return Math.max(30, 2*(+x.iv||30)); }
+function vipSumindo(){ return VIP.L.filter(function(x){ var d=vipDiasSem(x); return d!=null && d>vipLimite(x); }); }
+function vipAgrado(x){ var c=VIP.ctrl[x.ci]||{}, cada=+VIPCFG.agradoCada||5, ganhos=Math.floor((+x.vis||0)/cada), dados=+c.agrados||0; return {pend:Math.max(0, ganhos-dados), faltam:cada-((+x.vis||0)%cada), dados:dados, cada:cada}; }
+function setVipFiltro(f){ VIP.filtro=f; renderVip(); }
+function renderVip(){
+  if(viewAtual!=='vip') return;
+  var el=document.getElementById('page-vip'), gest=podePainel();
+  if(!VIP.ok){ el.innerHTML='<div class="card empty">'+(VIP.erro?'Sem permissão para ler a lista VIP ('+esc(VIP.erro)+'). Publique as regras novas do Firestore.':'A lista VIP aparece depois que o robô rodar a versão nova (rodada completa: 6h17, 12h17 ou 18h17).')+'</div>'; return; }
+  var sum=vipSumindo(), pend=VIP.L.filter(function(x){ return vipAgrado(x).pend>0; }), novas=VIP.entradas.filter(function(x){ return ehVip(x.ci); });
+  var h='<div class="grid kpis k4">';
+  [['todas','Clientes VIP Ouro',VIP.L.length,(VIP.est&&gest?'a partir de '+brl(VIP.est.corte)+' em 12 meses · '+VIPCFG.minVis+'+ visitas':'as que mais gastam no ano')],
+   ['sumindo','VIP sumindo',sum.length,'sem vir há mais que o dobro do normal'],
+   ['agrado','Agrados a entregar',pend.length,'a cada '+VIPCFG.agradoCada+' visitas como Ouro'],
+   ['novas','Novas Ouro no mês',novas.length,'mandar a mensagem de boas-vindas']].forEach(function(k){
+    h+='<div class="card kclick'+(VIP.filtro===k[0]?' on':'')+'" onclick="setVipFiltro(\''+k[0]+'\')"><div class="klabel">'+k[1]+'</div><div class="kval"'+(k[0]==='sumindo'&&k[2]?' style="color:var(--red)"':'')+'>'+n0(k[2])+'</div><div class="khint">'+k[3]+'</div></div>';
+  });
+  h+='</div>';
+  if(gest) h+=vipConfigHTML();
+  var L=VIP.L.slice();
+  if(VIP.filtro==='sumindo') L=sum; else if(VIP.filtro==='agrado') L=pend; else if(VIP.filtro==='novas') L=L.filter(function(x){ return novas.some(function(n){ return n.ci===x.ci; }); });
+  var q=chaveTxt(VIP.q||''); if(q) L=L.filter(function(x){ return chaveTxt(x.n+' '+x.p+' '+x.s).indexOf(q)>=0; });
+  L.sort(function(a,b){ return VIP.filtro==='sumindo' ? (vipDiasSem(b)-vipLimite(b))-(vipDiasSem(a)-vipLimite(a)) : (vipDiasSem(a)||0)-(vipDiasSem(b)||0) || a.n.localeCompare(b.n); });
+  h+='<div class="fbar" style="margin-top:14px"><input type="search" placeholder="Buscar VIP, profissional ou serviço" value="'+esc(VIP.q||'')+'" oninput="VIP.q=this.value;clearTimeout(VIP._t);VIP._t=setTimeout(renderVip,250)" style="flex:1;min-width:200px;height:34px"></div>';
+  var tit={todas:'Todas as VIP Ouro', sumindo:'VIP sumindo — chame com mensagem pessoal, não de campanha', agrado:'Agrado a entregar na próxima visita', novas:'Novas Ouro este mês'}[VIP.filtro];
+  h+='<div class="sect">'+tit+' <small>'+n0(L.length)+'</small></div><div class="rlist">';
+  var lim=limDe('vip',60);
+  h+=L.length?L.slice(0,lim).map(vipLinha).join(''):'<div class="card empty">'+(VIP.filtro==='sumindo'?'Nenhuma VIP sumida. 👏':'Ninguém aqui.')+'</div>';
+  h+='</div>'+maisHTML('vip', L.length, 60, 'renderVip()');
+  if(VIP.saidas.length && gest) h+='<div class="sect">Saíram do Ouro este mês <small>'+VIP.saidas.length+'</small></div><div class="khint">'+VIP.saidas.map(function(x){ return lkCli(x.ci,x.n); }).join(' · ')+'</div>';
+  if(gest){ var ex=Object.keys(VIP.aj.excluir||{}); if(ex.length) h+='<div class="sect">Tiradas do VIP à mão <small>'+ex.length+'</small></div><div class="rlist">'+ex.map(function(ci){ var x=VIP.aj.excluir[ci]; return '<div class="rrow" style="--c:var(--muted)"><div><div class="nm">'+lkCli(ci,x.n)+'</div><div class="info">tirada por '+esc(String(x.por||'').split('@')[0])+' em '+dataBR(x.em)+'</div></div><div class="acts"><button class="btn btn-sm btn-ghost" data-c="'+esc(ci)+'" onclick="vipDesfazer(this.dataset.c)">Voltar para o VIP</button></div></div>'; }).join('')+'</div>'; }
+  h+='<div class="nota"><b>Quem é VIP Ouro</b>: as '+VIPCFG.pct+'% das clientes que mais gastaram nos últimos 12 meses e vieram pelo menos '+VIPCFG.minVis+' vezes. O robô recalcula no dia 1 de cada mês; quem fica abaixo do corte 2 meses seguidos sai'+(gest?' (a gestão pode incluir ou tirar à mão)':'')+'. <b>Sumindo</b>: sem vir há mais que o dobro do intervalo de costume. <b>Agrado</b>: a cada '+VIPCFG.agradoCada+' visitas desde que virou Ouro. O selo ⭐ aparece ao lado do nome em todo o painel.'+(VIP.atualizadoEm?' Atualizado '+dataBR(VIP.atualizadoEm)+'.':'')+'</div>';
+  el.innerHTML=h;
+}
+function vipLinha(x){
+  var d=vipDiasSem(x), sum=d!=null && d>vipLimite(x), ag=vipAgrado(x), c=VIP.ctrl[x.ci]||{}, nova=VIP.entradas.some(function(n){ return n.ci===x.ci; });
+  var tags='';
+  if(sum) tags+='<span class="pill p-bad">sumida — '+fmtSumida(d)+' sem vir (costuma a cada '+(x.iv||'?')+' dias)</span>';
+  if(ag.pend) tags+='<span class="pill p-ok">🎁 '+ag.pend+' agrado'+(ag.pend>1?'s':'')+' a entregar</span>'; else tags+='<span class="pill p-mut">próximo agrado em '+ag.faltam+' visita'+(ag.faltam>1?'s':'')+'</span>';
+  if(nova) tags+=c.boasVindasEm?'<span class="pill p-mut">boas-vindas enviada '+dataBR(c.boasVindasEm)+'</span>':'<span class="pill p-warn">nova Ouro — falta a boas-vindas</span>';
+  if(!x.auto) tags+='<span class="pill p-blue">incluída à mão</span>';
+  if(x.risco) tags+='<span class="pill p-warn" title="Ficou abaixo do corte no último cálculo; sai se ficar abaixo de novo no próximo mês">em risco de sair</span>';
+  var h='<div class="rrow" style="--c:'+(sum?'var(--red)':'var(--amber)')+'"><div><div class="nm">'+lkCli(x.ci,x.n)+'</div>';
+  var inf=[]; if(x.s) inf.push('faz <b>'+esc(x.s.toLowerCase())+'</b>'+(x.p?' com '+esc(nomeProf(x.p)):'')); if(x.ult) inf.push('última visita '+dataBR(x.ult)+' ('+fmtSumida(d)+')'); if(x.q12) inf.push(n0(x.q12)+' visitas em 12 meses'); inf.push('Ouro desde '+dataBR(x.desde));
+  h+='<div class="info">'+inf.join(' · ')+'</div>';
+  h+='<div class="tags">'+tags+'</div>'+anotFix(x.ci)+ultimaOferta(x.ci)+'</div><div class="acts">'+btnOferta(x.ci,x.n)+btnAnot(x.ci,x.n);
+  if(ag.pend) h+='<button class="btn btn-sm" data-c="'+esc(x.ci)+'" onclick="vipAgradoDado(this.dataset.c)">Agrado entregue</button>';
+  if(nova && x.cel) h+='<button class="btn btn-sm '+(c.boasVindasEm?'btn-ghost':'btn-wa')+'" data-c="'+esc(x.ci)+'" onclick="vipBoasVindas(this.dataset.c)">'+(c.boasVindasEm?'Reenviar boas-vindas':'Boas-vindas')+'</button>';
+  else if(x.cel) h+='<a class="btn btn-sm btn-ghost" href="https://wa.me/55'+esc(x.cel)+'" target="_blank" rel="noopener">WhatsApp</a>';
+  if(podePainel()) h+='<button class="btn btn-sm btn-ghost" data-c="'+esc(x.ci)+'" data-n="'+esc(x.n)+'" onclick="vipTirar(this.dataset.c,this.dataset.n)" title="Tirar do VIP (vale até você desfazer)">Tirar</button>';
+  return h+'</div></div>';
+}
+function vipConfigHTML(){
+  var e=VIP.est||{};
+  var h='<details class="card msgcard" style="margin-top:14px"><summary>Regras do VIP, incluir cliente e mensagem de boas-vindas</summary>';
+  if(e.corte) h+='<div class="khint" style="margin:10px 0">Último cálculo ('+esc(e.mes||'')+'): '+n0(e.ativas)+' clientes vieram nos últimos 12 meses; corte do Ouro = <b>'+brl(e.corte)+'</b> gastos no ano; '+n0(e.elegiveis)+' bateram o corte e as '+VIPCFG.minVis+' visitas.</div>';
+  h+='<div class="pac-f" style="margin-top:10px"><label>% que mais gastam<input id="vp-pct" type="number" min="1" max="20" step="0.5" value="'+esc(String(VIPCFG.pct))+'"></label><label>Mínimo de visitas no ano<input id="vp-min" type="number" min="1" max="50" value="'+esc(String(VIPCFG.minVis))+'"></label><label>Agrado a cada (visitas)<input id="vp-ag" type="number" min="1" max="50" value="'+esc(String(VIPCFG.agradoCada))+'"></label><label>Desconto de aniversário VIP<input id="vp-aniv" type="text" value="'+esc(VIPCFG.anivDesc||'')+'" placeholder="25%"></label></div>';
+  h+='<div class="fbar" style="margin:8px 0 0"><span class="khint">% e mínimo de visitas valem no próximo cálculo (dia 1 do mês). Agrado e aniversário valem na hora.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarVipCfg()">Salvar regras</button></div>';
+  h+='<div class="klabel" style="margin:16px 0 6px">Incluir cliente no VIP à mão</div>'+buscaCliHTML('vp','vipIncluir');
+  h+='<div class="klabel" style="margin:16px 0 6px">Mensagem de boas-vindas ao Ouro</div><textarea id="ed-textoVipBoasVindas">'+esc(textoMsg('textoVipBoasVindas'))+'</textarea><div class="msgrow"><span>Use <b>{nome}</b> para o primeiro nome.</span><span style="flex:1"></span><button class="btn btn-sm" onclick="salvarCampoMsg(\'textoVipBoasVindas\')">Salvar mensagem</button></div>';
+  return h+'</details>';
+}
+function salvarVipCfg(){
+  function num(id, d){ var v=parseFloat(String(document.getElementById(id).value).replace(',','.')); return isNaN(v)?d:v; }
+  var d={pct:Math.max(1,Math.min(20,num('vp-pct',3))), minVis:Math.max(1,Math.round(num('vp-min',6))), agradoCada:Math.max(1,Math.round(num('vp-ag',5))), anivDesc:String(document.getElementById('vp-aniv').value||'').trim()||'25%'};
+  if(DEMO){ VIPCFG=d; renderVip(); toast('Salvo.'); return; }
+  db.collection('voox_config').doc('vip').set(d, {merge:true}).then(function(){ toast('Regras do VIP salvas.'); }).catch(falhou);
+}
+function vipAjuste(campo, ci, dado, msg){
+  var u={}; u[campo]={}; u[campo][ci]=dado;
+  if(DEMO){ VIP.aj[campo]=VIP.aj[campo]||{}; if(dado && dado!=='DEL') VIP.aj[campo][ci]=dado; else delete VIP.aj[campo][ci]; demoVipAplicar(); toast(msg); return; }
+  if(dado==='DEL') u[campo][ci]=firebase.firestore.FieldValue.delete();
+  db.collection('voox_vip').doc('ajustes').set(u, {merge:true}).then(function(){ toast(msg); }).catch(falhou);
+}
+function vipIncluir(ds){ var ci=String(ds.i), n=ds.n; if(ehVip(ci)){ toast(n+' já é VIP.'); return; } vipAjuste('excluir', ci, 'DEL', ''); vipAjuste('incluir', ci, {n:n, por:email, em:new Date().toISOString()}, n+' incluída no VIP. Aparece na lista na próxima rodada do robô.'); }
+function vipTirar(ci, n){ if(!confirm('Tirar '+n+' do VIP? Ela só volta se você desfizer.')) return; vipAjuste('incluir', ci, 'DEL', ''); vipAjuste('excluir', ci, {n:n, por:email, em:new Date().toISOString()}, n+' tirada do VIP. Some da lista na próxima rodada do robô.'); }
+function vipDesfazer(ci){ vipAjuste('excluir', ci, 'DEL', 'Ela volta para o VIP na próxima rodada do robô (se ainda bater o critério).'); }
+function vipCtrl(ci, campos, msg){
+  if(DEMO){ VIP.ctrl[ci]=Object.assign(VIP.ctrl[ci]||{}, campos); renderVip(); if(msg) toast(msg); return; }
+  db.collection('voox_vip_ctrl').doc(String(ci)).set(campos, {merge:true}).then(function(){ if(msg) toast(msg); }).catch(falhou);
+}
+function vipAgradoDado(ci){ var c=VIP.ctrl[ci]||{}; vipCtrl(ci, {agrados:(+c.agrados||0)+1, ultAgrado:new Date().toISOString(), agradoPor:email||'demo'}, 'Agrado registrado.'); }
+function vipBoasVindas(ci){
+  var x=VIP.map[ci]; if(!x||!x.cel) return;
+  logEnvio('vipboas', ci, x.n);
+  abrirWhats(x.cel, preencher(textoMsg('textoVipBoasVindas'), {nome:nomeCurto(x.n)}));
+  vipCtrl(ci, {boasVindasEm:new Date().toISOString(), boasVindasPor:email||'demo'});
+}
+function demoVipAplicar(){ var base=VIP._base||[]; var ex=VIP.aj.excluir||{}, inc=VIP.aj.incluir||{}; var L=base.filter(function(x){ return !ex[x.ci]; }); Object.keys(inc).forEach(function(ci){ if(!L.some(function(x){ return x.ci===ci; })) L.push({ci:ci, n:inc[ci].n, cel:'', desde:hojeISO(), auto:false, ult:'', iv:0, q12:0, vis:0, s:'', p:''}); }); setVip({itens:L, entradas:VIP.entradas, saidas:VIP.saidas, mes:hojeISO().slice(0,7), atualizadoEm:hojeISO()+'T10:00'}); }
+function dadosDemoVip(){
+  var L=cliLista.slice().sort(function(a,b){ return (b.vs||[]).length-(a.vs||[]).length; }).slice(0,14), h=hojeISO();
+  var it=L.map(function(c,i){ var ult=c.u||addDias(h,-(i*9)); return {ci:String(c.i), n:c.n, cel:c.c||'', desde:addDias(h,-(30+i*20)), auto:i!==3, ult:i===2||i===7?addDias(h,-70-i):ult, iv:9+i%5, q12:(c.vs||[]).length, vis:(i*3)%13, s:['MANICURE','ESCOVA MEDIA','RETOQUE RAIZ','PODOLOGIA'][i%4], p:['ANA (MAN)','CARLA (CAB)','GABI (SOB)','EVA (POD)'][i%4], risco:i===9?1:0}; });
+  VIP._base=it; VIP.est={corte:4120, ativas:3520, elegiveis:14, mes:h.slice(0,7)};
+  VIP.entradas=[{ci:it[0].ci, n:it[0].n, mes:h.slice(0,7)},{ci:it[5].ci, n:it[5].n, mes:h.slice(0,7)}]; VIP.saidas=[{ci:'x200', n:'FERNANDA ALVES', mes:h.slice(0,7)}];
+  VIP.ctrl[it[5].ci]={boasVindasEm:addDias(h,-2)+'T10:00'};
+  setVip({itens:it, entradas:VIP.entradas, saidas:VIP.saidas, mes:h.slice(0,7), atualizadoEm:h+'T10:00'});
 }
 
 // ================================================================ utilidades de período (Margem, Satisfação)
@@ -4337,7 +4480,7 @@ function renderVagas(){
   if(!profs.length) h+='<div class="card empty">Agenda cheia neste dia — nenhum buraco de 45 minutos ou mais.</div>';
   profs.forEach(function(p){
     h+='<div class="card vg-prof"><div class="vg-top"><div><div class="nm">'+esc(nomeProf(p.p))+' <small class="p-sem">'+esc(p.p)+'</small></div><div class="vg-gaps">'+p.gaps.map(function(g){ return '<span class="pill '+(g.borda?'p-mut':'p-ok')+'" title="'+(g.borda?'Início/fim do dia: confira se ela trabalha nesse horário':'Buraco entre atendimentos')+'">'+g.i+'–'+g.f+' · '+(g.min>=60?Math.floor(g.min/60)+'h'+(g.min%60?String(g.min%60).padStart(2,'0'):''):g.min+' min')+(g.borda?' ?':'')+'</span>'; }).join('')+'</div></div></div>';
-    var C=p.cands||[];
+    var C=(p.cands||[]).slice().sort(function(a,b){ return vipRank(b.id)-vipRank(a.id); });
     if(!C.length) h+='<div class="khint" style="padding:8px 0 2px">Nenhuma cliente dela no tempo de voltar. Use a Reativação ou as Oportunidades.</div>';
     else {
       h+='<div class="rlist" style="margin-top:8px">';
@@ -4627,7 +4770,7 @@ function demoProfDoc(p){
 
 // ================================================================ FICHA DA CLIENTE (clique no nome)
 var FICHA = { id:'', nome:'' };
-function lkCli(id, nome){ return podePainel() ? '<span class="cli-lk" data-id="'+esc(id||'')+'" data-n="'+esc(nome||'')+'" title="Ver histórico">'+esc(nome)+'</span>' : esc(nome); }
+function lkCli(id, nome){ return (podePainel() ? '<span class="cli-lk" data-id="'+esc(id||'')+'" data-n="'+esc(nome||'')+'" title="Ver histórico">'+esc(nome)+'</span>' : esc(nome))+(typeof vipSelo==='function'?vipSelo(id):''); }
 document.addEventListener('click', function(ev){
   var el=ev.target.closest && ev.target.closest('.cli-lk'); if(!el) return;
   ev.preventDefault(); ev.stopPropagation(); abrirFicha(el.dataset.id, el.dataset.n);
@@ -4816,7 +4959,7 @@ function renderLista(){
     if(q && (c.nome||'').toUpperCase().indexOf(q)<0 && (c.servico||'').toUpperCase().indexOf(q)<0) return false;
     return true;
   });
-  if(filtro==='enviar') arr.sort(function(a,b){ return (a.prioridade-b.prioridade) || (b.n-a.n) || (diasDesde(a.ult)-diasDesde(b.ult)); });
+  if(filtro==='enviar') arr.sort(function(a,b){ return (vipRank(b.id)-vipRank(a.id)) || (a.prioridade-b.prioridade) || (b.n-a.n) || (diasDesde(a.ult)-diasDesde(b.ult)); });
   else if(filtro==='voltaram') arr.sort(function(a,b){ return (b.voltouEm||'').localeCompare(a.voltouEm||''); });
   else arr.sort(function(a,b){ return (b.enviadoEm||b.descartadoEm||'').localeCompare(a.enviadoEm||a.descartadoEm||''); });
 
@@ -4900,7 +5043,7 @@ var NIVEIS = [
 var CFG_ABAS = [
   {g:'Gestão', gestao:true, abas:[['painel','Painel'],['semana','Resumo da semana'],['envios','Contatos da recepção'],['prof','Profissionais'],['metas','Metas da equipe'],['agenda','Agenda'],['serv','Serviços feitos'],['sat','Satisfação'],['vendas','Mês a mês']]},
   {g:'Financeiro', gestao:true, fin:true, abas:[['fin','Dashboard'],['lanc','Lançamentos'],['pagar','Contas a pagar'],['com','Comissões'],['marg','Margem por serviço'],['conc','Conferência Zelo'],['cgs','Contas gerenciais']]},
-  {g:'Clientes', abas:[['cli','Clientes',1],['base','Base de clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['retorno','Hora de voltar'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga'],['cupom','Códigos de desconto']]}
+  {g:'Clientes', abas:[['cli','Clientes',1],['base','Base de clientes',1],['conf','Confirmações'],['falt','Faltosas'],['vagas','Horários vagos'],['pos','Pós-atendimento'],['reativ','Reativação'],['retorno','Hora de voltar'],['oport','Oportunidades'],['aniv','Aniversariantes'],['pac','Pacotes'],['indic','Indique uma amiga'],['vip','Clientes VIP'],['cupom','Códigos de desconto']]}
 ];
 var FIN_ABAS = {}; CFG_ABAS[1].abas.forEach(function(a){ FIN_ABAS[a[0]]=1; });
 function nivelNome(n){ var x=NIVEIS.filter(function(v){ return v[0]===n; })[0]; return x?x[1]:'—'; }
@@ -6243,7 +6386,7 @@ function retFiltrados(){
     return true;
   }).sort(function(a,b){
     if(f==='semana'){ var L=RV.semana.profs; return ((L[b.p]||0)-(L[a.p]||0)) || a.vence.localeCompare(b.vence); }
-    return a.vence.localeCompare(b.vence) || (b.q-a.q);
+    return (vipRank(b.ci)-vipRank(a.ci)) || a.vence.localeCompare(b.vence) || (b.q-a.q);
   });
 }
 function contarRet(){
@@ -6331,7 +6474,7 @@ aplicarModo(modoAtual());
 if(DEMO){
   document.getElementById('demoBox').innerHTML='<div class="demo">Modo demonstração · dados fictícios</div>';
   nivel='admin'; logado=true; nome='Demo'; email='demo';
-  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoCupom(); dadosDemoEnvios(); dadosDemoPrev(); dadosDemoRet(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
+  dadosDemo(); dadosDemoDias(); dadosDemoExtras(); dadosDemoMsgs(); dadosDemoClientes(); dadosDemoCli2(); dadosDemoPesq(); dadosDemoOfertas(); dadosDemoCupom(); dadosDemoEnvios(); dadosDemoVip(); dadosDemoPrev(); dadosDemoRet(); dadosDemoFin(); dadosDemoServ(); dadosDemoNovos(); contarPagar();
   setFalt({data:hojeISO(), itens:[{i:'c0',n:'ANA PAULA SILVA',primeiro:'Ana',c:'51999990000',f:3,cx:1,a:4,uf:addDias(hojeISO(),-20),s:'MANICURE',prox:addDias(hojeISO(),1)+'T08:00'},{i:'x9',n:'CARLA MENDES',primeiro:'Carla',c:'51999990010',f:2,cx:0,a:9,uf:addDias(hojeISO(),-40),s:'ESCOVA MEDIA'}]});
   (function(){ var m=hojeISO().slice(0,7), o={}; ['ANA (MAN)','BIA (MAN)','CARLA (CAB)','DANI (DEP)','EVA (POD)','GABI (SOB)'].forEach(function(p,i){ o[p]={meta:[9000,8000,12000,7000,9500,6000][i], bonus:[200,150,250,150,200,100][i]}; }); METASP={m:{}}; METASP.m[m]=o; METASP.m[addMes(m,-1)]=o; })();
   ACESSOS={'gisele.dep@gmail.com':{prof:'GISELE (DEP)',slug:'gisele-dep',nome:'Gisele'}};
