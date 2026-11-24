@@ -1368,7 +1368,10 @@ def gravar_vip(db, d, docs_cli):
     est = est_ref.get().to_dict() or {}
     aj = db.collection("voox_vip").document("ajustes").get().to_dict() or {}
     incl, excl = aj.get("incluir") or {}, aj.get("excluir") or {}
-    corte12 = (hoje - dt.timedelta(days=365)).isoformat()
+    # período apurado: os 12 meses FECHADOS antes do mês atual (no dia 1/dez: 1/dez do ano passado a 30/nov)
+    ini_p = date_add_months(hoje.replace(day=1), -12)
+    fim_p = hoje.replace(day=1) - dt.timedelta(days=1)
+    corte12, fim12 = ini_p.isoformat(), fim_p.isoformat()
     cli = {}
     for k, dd in docs_cli.items():
         if k == "meta":
@@ -1378,11 +1381,17 @@ def gravar_vip(db, d, docs_cli):
             if not cid:
                 continue
             dias, serv, prof = [], Counter(), Counter()
+            vp, qp = 0.0, set()
             for v in it.get("vs") or []:
                 a = v.split(",")
                 dia = f"20{a[0][0:2]}-{a[0][2:4]}-{a[0][4:6]}"
                 dias.append(dia)
-                if dia >= corte12:
+                if corte12 <= dia <= fim12:
+                    qp.add(dia)
+                    try:
+                        vp += float(a[1])
+                    except (IndexError, ValueError):
+                        pass
                     try:
                         j = int(a[2]); serv[sd[j]] += 1 if 0 <= j < len(sd) and sd[j] else 0
                     except (IndexError, ValueError):
@@ -1391,7 +1400,7 @@ def gravar_vip(db, d, docs_cli):
                         j = int(a[3]); prof[pd[j]] += 1 if 0 <= j < len(pd) and pd[j] else 0
                     except (IndexError, ValueError):
                         pass
-            cli[cid] = {"n": it.get("n") or "", "v": float(it.get("v") or 0), "q": int(it.get("q") or 0), "dias": sorted(set(dias)),
+            cli[cid] = {"n": it.get("n") or "", "v": round(vp, 2), "q": len(qp), "dias": sorted(set(dias)),
                         "iv": it.get("iv"), "c": it.get("c") or "",
                         "s": (serv.most_common(1)[0][0] if serv else it.get("s") or ""),
                         "p": (prof.most_common(1)[0][0] if prof else it.get("r") or "")}
@@ -1419,13 +1428,17 @@ def gravar_vip(db, d, docs_cli):
             if membros[cid]["abaixo"] >= 2:
                 saidas.append({"ci": cid, "n": (cli.get(cid) or {}).get("n", ""), "mes": mes})
                 del membros[cid]
+        # posição no ranking do mês (1 = quem mais gastou no período); fica fixa até o próximo dia 1
+        for i, cid in enumerate(sorted(membros, key=lambda c: -(cli.get(c) or {}).get("v", 0))):
+            membros[cid]["rk"] = i + 1
         lim = date_add_months(hoje.replace(day=1), -6).strftime("%Y-%m")
         entradas = [x for x in entradas if x["mes"] >= lim]
         saidas = [x for x in saidas if x["mes"] >= lim]
         est = {"mes": mes, "membros": membros, "entradas": entradas, "saidas": saidas, "corte": round(corte, 2),
+               "periodo": [corte12, fim12],
                "ativas": len(ativas), "elegiveis": len(elegiveis), "pct": pct, "minVis": min_vis, "calculadoEm": agora}
         est_ref.set(est)
-        log(f"VIP: {len(membros)} Ouro (corte R$ {corte:,.2f} em 12 meses, {len(ativas)} clientes ativas)")
+        log(f"VIP: {len(membros)} Ouro (corte R$ {corte:,.2f} de {corte12} a {fim12}, {len(ativas)} clientes ativas)")
     final = {cid: dict(m, auto=True) for cid, m in membros.items() if cid not in excl}
     for cid, x in incl.items():
         if cid not in excl and cid not in final:
@@ -1437,9 +1450,9 @@ def gravar_vip(db, d, docs_cli):
         itens.append({"ci": cid, "n": limpa_nome(c["n"]), "cel": c.get("c") or "", "desde": desde, "auto": m.get("auto", True),
                       "ult": c["dias"][-1] if c["dias"] else "", "iv": c.get("iv") or 0, "q12": c.get("q") or 0,
                       "vis": sum(1 for x in c["dias"] if x >= desde), "s": c.get("s") or "", "p": c.get("p") or "",
-                      "risco": int(m.get("abaixo") or 0)})
-    itens.sort(key=lambda o: o["n"])
-    novo = {"itens": itens, "mes": mes, "entradas": [x for x in entradas if x["mes"] == mes],
+                      "risco": int(m.get("abaixo") or 0), "rk": int(m.get("rk") or 0)})
+    itens.sort(key=lambda o: (o["rk"] or 99999, o["n"]))
+    novo = {"itens": itens, "mes": mes, "periodo": est.get("periodo") or [corte12, fim12], "entradas": [x for x in entradas if x["mes"] == mes],
             "saidas": [x for x in saidas if x["mes"] == mes], "atualizadoEm": agora}
     ref = db.collection("voox_vip").document("lista")
     velho = ref.get().to_dict() or {}
@@ -1794,6 +1807,7 @@ def gravar_agendamentos_novos(db, d):
     novos = {k: v for k, v in (conv.get("c") or {}).items()}
     primeira = not cache.get("k")
     n = 0
+    agora_novos = {}
     for k, (c, quando) in chaves.items():
         if k in vistos:
             continue
@@ -1801,7 +1815,19 @@ def gravar_agendamentos_novos(db, d):
         if primeira:
             continue
         novos.setdefault(c, []).append(f"{agora}|{quando}")
+        agora_novos.setdefault(c, []).append(quando)
         n += 1
+    # fila de espera: quem estava esperando e ganhou horário novo sai da fila como "agendou"
+    if agora_novos:
+        try:
+            for doc in db.collection("voox_fila").where("st", "in", ["esperando", "chamada"]).stream():
+                f = doc.to_dict() or {}
+                c = str(f.get("ci") or "")
+                if c in agora_novos:
+                    doc.reference.set({"st": "agendou", "agendouEm": agora, "agPara": min(agora_novos[c]), "autoAg": True}, merge=True)
+                    log(f"  fila de espera: {f.get('nome', c)} agendou")
+        except Exception as e:
+            log(f"  fila de espera não conferida: {e}")
     corte = (hoje - dt.timedelta(days=130)).isoformat()
     vistos = sorted(k for k in vistos if k.split("|")[1] >= corte)
     lim = (hoje - dt.timedelta(days=150)).isoformat()
