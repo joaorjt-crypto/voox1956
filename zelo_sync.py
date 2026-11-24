@@ -1347,6 +1347,106 @@ def gravar_base_clientes(z, db, hoje):
 REATIV_POR_PARTE = 3000
 
 
+# ---------------------------------------------------------------- clientes VIP (Ouro)
+
+def gravar_vip(db, d, docs_cli):
+    """VIP Ouro: as que mais gastaram nos últimos 12 meses (pct% das clientes ativas) e vieram pelo menos minVis vezes.
+    Recalcula a lista no começo de cada mês; quem fica abaixo do corte 2 meses seguidos sai. A gestão inclui/tira à mão
+    (voox_vip/ajustes). Grava voox_vip/lista (sem valores, a recepção lê) e voox_vip/estado (com o corte, só a gestão)."""
+    hoje = d["hoje"]
+    mes = hoje.strftime("%Y-%m")
+    agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
+    meta = docs_cli.get("meta") or {}
+    sd, pd = meta.get("sd") or [], meta.get("pd") or []
+    if not sd:
+        log("VIP: lista de clientes ainda não existe; fica para a próxima")
+        return
+    cfg = (db.collection("voox_config").document("vip").get().to_dict() or {})
+    pct = float(cfg.get("pct") or 3)
+    min_vis = int(cfg.get("minVis") or 6)
+    est_ref = db.collection("voox_vip").document("estado")
+    est = est_ref.get().to_dict() or {}
+    aj = db.collection("voox_vip").document("ajustes").get().to_dict() or {}
+    incl, excl = aj.get("incluir") or {}, aj.get("excluir") or {}
+    corte12 = (hoje - dt.timedelta(days=365)).isoformat()
+    cli = {}
+    for k, dd in docs_cli.items():
+        if k == "meta":
+            continue
+        for it in dd.get("itens") or []:
+            cid = str(it.get("i") or "")
+            if not cid:
+                continue
+            dias, serv, prof = [], Counter(), Counter()
+            for v in it.get("vs") or []:
+                a = v.split(",")
+                dia = f"20{a[0][0:2]}-{a[0][2:4]}-{a[0][4:6]}"
+                dias.append(dia)
+                if dia >= corte12:
+                    try:
+                        j = int(a[2]); serv[sd[j]] += 1 if 0 <= j < len(sd) and sd[j] else 0
+                    except (IndexError, ValueError):
+                        pass
+                    try:
+                        j = int(a[3]); prof[pd[j]] += 1 if 0 <= j < len(pd) and pd[j] else 0
+                    except (IndexError, ValueError):
+                        pass
+            cli[cid] = {"n": it.get("n") or "", "v": float(it.get("v") or 0), "q": int(it.get("q") or 0), "dias": sorted(set(dias)),
+                        "iv": it.get("iv"), "c": it.get("c") or "",
+                        "s": (serv.most_common(1)[0][0] if serv else it.get("s") or ""),
+                        "p": (prof.most_common(1)[0][0] if prof else it.get("r") or "")}
+    ativas = sorted((c["v"] for c in cli.values() if c["q"] >= 1), reverse=True)
+    if not ativas:
+        return
+    pos = max(1, round(len(ativas) * pct / 100))
+    corte = ativas[min(pos, len(ativas)) - 1]
+    elegiveis = {cid for cid, c in cli.items() if c["v"] >= corte and c["q"] >= min_vis}
+    membros = dict(est.get("membros") or {})
+    entradas, saidas = list(est.get("entradas") or []), list(est.get("saidas") or [])
+    if est.get("mes") != mes:
+        primeira = not membros
+        for cid in elegiveis:
+            if cid not in membros:
+                membros[cid] = {"desde": hoje.isoformat(), "abaixo": 0}
+                if not primeira:
+                    entradas.append({"ci": cid, "n": cli[cid]["n"], "mes": mes})
+            else:
+                membros[cid]["abaixo"] = 0
+        for cid in list(membros):
+            if cid in elegiveis:
+                continue
+            membros[cid]["abaixo"] = int(membros[cid].get("abaixo") or 0) + 1
+            if membros[cid]["abaixo"] >= 2:
+                saidas.append({"ci": cid, "n": (cli.get(cid) or {}).get("n", ""), "mes": mes})
+                del membros[cid]
+        lim = date_add_months(hoje.replace(day=1), -6).strftime("%Y-%m")
+        entradas = [x for x in entradas if x["mes"] >= lim]
+        saidas = [x for x in saidas if x["mes"] >= lim]
+        est = {"mes": mes, "membros": membros, "entradas": entradas, "saidas": saidas, "corte": round(corte, 2),
+               "ativas": len(ativas), "elegiveis": len(elegiveis), "pct": pct, "minVis": min_vis, "calculadoEm": agora}
+        est_ref.set(est)
+        log(f"VIP: {len(membros)} Ouro (corte R$ {corte:,.2f} em 12 meses, {len(ativas)} clientes ativas)")
+    final = {cid: dict(m, auto=True) for cid, m in membros.items() if cid not in excl}
+    for cid, x in incl.items():
+        if cid not in excl and cid not in final:
+            final[cid] = {"desde": (x.get("em") or agora)[:10], "auto": False}
+    itens = []
+    for cid, m in final.items():
+        c = cli.get(cid) or {"n": (incl.get(cid) or {}).get("n", ""), "dias": [], "iv": None, "c": "", "s": "", "p": "", "q": 0}
+        desde = m.get("desde") or hoje.isoformat()
+        itens.append({"ci": cid, "n": limpa_nome(c["n"]), "cel": c.get("c") or "", "desde": desde, "auto": m.get("auto", True),
+                      "ult": c["dias"][-1] if c["dias"] else "", "iv": c.get("iv") or 0, "q12": c.get("q") or 0,
+                      "vis": sum(1 for x in c["dias"] if x >= desde), "s": c.get("s") or "", "p": c.get("p") or "",
+                      "risco": int(m.get("abaixo") or 0)})
+    itens.sort(key=lambda o: o["n"])
+    novo = {"itens": itens, "mes": mes, "entradas": [x for x in entradas if x["mes"] == mes],
+            "saidas": [x for x in saidas if x["mes"] == mes], "atualizadoEm": agora}
+    ref = db.collection("voox_vip").document("lista")
+    velho = ref.get().to_dict() or {}
+    if {k: v for k, v in velho.items() if k != "atualizadoEm"} != {k: v for k, v in novo.items() if k != "atualizadoEm"}:
+        ref.set(novo)
+
+
 def gravar_reativ_lista(db, d, docs_cli):
     """Clientes que vieram 2+ vezes nos últimos 24 meses e pararam (mesma regra de antes: 30 dias e 1,5x o intervalo
     habitual; sem horário marcado; quem só vem para evento fica fora). Grava em poucos documentos (sem valores),
@@ -1521,6 +1621,59 @@ def escala_habitual(db, hoje, semanas=8):
     return {str(wd): sorted(p for p, n in trab[wd].items() if n >= max(1, dias_sem[wd] * 0.5)) for wd in range(7)}
 
 
+SEMANAS_PASSADAS = 8
+
+
+def montar_passado(z, d, medias, escala, horario):
+    """Últimas semanas (até ontem): minutos atendidos (pagos) ÷ minutos disponíveis, no mesmo critério da previsão."""
+    hoje = d["hoje"]
+    ini = hoje - dt.timedelta(days=hoje.weekday()) - dt.timedelta(weeks=SEMANAS_PASSADAS)
+    ontem = hoje - dt.timedelta(days=1)
+    if ontem < ini:
+        return {}
+    precos = d.get("precos") or {}
+    ags = z.agendamentos(ini, ontem, STATUS_PAGO, "dataHora,duracao,servico(id,nome),profissional(nomeAgenda)")
+    blq = defaultdict(int)
+    try:
+        for a in z.agendamentos(ini, ontem, "BLOQUEIO_AGENDA", "dataHora,duracao,profissional(nomeAgenda)"):
+            if a.get("dataHora"):
+                blq[(a["dataHora"][:10], ((a.get("profissional") or {}).get("nomeAgenda") or "").strip())] += _min(a) or 30
+    except Exception as e:
+        log(f"Semanas passadas: bloqueios não lidos ({e})")
+    dias = {}
+    x = ini
+    while x <= ontem:
+        dias[x.isoformat()] = {"v": 0.0, "q": 0, "m": 0, "cap": 0, "p": defaultdict(lambda: [0.0, 0, 0, 0])}
+        x += dt.timedelta(days=1)
+    for a in ags:
+        dia = (a.get("dataHora") or "")[:10]
+        if dia not in dias:
+            continue
+        prof = ((a.get("profissional") or {}).get("nomeAgenda") or "—").strip()
+        sv = a.get("servico") or {}
+        v = medias.get(limpa_serv(sv.get("nome")))
+        if v is None:
+            v = precos.get(str(sv.get("id")), 0.0)
+        mins = _min(a) or 30
+        o, pp = dias[dia], dias[dia]["p"][prof]
+        o["m"] += mins; o["v"] += v; o["q"] += 1
+        pp[0] += v; pp[1] += 1; pp[2] += mins
+    for dia, o in dias.items():
+        wd = dt.date.fromisoformat(dia).weekday()
+        h = horario[wd] or {}
+        aberto = (h.get("min") or 0) if h.get("aberto", True) else 0
+        quem = set(escala.get(str(wd)) or []) | {p for p, v in o["p"].items() if v[1]}
+        for p in quem:
+            if p in NAO_PROF:
+                continue
+            cap = max(0, aberto - blq.get((dia, p), 0))
+            o["p"][p][3] = cap
+            o["cap"] += cap
+        o["v"] = round(o["v"], 2)
+        o["p"] = {k: [round(v[0], 2), v[1], v[2], v[3]] for k, v in o["p"].items() if any(v)}
+    return dias
+
+
 def gravar_previsao(z, db, d, rapido=False):
     hoje = d["hoje"]
     ref = db.collection("voox_previsao").document("agenda")
@@ -1582,7 +1735,14 @@ def gravar_previsao(z, db, d, rapido=False):
         o["v"] = round(o["v"], 2)
         o["p"] = {k: [round(v[0], 2), v[1], v[2], v[3]] for k, v in o["p"].items() if any(v)}
     antigos = {k: v for k, v in (velho.get("dias") or {}).items() if k >= hoje.isoformat() and k not in dias}
-    novo = {"dias": dict(antigos, **dias), "medias": medias, "escala": escala, "semValor": sem_valor,
+    passado = velho.get("passado") or {}
+    if not rapido or not passado:
+        try:
+            passado = montar_passado(z, d, medias, escala, horario) or passado
+        except Exception as e:
+            log(f"Semanas passadas: {e}")
+    passado = {k: v for k, v in passado.items() if k < hoje.isoformat()}
+    novo = {"dias": dict(antigos, **dias), "passado": passado, "medias": medias, "escala": escala, "semValor": sem_valor,
             "ate": max(list(dias) + list(antigos)), "atualizadoEm": dt.datetime.now(TZ).isoformat(timespec="minutes")}
     # semanas à frente (sem valores): % preenchida e horas livres por profissional — para a recepção encher semana fraca
     try:
@@ -1604,11 +1764,55 @@ def gravar_previsao(z, db, d, rapido=False):
             rs.set({"semanas": semanas, "atualizadoEm": novo["atualizadoEm"]})
     except Exception as e:
         log(f"Semanas à frente: {e}")
-    if velho.get("dias") == novo["dias"] and velho.get("medias") == medias:
+    if velho.get("dias") == novo["dias"] and velho.get("medias") == medias and velho.get("passado") == passado:
         return
     ref.set(novo)
     tot = sum(o["v"] for o in dias.values())
     log(f"Previsão da agenda: R$ {tot:,.2f} em {sum(o['q'] for o in dias.values())} atendimentos até {fim.isoformat()}")
+
+
+# ---------------------------------------------------------------- agendamentos novos (para medir quem agendou depois da mensagem)
+
+def gravar_agendamentos_novos(db, d):
+    """O Zelo não informa quando o horário foi marcado. A cada rodada o robô compara a agenda com a anterior:
+    horário que não existia antes = agendado agora. Grava em voox_conv/novos {c:{cliente:["quando-viu|dataHora"]}}."""
+    hoje = d["hoje"]
+    agora = dt.datetime.now(TZ).isoformat(timespec="minutes")
+    chaves = {}
+    for a in list(d.get("futuros") or []) + list(d.get("pagos") or []):
+        c = (a.get("cliente") or {}).get("id")
+        if not c or not a.get("dataHora"):
+            continue
+        k = f"{c}|{a['dataHora'][:16]}|{(a.get('servico') or {}).get('id') or ''}"
+        chaves[k] = (str(c), a["dataHora"][:16])
+    cache_ref = db.collection("voox_cache").document("agvistos")
+    cache = cache_ref.get().to_dict() or {}
+    vistos = set(cache.get("k") or [])
+    conv_ref = db.collection("voox_conv").document("novos")
+    conv = conv_ref.get().to_dict() or {}
+    desde = conv.get("desde") or agora
+    novos = {k: v for k, v in (conv.get("c") or {}).items()}
+    primeira = not cache.get("k")
+    n = 0
+    for k, (c, quando) in chaves.items():
+        if k in vistos:
+            continue
+        vistos.add(k)
+        if primeira:
+            continue
+        novos.setdefault(c, []).append(f"{agora}|{quando}")
+        n += 1
+    corte = (hoje - dt.timedelta(days=130)).isoformat()
+    vistos = sorted(k for k in vistos if k.split("|")[1] >= corte)
+    lim = (hoje - dt.timedelta(days=150)).isoformat()
+    novos = {c: [x for x in v if x[:10] >= lim] for c, v in novos.items()}
+    novos = {c: v for c, v in novos.items() if v}
+    if vistos != sorted(cache.get("k") or []):
+        cache_ref.set({"k": vistos, "atualizadoEm": agora})
+    if primeira or n or novos != (conv.get("c") or {}):
+        conv_ref.set({"c": novos, "desde": desde, "atualizadoEm": agora})
+    if n:
+        log(f"Agendamentos novos desde a última rodada: {n}")
 
 
 # ---------------------------------------------------------------- agenda de hoje (tablet da pesquisa de satisfação)
@@ -1917,7 +2121,8 @@ def main_rapido():
                       ("Agenda de hoje", lambda: gravar_agenda_hoje(z, db, hoje)),
                       ("Previsão", lambda: gravar_previsao(z, db, d, rapido=True)),
                       ("Pacotes", lambda: gravar_pacotes(db, d["pagos"], hoje - dt.timedelta(days=5))),
-                      ("Indicações", lambda: gravar_indicacoes(db, d["pagos"]))):
+                      ("Indicações", lambda: gravar_indicacoes(db, d["pagos"])),
+                      ("Agendamentos novos", lambda: gravar_agendamentos_novos(db, d))):
         try:
             fn()
         except Exception as e:
@@ -1991,9 +2196,11 @@ def main():
         log(f"Celulares da lista de clientes não carregaram: {e}")
     fones = Fones(z, {k: v for k, v in conhecidos.items() if v})
     for etapa, fn in (("Mensagens do dia", lambda: gravar_mensagens_do_dia(z, db, d, fones)),
+                      ("Agendamentos novos", lambda: gravar_agendamentos_novos(db, d)),
                       ("Oportunidades", lambda: gravar_oportunidades(db, montar_oportunidades(d, set(candidatas), hist), fones, d)),
                       ("Hora de voltar", lambda: gravar_retornos(db, d, fones)),
                       ("Reativação 24m", lambda: gravar_reativ_lista(db, d, docs_cli)),
+                      ("VIP", lambda: gravar_vip(db, d, docs_cli)),
                       ("Clientes", lambda: gravar_clientes(z, db, d, resumo, {k: v for k, v in fones.c.items() if v})),
                       ("Serviços", lambda: gravar_servicos(z, db, d["hoje"], d["precos"], resumo)),
                       ("Horários vagos", lambda: gravar_vagas(z, db, d, fones)),
