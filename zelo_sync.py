@@ -2293,17 +2293,20 @@ def api_teste():
             log(f"{nome}: FALHOU — {e}")
     etapa("Profissionais ativas", lambda: len(api.paginas("/api/v1/professionals")))
     etapa("Serviços", lambda: len(api.paginas("/api/v1/services")))
+    TODOS = "SCHEDULED,IN_PROGRESS,PAID,CANCELLED,CANCELLED_BY_CLIENT,NO_SHOW,AGENDA_BLOCK,WAITLIST,WAITLIST_SCHEDULED,WAITLIST_CANCELLED"
     def dia(d):
-        L = api.paginas("/api/v1/appointments", {"date": d.isoformat()})
+        L = api.paginas("/api/v1/appointments", {"date": d.isoformat(), "status": TODOS})
         st = Counter(a.get("status") for a in L)
         campos = sorted(set(k for a in L[:20] for k in a)) if L else []
         return f"{len(L)} itens · status {dict(st)} · campos {campos}"
     etapa(f"Agenda de hoje ({hoje})", lambda: dia(hoje))
     etapa(f"Agenda de ontem", lambda: dia(hoje - dt.timedelta(days=1)))
+    etapa(f"Agenda de amanhã", lambda: dia(hoje + dt.timedelta(days=1)))
+    etapa("Agenda de hoje sem filtro de status (o que a API manda por padrão)", lambda: f"{len(api.paginas('/api/v1/appointments', {'date': hoje.isoformat()}))} itens")
     def espera():
         tot = Counter()
         for i in range(0, 21):
-            for a in api.paginas("/api/v1/appointments", {"date": (hoje + dt.timedelta(days=i)).isoformat(), "status": "WAITLIST"}):
+            for a in api.paginas("/api/v1/appointments", {"date": (hoje + dt.timedelta(days=i)).isoformat(), "status": "WAITLIST,WAITLIST_SCHEDULED,WAITLIST_CANCELLED"}):
                 tot[a.get("status")] += 1
         return f"próximos 21 dias: {dict(tot) or 'nenhuma cliente na fila de espera do Zelo'}"
     etapa("Fila de espera do Zelo", espera)
