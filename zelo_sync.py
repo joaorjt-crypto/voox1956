@@ -2251,8 +2251,73 @@ def main():
     log(f"Fim · {(time.time() - INICIO) / 60:.1f} min · {fones.novos} telefones buscados no Zelo")
 
 
+# ---------------------------------------------------------------- API oficial do Zelo (chave de produção)
+
+class ZeloAPI:
+    """https://openapi.zelo.tec.br — autenticação: Authorization: Bearer <ZELO_API_TOKEN>"""
+    BASE = "https://openapi.zelo.tec.br"
+
+    def __init__(self, token):
+        self.s = requests.Session()
+        self.s.headers.update({"Authorization": f"Bearer {token}", "Accept": "application/json"})
+
+    def get(self, path, params=None):
+        r = self.s.get(self.BASE + path, params=params or {}, timeout=60)
+        if r.status_code >= 400:
+            raise RuntimeError(f"{path} → HTTP {r.status_code}: {r.text[:200]}")
+        return r.json()
+
+    def paginas(self, path, params=None, size=100, limite=200):
+        out, page = [], 0
+        while page < limite:
+            j = self.get(path, dict(params or {}, page=page, size=size))
+            out.extend(j.get("content") or [])
+            if not j.get("hasNext"):
+                break
+            page += 1
+        return out
+
+
+def api_teste():
+    """Só lê pela API oficial e mostra no log o que veio (sem nomes nem telefones: o log do GitHub é público)."""
+    tok = os.environ.get("ZELO_API_TOKEN")
+    if not tok:
+        sys.exit("Falta o secret ZELO_API_TOKEN no workflow")
+    api = ZeloAPI(tok)
+    hoje = dt.datetime.now(TZ).date()
+    def etapa(nome, fn):
+        t0 = time.time()
+        try:
+            log(f"{nome}: {fn()} ({time.time() - t0:.1f}s)")
+        except Exception as e:
+            log(f"{nome}: FALHOU — {e}")
+    etapa("Profissionais ativas", lambda: len(api.paginas("/api/v1/professionals")))
+    etapa("Serviços", lambda: len(api.paginas("/api/v1/services")))
+    def dia(d):
+        L = api.paginas("/api/v1/appointments", {"date": d.isoformat()})
+        st = Counter(a.get("status") for a in L)
+        campos = sorted(set(k for a in L[:20] for k in a)) if L else []
+        return f"{len(L)} itens · status {dict(st)} · campos {campos}"
+    etapa(f"Agenda de hoje ({hoje})", lambda: dia(hoje))
+    etapa(f"Agenda de ontem", lambda: dia(hoje - dt.timedelta(days=1)))
+    def espera():
+        tot = Counter()
+        for i in range(0, 21):
+            for a in api.paginas("/api/v1/appointments", {"date": (hoje + dt.timedelta(days=i)).isoformat(), "status": "WAITLIST"}):
+                tot[a.get("status")] += 1
+        return f"próximos 21 dias: {dict(tot) or 'nenhuma cliente na fila de espera do Zelo'}"
+    etapa("Fila de espera do Zelo", espera)
+    def cliente():
+        L = api.get("/api/v1/customers", {"page": 0, "size": 5}).get("content") or []
+        return f"{len(L)} na 1ª página · campos {sorted(set(k for c in L for k in c))}"
+    etapa("Clientes", cliente)
+    log("Teste da API terminado — nada foi gravado.")
+
+
 if __name__ == "__main__":
-    if "--rapido" in sys.argv:
+    if "--api-teste" in sys.argv:
+        api_teste()
+    elif "--rapido" in sys.argv:
         main_rapido()
     else:
         main()
