@@ -213,6 +213,19 @@ html[data-theme] .seg select.on{background:var(--primary-strong);color:#fff;font
 .fv-it{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0;font-size:13px}
 @media(max-width:900px){.fila-f{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.fila-f{grid-template-columns:1fr}.fila-f .ff-cli,.fila-f .ff-obs{grid-column:auto}}
+.guia{max-width:980px}
+.guia h2{font-size:19px;margin:30px 0 10px;scroll-margin-top:16px}
+.guia h2:first-of-type{margin-top:18px}
+.guia p{margin:0 0 10px;line-height:1.6}
+.guia ul,.guia ol{margin:0 0 12px 20px;line-height:1.6}
+.guia li{margin:3px 0}
+.guia .tw{margin:8px 0 12px}
+.guia-ind{display:flex;flex-wrap:wrap;gap:6px 14px;padding:12px 15px}
+.guia-ind a{color:var(--primary);font-weight:600;font-size:13px;text-decoration:none}
+.guia-faq{display:grid;gap:8px}
+.guia-faq details{padding:11px 14px}
+.guia-faq summary{cursor:pointer;font-weight:600}
+.guia-faq p{margin:8px 0 0;color:var(--muted)}
 .sel-area{height:28px;font-size:12px;padding:2px 6px;width:auto;min-width:150px}
 html[data-theme="dark"] .seg select option{background:#1c1c1f}
 .seg button.on{background:var(--primary-strong);color:#fff;font-weight:600}
@@ -793,6 +806,8 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <button class="navbtn" data-p="indic" onclick="nav('indic')"><span class="side-ico">❦</span><span class="lbl">Indique uma amiga</span></button>
     <button class="navbtn" data-p="vip" onclick="nav('vip')"><span class="side-ico">★</span><span class="lbl">Clientes VIP</span><span class="cnt" id="cntVip" style="display:none">0</span></button>
     <button class="navbtn" data-p="cupom" onclick="nav('cupom')"><span class="side-ico">%</span><span class="lbl">Códigos de desconto</span></button>
+    <div class="side-sec lbl">Ajuda</div>
+    <button class="navbtn" data-p="guia" onclick="nav('guia')"><span class="side-ico">?</span><span class="lbl">Guia de uso</span></button>
     <div class="side-sec lbl admin-only">Admin</div>
     <button class="navbtn admin-only" data-p="config" onclick="nav('config')"><span class="side-ico">⚙</span><span class="lbl">Configurações</span><span class="cnt" id="cntCfg" style="display:none">0</span></button>
     <div class="side-foot">
@@ -835,6 +850,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div class="page" id="page-pac"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-indic"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-cupom"><div class="empty">Carregando…</div></div>
+    <div class="page" id="page-guia"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-fila"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-vip"><div class="empty">Carregando…</div></div>
     <div class="page" id="page-envios"><div class="empty">Carregando…</div></div>
@@ -1293,6 +1309,7 @@ var TITULOS = {
   retorno:['Hora de voltar', 'Clientes chegando no ciclo de cada serviço — e para encher semana fraca'],
   pac:    ['Pacotes', 'Sessões compradas, quanto falta e quem renovar'],
   indic:  ['Indique uma amiga', 'Códigos de indicação, amigas que vieram e prêmios'],
+  guia:   ['Guia de uso', 'Como usar o painel no dia a dia'],
   fila:   ['Fila de espera', 'Quem quer horário: VIP Ouro primeiro, depois por ordem de contato'],
   vip:    ['Clientes VIP', 'As clientes Ouro: quem está sumindo, agrados e boas-vindas'],
   envios: ['Contatos da recepção', 'Quantas vezes cada campanha foi usada, por quem e com quais clientes'],
@@ -1382,6 +1399,7 @@ function nav(v){
   if(v==='envios') renderEnvios();
   if(v==='vip') renderVip();
   if(v==='fila') renderFila();
+  if(v==='guia') renderGuia();
   if(v==='falt') renderFalt();
   if(v==='minha') renderMinha();
   if(v==='pos') renderPos();
@@ -1398,10 +1416,17 @@ function frescor(){
     ? Object.keys(clientes).reduce(function(a,id){ var t=clientes[id].atualizadoEm||''; return t>a?t:a; }, '')
     : (resumo && resumo.atualizadoEm) || '';
   if(!at){ tx.textContent='Sem dados ainda'; el.classList.remove('velho'); return; }
-  var horas=(Date.now()-new Date(at).getTime())/36e5;
-  tx.textContent='Zelo · '+dataBR(at)+' às '+at.slice(11,16)+(horas>8?' · robô atrasado':'');
-  el.classList.toggle('velho', horas>8);
+  var atras=roboAtrasado(new Date(at));
+  tx.textContent='Zelo · '+dataBR(at)+' às '+at.slice(11,16)+(atras?' · robô atrasado':'');
+  el.title='O robô roda às 6h17, 12h17 e 18h17 (todos os dias) e de 15 em 15 minutos das 8h às 20h45 (seg a sáb). Próxima: '+proximaRodada();
+  el.classList.toggle('velho', atras);
 }
+// horários do robô (Brasília): completo 6h17/12h17/18h17 todo dia; rápido de 15 em 15 min das 8h04 às 20h49, seg a sáb
+function rodadasDoDia(d){ var L=[[6,17],[12,17],[18,17]], dw=d.getDay(); if(dw>=1 && dw<=6) for(var h=8;h<=20;h++) [4,19,34,49].forEach(function(m){ L.push([h,m]); }); return L.map(function(x){ var t=new Date(d); t.setHours(x[0],x[1],0,0); return t; }).sort(function(a,b){ return a-b; }); }
+function ultimaRodadaPrevista(agora){ for(var k=0;k<3;k++){ var d=new Date(agora); d.setDate(d.getDate()-k); var L=rodadasDoDia(d).filter(function(t){ return t<=agora; }); if(L.length) return L[L.length-1]; } return null; }
+// atrasado = já passou mais de 1h30 de uma rodada prevista e o dado continua mais velho que ela (o GitHub às vezes atrasa uns minutos)
+function roboAtrasado(at){ var lim=ultimaRodadaPrevista(new Date(Date.now()-90*6e4)); return !!(lim && at < new Date(lim.getTime()-10*6e4)); }
+function proximaRodada(){ var ag=new Date(); for(var k=0;k<3;k++){ var d=new Date(ag); d.setDate(d.getDate()+k); var L=rodadasDoDia(d).filter(function(t){ return t>ag; }); if(L.length){ var t=L[0]; return (k===0?'hoje':k===1?'amanhã':dataBR(d2s(t)))+' às '+String(t.getHours()).padStart(2,'0')+'h'+String(t.getMinutes()).padStart(2,'0'); } } return '—'; }
 
 // ---------------------------------------------------------------- painel
 function semDados(id){
@@ -4132,6 +4157,94 @@ function dadosDemoFila(){
   for(var i=0;i<9;i++){ var c=i===6&&vipId?{i:vipId,n:VIP.map[vipId].n,c:VIP.map[vipId].cel||'51999990000'}:L[i+20]; if(!c) break;
     FILA.L.push({id:'f'+i, ci:String(c.i), nome:c.n, cel:c.c, serv:sv[i%5], prof:ps[i%5], qt:i%3===0?'qualquer':i%3===1?'data':'entre', de:i%3===0?'':addDias(h,1+(i%4)), ate:i%3===2?addDias(h,10):'', turno:['qualquer','tarde','manha'][i%3], obs:i===2?'só depois das 15h':'', criadoEm:addDias(h,-(9-i))+'T1'+(i%9)+':20:00.000Z', por:'demo', nm:['Recepção','Adriana'][i%2], st:i===7?'chamada':i===8?'agendou':'esperando', chamadaEm:i===7?addDias(h,-1)+'T14:00:00.000Z':undefined, agendouEm:i===8?addDias(h,-1)+'T15:00:00.000Z':undefined, agPara:i===8?addDias(h,3)+'T10:00':undefined, autoAg:i===8}); }
   FILA.ok=true; contarFila();
+}
+
+// ================================================================ GUIA DE USO (consulta da equipe)
+function renderGuia(){
+  if(viewAtual!=='guia') return;
+  var gest=podePainel();
+  function tab(cab, L){ return '<div class="tw"><div class="tscroll"><table><thead><tr>'+cab.map(function(c){ return '<th>'+c+'</th>'; }).join('')+'</tr></thead><tbody>'+L.map(function(r){ return '<tr>'+r.map(function(c,i){ return '<td>'+(i===0?'<b>'+c+'</b>':c)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div></div>'; }
+  var h='<div class="guia">';
+  h+='<div class="guia-ind card">'+[['g1','Primeiros passos'],['g2','Rotina do dia'],['g3','Telas da recepção'],['g4','Ficha da cliente'],gest?['g5','Para a gestão']:null,['g6','Regras de ouro e dúvidas']].filter(Boolean).map(function(x){ return '<a href="#" onclick="document.getElementById(\''+x[0]+'\').scrollIntoView({behavior:\'smooth\'});return false">'+x[1]+'</a>'; }).join('')+'</div>';
+
+  h+='<h2 id="g1">Primeiros passos</h2><p>O painel junta os dados do Zelo e mostra a lista de quem chamar, quando e com qual mensagem.</p><ul>'
+   +'<li><b>Entrar:</b> e-mail e senha que a gestão cadastrou para você. Esqueceu a senha? Clique em "Esqueci a senha" e siga o e-mail.</li>'
+   +'<li><b>Menu:</b> à esquerda (no celular, nas abas embaixo). Você só vê as telas liberadas para o seu usuário.</li>'
+   +'<li><b>Números amarelos no menu</b> = coisas esperando você (ex.: 14 confirmações para mandar).</li>'
+   +'<li><b>Clicar no nome de uma cliente</b> abre a ficha dela, em qualquer tela.</li>'
+   +'<li><b>Selo ⭐</b> ao lado do nome = cliente VIP Ouro. O número junto é a posição dela no ranking do mês.</li>'
+   +'<li><b>Canto de cima:</b> hora do último dado do Zelo. Em vermelho "robô atrasado" = avise a gestão.</li>'
+   +'<li><b>Atualizar agora:</b> busca no Zelo o que mudou nos últimos minutos. Use se uma cliente acabou de marcar e ainda não aparece.</li>'
+   +'<li><b>☀ / ☾:</b> troca entre tema escuro e claro.</li></ul>'
+   +'<p class="khint">O robô atualiza sozinho: de 15 em 15 minutos das 8h às 20h45 (seg a sáb) e uma atualização completa às 6h17, 12h17 e 18h17.</p>';
+
+  h+='<h2 id="g2">Rotina diária da recepção</h2><p>Siga esta ordem todo dia. Cada item é uma tela do menu <b>Clientes</b>.</p><ol>'
+   +'<li><b>Confirmações</b> (de manhã): mandar a confirmação para todas as clientes de amanhã. Marcar quem confirmou, remarcou ou cancelou.</li>'
+   +'<li><b>Fila de espera</b>: ver quem está esperando e se abriu vaga para elas.</li>'
+   +'<li><b>Horários vagos</b>: chamar quem está na fila e as clientes sugeridas para os buracos de hoje e amanhã.</li>'
+   +'<li><b>Pós-atendimento</b> (fim da tarde): mandar a mensagem de avaliação para quem foi atendida hoje.</li>'
+   +'<li><b>Aniversariantes</b>: mandar parabéns com o código de desconto.</li>'
+   +'<li><b>Reativação</b> e <b>Hora de voltar</b>: 20 a 30 contatos por dia, não mais (protege o número do WhatsApp).</li>'
+   +'<li><b>Clientes VIP</b>: olhar quem está sumindo, agrados a entregar e boas-vindas de novas Ouro.</li>'
+   +'<li><b>Tablet</b>: oferecer a pesquisa de satisfação para as clientes durante o atendimento.</li></ol>'
+   +'<p>Quando a cliente chegar com código de desconto: <b>Códigos de desconto</b> → digitar o código → conferir o nome → dar o desconto no Zelo → <b>Confirmar uso</b>.</p>'
+   +'<p><b>Enviar em sequência:</b> nas telas com lista grande, o botão abre uma cliente por vez no WhatsApp com a mensagem pronta. Você aperta enviar no WhatsApp, volta e aperta <b>Enter</b> para a próxima.</p>';
+
+  h+='<h2 id="g3">Telas da recepção</h2>'+tab(['Tela','Para que serve','O que fazer'],[
+    ['Confirmações','Clientes com horário amanhã e depois','WhatsApp para cada uma; marcar Confirmou, Remarcou ou Cancelou'],
+    ['Faltosas','Quem costuma faltar','Confirmar com mais cuidado ou pedir sinal'],
+    ['Fila de espera','Quem quer horário e não tem','➕ Colocar na fila; Avisar vaga; marcar Agendou ou Desistiu. VIP Ouro fica na frente, depois quem pediu antes. O robô tira da fila sozinho quem marcou no Zelo'],
+    ['Horários vagos','Buracos na agenda de cada profissional','Chamar primeiro quem está na fila; depois as clientes sugeridas'],
+    ['Pós-atendimento','Quem foi atendida','Mandar o link de avaliação'],
+    ['Reativação','Clientes que vinham e pararam (24 meses)','Escolher o período em "Sem vir há"; WhatsApp com código de desconto; Descartar quem não quer contato'],
+    ['Hora de voltar','Clientes chegando no tempo de repetir o serviço','WhatsApp lembrando do serviço'],
+    ['Oportunidades','Serviços que a cliente ainda não faz','Oferecer por WhatsApp ou na recepção'],
+    ['Aniversariantes','Aniversariantes da semana','WhatsApp de parabéns com código (VIP ganha desconto maior)'],
+    ['Clientes VIP','As clientes Ouro e o ranking do mês','Ver quem está sumindo; marcar Agrado entregue; mandar Boas-vindas'],
+    ['Códigos de desconto','Conferir o código que a cliente trouxe','Digitar, conferir o nome, dar o desconto no Zelo, Confirmar uso'],
+    ['Pacotes','Sessões compradas e quanto falta','Avisar quando estiver acabando'],
+    ['Indique uma amiga','Códigos de indicação','Registrar quem chegou indicada; marcar Prêmio dado'],
+    ['Clientes e Base de clientes','Histórico e cadastro','Consulta']]);
+  h+='<p><b>Tablet (pesquisa de satisfação):</b> abrir <b>voox1956.com.br/avaliacao</b>, tocar em <b>Avaliação sem identificar a cliente</b> e entregar o tablet. Depois de 3 minutos parado, ele volta sozinho para o início.</p>';
+
+  h+='<h2 id="g4">Ficha da cliente, anotações e ofertas</h2><p>Clique no nome de qualquer cliente para abrir a ficha: visitas, serviços que mais faz, com quem, pacotes, notas e tudo que já foi oferecido.</p><ul>'
+   +'<li><b>💬 Ofertas e abordagens:</b> registre toda vez que oferecer um serviço, na recepção, por telefone ou WhatsApp. Dá para colocar vários serviços de uma vez (Enter ou "+ Adicionar"). Escolha o canal e o resultado. Assim ninguém oferece a mesma coisa de novo cedo demais.</li>'
+   +'<li><b>📝 Anotações:</b> preferências e cuidados da cliente (ex.: "gosta de café sem açúcar"). Anotação fixada aparece em todas as listas, embaixo do nome.</li>'
+   +'<li><b>"Já oferecido"</b> embaixo do nome: o que foi oferecido nos últimos meses. Confira antes de chamar.</li>'
+   +'<li>Os envios das campanhas (Reativação, Aniversário, Hora de voltar) entram nas ofertas sozinhos.</li></ul>';
+
+  if(gest){
+    h+='<h2 id="g5">Para a gestão</h2><p>Estas telas só aparecem para admin e gerente. A recepção nunca vê valores.</p>'+tab(['Tela','O que mostra'],[
+      ['Painel','Faturamento, ticket, comparação com o ano passado e a Previsão pela agenda: % da agenda preenchida na semana passada, nesta e nas próximas, por semana, mês e profissional'],
+      ['Resumo da semana','A semana numa página, para olhar toda segunda'],
+      ['Contatos da recepção','Quantas vezes cada campanha foi usada, por quem, com quais clientes e quantas agendaram depois. Tem Excel'],
+      ['Profissionais e Metas da equipe','Atendimentos, faturamento estimado, ocupação, faltas, metas e bônus'],
+      ['Agenda e Serviços feitos','Serviços por dia, semana ou mês, por serviço ou por área (Cabelo, Depilação…)'],
+      ['Satisfação','Notas do pós-atendimento e respostas do tablet'],
+      ['Financeiro','Dashboard, lançamentos, contas a pagar, comissões, margem e conferência com o Zelo'],
+      ['Configurações (só admin)','Quem entra no painel, o nível de cada pessoa e quais telas vê']]);
+    h+='<p>O que só a gestão ajusta:</p><ul>'
+     +'<li><b>Textos das mensagens:</b> dentro de cada tela, em "Editar o texto" (Reativação tem um texto separado para VIP).</li>'
+     +'<li><b>Descontos:</b> em Códigos de desconto, valor e validade da Reativação e do Aniversário.</li>'
+     +'<li><b>VIP:</b> em Clientes VIP, % de clientes, mínimo de visitas, agrado a cada X visitas e desconto de aniversário; incluir ou tirar cliente à mão.</li>'
+     +'<li><b>Área de cada serviço:</b> em Serviços feitos → Por área.</li></ul>';
+  }
+
+  h+='<h2 id="g6">Regras de ouro e dúvidas comuns</h2><ol>'
+   +'<li><b>No máximo 20 a 30 mensagens de campanha por dia</b>, espalhadas ao longo do dia. Mais que isso arrisca o WhatsApp bloquear o número.</li>'
+   +'<li><b>Sempre pelo botão do app.</b> Assim fica registrado quem chamou, quando, e se a cliente agendou depois.</li>'
+   +'<li><b>Código de desconto só vale uma vez.</b> Sempre confira o nome antes de dar o desconto e aperte Confirmar uso.</li>'
+   +'<li><b>Ofereceu algo na recepção? Registre no 💬.</b> O que não é registrado não aparece para a próxima pessoa.</li>'
+   +'<li><b>O Zelo continua sendo a agenda oficial.</b> O painel lê do Zelo; marcar, remarcar e dar baixa continuam no Zelo.</li></ol>'
+   +'<div class="guia-faq">'+[
+     ['A cliente marcou e não aparece?','Espere até 15 minutos ou clique em Atualizar agora.'],
+     ['Aparece "robô atrasado" em vermelho?','Avise a gestão.'],
+     ['A lista está vazia?','Confira o filtro de período ou de profissional no alto da tela.'],
+     ['Cliente sem celular?','O botão de WhatsApp não aparece. Atualize o celular no cadastro do Zelo; no dia seguinte ele chega no painel.'],
+     ['Não vejo uma tela?','Ela não está liberada para o seu usuário. Peça para a gestão em Configurações.'],
+     ['A cliente não quer mais receber mensagem?','Na Reativação, aperte Descartar e anote o motivo no 📝.']].map(function(x){ return '<details class="card"><summary>'+x[0]+'</summary><p>'+x[1]+'</p></details>'; }).join('')+'</div>';
+  h+='</div>';
+  document.getElementById('page-guia').innerHTML=h;
 }
 
 // ================================================================ utilidades de período (Margem, Satisfação)
