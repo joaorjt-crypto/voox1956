@@ -1,0 +1,22 @@
+name: Teste da API oficial do Zelo
+
+# Só roda quando você manda (Actions → Teste da API oficial do Zelo → Run workflow). Não grava nada.
+on:
+  workflow_dispatch:
+
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Ler pela API oficial
+        env:
+          ZELO_API_TOKEN: ${{ secrets.ZELO_API_TOKEN }}
+        run: python zelo_sync.py --api-teste
