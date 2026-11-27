@@ -22,6 +22,7 @@ document.documentElement.setAttribute('data-theme',m==='claro'?'light':'dark');}
   --s1:#BC8240; --s2:#4A92E0; --grid:rgba(255,255,255,.07);
   --shadow:none; --blur:none;
   --wa:#1F8F4E;
+  --area-rgb:176,125,76; --prim-sombra:rgba(176,125,76,.38);
 }
 html[data-theme="light"]{
   /* CLARO: vidro fosco sobre fundo bege da Voox */
@@ -34,7 +35,7 @@ html[data-theme="light"]{
   --blur:blur(22px) saturate(165%);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Archivo',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;font-variant-numeric:tabular-nums;min-height:100vh}
+body{font-family:'Archivo',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;font-weight:500;line-height:1.45;font-variant-numeric:tabular-nums;min-height:100vh}
 html[data-theme="light"] body{
   background:
     radial-gradient(900px 600px at 8% -10%, rgba(214,170,120,.55), transparent 60%),
@@ -58,25 +59,26 @@ textarea{resize:vertical;min-height:90px}
 html[data-theme="light"] .logoimg{background-image:var(--logo-preto)}
 .logomini{display:inline-block;width:22px;height:26px;background:var(--logoV-branco) no-repeat center;background-size:contain}
 html[data-theme="light"] .logomini{background-image:var(--logoV-preto)}
-.auth-card .logoimg{height:92px;background-position:center;margin:4px 0 14px}
+.auth-card .logoimg{height:96px;background-position:center;margin:2px 0 18px}
 /* logo Voox em texto */
 
 /* login */
 #authOverlay{position:fixed;inset:0;z-index:999;display:none;align-items:center;justify-content:center;padding:20px}
-.auth-card{width:340px;max-width:92vw;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:30px 26px;box-shadow:var(--shadow);text-align:center}
-.auth-card .auth-card .auth-card h1{font-size:17px;font-weight:700;margin-top:18px}
-.auth-card p{font-size:12.5px;color:var(--muted);margin:4px 0 20px}
-.gbtn{width:100%;padding:12px;background:var(--primary-strong);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px}
+.auth-card{width:320px;max-width:88vw;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:30px 26px;box-shadow:var(--shadow);text-align:center}
+.auth-card h1{font-size:18px;font-weight:700;text-align:left;margin:0}
+.auth-card p{font-size:12.5px;color:var(--muted);margin:4px 0 18px;text-align:left}
+.gbtn{width:100%;padding:13px;background:var(--primary-strong);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;box-shadow:0 8px 20px var(--prim-sombra);display:flex;align-items:center;justify-content:center;gap:10px}
 .gbtn svg{width:18px;height:18px;background:#fff;border-radius:3px;padding:1px}
 .gbtn:disabled{opacity:.6}
 .auth-form{display:flex;flex-direction:column;gap:9px;text-align:left}
-.auth-form input[type=email],.auth-form input[type=password],.auth-form input[type=text]{width:100%;height:42px;font-size:14px}
+.auth-form input[type=email],.auth-form input[type=password],.auth-form input[type=text]{width:100%;height:44px;padding:12px 14px;border-radius:11px;font-size:14px}
+@media(max-width:600px){.auth-form input[type=email],.auth-form input[type=password],.auth-form input[type=text]{font-size:16px}}
 .auth-senha{position:relative}
 .auth-senha input{padding-right:40px}
 .auth-olho{position:absolute;right:6px;top:7px;width:30px;height:28px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px}
 .auth-lembrar{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);cursor:pointer;margin:2px 0}
-.auth-lembrar input{width:auto;height:auto;margin:0}
-.auth-erro{font-size:12.5px;color:var(--red);min-height:0}
+.auth-lembrar input{width:auto;height:auto;margin:0;accent-color:var(--primary-strong)}
+.auth-erro{font-size:12.5px;color:var(--red);background:rgba(240,96,90,.10);border:1px solid rgba(240,96,90,.35);border-radius:10px;padding:9px 11px}
 .auth-erro:empty{display:none}
 .auth-link{background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;margin-top:2px}
 .auth-link:hover{color:var(--text)}
@@ -377,29 +379,89 @@ html[data-theme="light"] .hbar .tr{background:rgba(120,90,60,.08)}
 @media(min-width:2400px){
   main>*{max-width:2240px;margin-left:auto;margin-right:auto}
 }
+/* ===== CELULAR no formato novo dos apps (nov/2026): grafite com brilho leve dourado no topo; topo com
+   avatar · logo · pílula (pendências e claro/escuro); barra de baixo flutuante com 4 telas + Mais. Só até 900px. ===== */
+#topo-m{display:none}
+.lab-m{display:none}
+.tab-mais{display:none!important}
 @media(max-width:900px){
+  body{background:radial-gradient(110% 340px at 50% -70px, rgba(var(--area-rgb),.30) 0%, rgba(var(--area-rgb),.09) 48%, rgba(var(--area-rgb),0) 78%) no-repeat, var(--bg)!important}
+  html[data-theme="light"] body{background:radial-gradient(110% 340px at 50% -70px, rgba(var(--area-rgb),.16) 0%, rgba(var(--area-rgb),0) 75%) no-repeat, var(--bg)!important}
   .shell{flex-direction:column}
-  .side,.side:hover,.side.pin{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;height:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:5px 6px calc(5px + env(safe-area-inset-bottom));gap:2px;align-items:stretch;box-shadow:0 -8px 24px rgba(0,0,0,.25);transition:none;border-right:none;border-top:1px solid var(--border);z-index:60;scrollbar-width:none}
-  html[data-theme="dark"] .side{background:#151517}
-  html[data-theme="light"] .side{background:rgba(247,241,233,.92)}
-  .side .lbl{opacity:1}
-  .pinbtn,.side-logo,.side-sec{display:none!important}
-  .side:not(.pin):not(:hover) .navbtn .lbl,.side:not(.pin):not(:hover) .navbtn .cnt{display:block}
-  .side:not(.pin):not(:hover) .navbtn,.navbtn{position:relative;flex-direction:column;justify-content:center;gap:2px;width:auto;min-width:74px;max-width:96px;min-height:50px;padding:5px 6px;font-size:10.5px;line-height:1.15;text-align:center;white-space:normal;border-radius:10px}
-  .navbtn .side-ico{font-size:17px;width:auto;flex:none}
-  .navbtn.on{box-shadow:none}
-  .navbtn .cnt{position:absolute;top:2px;right:6px;margin:0;font-size:9.5px;min-width:16px;height:16px;line-height:16px;padding:0 4px}
-  .side-foot{margin:0 0 0 6px;padding:0 0 0 8px;border:none;border-left:1px solid var(--border);display:flex;align-items:center;gap:6px}
-  .side-foot .uline{display:none}
-  .side:not(.pin):not(:hover) .side-foot .btn{display:inline-flex}
-  .side-foot .btn{white-space:nowrap}
+  /* topo: avatar · logo · pílula */
+  #topo-m{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;margin:2px 0 14px}
+  .tm-av{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font:700 16px 'Archivo',sans-serif;cursor:pointer}
+  .tm-logo{display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:0}
+  .tm-img{display:block;height:34px;width:120px;background:var(--logo-branco) no-repeat center/contain}
+  html[data-theme="light"] .tm-img{background-image:var(--logo-preto)}
+  .tm-logo small{font-size:9px;letter-spacing:.24em;font-weight:700;color:var(--muted);margin-top:3px}
+  .tm-grupo{display:flex;align-items:center;height:44px;padding:0 4px;border-radius:22px;border:1px solid var(--border);background:var(--card)}
+  .tm-b{position:relative;width:36px;height:36px;border:0;background:transparent;color:var(--text);font-size:16px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .tm-n{position:absolute;top:1px;right:0;min-width:15px;height:15px;line-height:15px;padding:0 3px;border-radius:8px;font-size:9.5px;font-weight:700;background:var(--amber);color:#1a1400}
+  .top-r{display:none!important}
+  .topbar{margin-bottom:14px}
+  .topbar h1{font-size:27px;letter-spacing:-.6px;font-weight:800}
+  /* barra de baixo: pílula escura flutuante com as telas principais + Mais */
+  .side,.side:hover,.side.pin{position:fixed;top:auto;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:auto;height:auto;flex-direction:row;overflow:hidden;
+    padding:6px!important;gap:0;align-items:stretch;border-radius:34px;border:1px solid #2a2a2f!important;background:rgba(21,21,23,.96)!important;
+    box-shadow:0 14px 30px -10px rgba(0,0,0,.55)!important;transition:none;z-index:60}
+  .pinbtn,.side-logo,.side-sec,.side-foot{display:none!important}
+  .side .navbtn:not(.tab-cel){display:none!important}
+  .tab-mais{display:flex!important}
+  .side .navbtn,.side:not(.pin):not(:hover) .navbtn{position:relative;flex:1 1 0;min-width:0;max-width:none;width:auto;flex-direction:column;justify-content:center;gap:3px;min-height:56px;
+    padding:0!important;border-radius:26px;color:#c9c9cf;background:none;box-shadow:none}
+  .side .navbtn .lbl{display:none!important}
+  .side .navbtn .lab-m{display:block;font-size:10.5px;font-weight:600;color:#8d8d95;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .side .navbtn .side-ico{font-size:19px;width:auto;flex:none;color:#c9c9cf}
+  .side .navbtn.on{background:#2b2b30!important;box-shadow:none}
+  .side .navbtn.on .side-ico{color:var(--primary)}
+  .side .navbtn.on .lab-m{color:#fff}
+  .side .navbtn .cnt,.side:not(.pin):not(:hover) .navbtn .cnt{display:block;position:absolute;top:3px;left:calc(50% + 6px);margin:0;min-width:15px;height:15px;line-height:15px;font-size:9.5px;padding:0 3px}
   .shell>main,.side.pin ~ main{margin-left:0}
-  main{padding:16px 14px calc(84px + env(safe-area-inset-bottom))}
-  .toast{bottom:calc(76px + env(safe-area-inset-bottom))}
+  main{padding:14px 14px calc(100px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+  /* cartões e campos */
+  .card,.rrow,.tw{border-radius:20px}
+  input,select,textarea{font-size:16px}
+  input[type=search]{border-radius:24px;padding-left:16px}
   .rrow{grid-template-columns:1fr}
   .rrow .acts{justify-content:flex-start}
   .kval{font-size:21px}
 }
+/* janelas que sobem de baixo: Mais, conta e pendências (no computador as pendências abrem num balão) */
+.mais-fundo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900}
+.mais-fundo.show{display:block}
+.mais-sheet{display:none;position:fixed;left:0;right:0;bottom:0;z-index:901;background:var(--card-2);border-top:1px solid var(--border);
+  border-radius:20px 20px 0 0;padding:16px 14px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.4);max-height:85vh;overflow-y:auto}
+html[data-theme="light"] .mais-sheet{background:#f7f1e9}
+.mais-sheet.show{display:block}
+.mais-h{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:10px 4px 10px}
+.mais-h:first-child{margin-top:0}
+.mais-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mais-it{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:13px 6px;border-radius:14px;background:var(--card);
+  border:1px solid var(--border);color:var(--text);font:600 12.5px 'Archivo',sans-serif;cursor:pointer;text-align:center}
+.mais-it .side-ico{font-size:19px}
+.mais-it.on{border-color:var(--primary);color:var(--primary)}
+.mais-it .cnt{position:absolute;top:6px;right:8px;background:var(--amber);color:#1a1400;font-size:10px;font-weight:700;min-width:17px;height:17px;line-height:17px;border-radius:9px;padding:0 4px}
+.mais-pe{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 4px 0;font-size:13px;color:var(--muted)}
+.conta-l{display:flex;flex-direction:column;gap:8px}
+.conta-b{height:50px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font:600 15px 'Archivo',sans-serif;cursor:pointer;text-align:left;padding:0 16px}
+.conta-b.sair{color:var(--red)}
+/* ⚠ pendências */
+.warnbtn{position:relative;width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.warnbtn:hover{border-color:var(--primary)}
+.warn-n{position:absolute;top:-4px;right:-5px;min-width:16px;height:16px;line-height:16px;padding:0 4px;border-radius:8px;font-size:10px;font-weight:700;background:var(--amber);color:#1a1400}
+.warn-n:empty{display:none}
+.avisos-pop{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:70;width:340px;max-width:88vw;background:var(--card-2);border:1px solid var(--border);border-radius:14px;padding:8px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+html[data-theme="light"] .avisos-pop{background:#f7f1e9}
+.avisos-pop.show{display:block}
+.av-it{display:flex;align-items:center;gap:10px;width:100%;padding:10px 10px;border:0;background:none;border-radius:10px;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.av-it:hover{background:var(--card)}
+.av-it .av-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.av-it b{font-weight:600}
+.av-it small{display:block;color:var(--muted);font-size:12px}
+.av-vazio{padding:12px;color:var(--muted);font-size:13px;text-align:center}
+
 /* celular: tabela vira cartões (cada linha um cartão, rótulo à esquerda e valor à direita) */
 @media(max-width:600px){
   table.tcard thead{display:none}
@@ -749,12 +811,12 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
   <div class="auth-card">
     <div class="logoimg" role="img" aria-label="Voox 1956"></div>
     <h1>Painel da casa</h1>
-    <p id="authMsg">Indicadores e clientes para chamar de volta</p>
+    <p id="authMsg">Acesso restrito · use seu login do painel</p>
     <form class="auth-form" onsubmit="login();return false" autocomplete="on">
+      <div class="auth-erro" id="authErro"></div>
       <input id="authEmail" type="email" placeholder="E-mail" autocomplete="username" required>
       <div class="auth-senha"><input id="authSenha" type="password" placeholder="Senha" autocomplete="current-password" required><button type="button" class="auth-olho" onclick="var i=document.getElementById('authSenha');i.type=i.type==='password'?'text':'password'" title="Mostrar senha">◉</button></div>
-      <label class="auth-lembrar"><input type="checkbox" id="authLembrar" checked> Manter conectado neste aparelho</label>
-      <div class="auth-erro" id="authErro"></div>
+      <label class="auth-lembrar"><input type="checkbox" id="authLembrar" checked> Manter conectado</label>
       <button class="gbtn" id="authBtn" type="submit">Entrar</button>
       <button type="button" class="auth-link" onclick="esqueciSenha()">Esqueci a senha</button>
     </form>
@@ -762,6 +824,8 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
   </div>
 </div>
 
+<div class="mais-fundo" id="maisFundo" onclick="fecharMais()"></div>
+<div class="mais-sheet" id="maisSheet" role="dialog" aria-label="Mais"></div>
 <div id="app">
 <div class="shell">
   <nav class="side" id="sidebar">
@@ -806,6 +870,7 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <button class="navbtn" data-p="indic" onclick="nav('indic')"><span class="side-ico">❦</span><span class="lbl">Indique uma amiga</span></button>
     <button class="navbtn" data-p="vip" onclick="nav('vip')"><span class="side-ico">★</span><span class="lbl">Clientes VIP</span><span class="cnt" id="cntVip" style="display:none">0</span></button>
     <button class="navbtn" data-p="cupom" onclick="nav('cupom')"><span class="side-ico">%</span><span class="lbl">Códigos de desconto</span></button>
+    <button class="navbtn prof-only tab-mais tab-cel" id="tab-mais" onclick="abrirMais()"><span class="side-ico">⋯</span><span class="lbl">Mais</span><span class="lab-m">Mais</span></button>
     <div class="side-sec lbl">Ajuda</div>
     <button class="navbtn" data-p="guia" onclick="nav('guia')"><span class="side-ico">?</span><span class="lbl">Guia de uso</span></button>
     <div class="side-sec lbl admin-only">Admin</div>
@@ -824,12 +889,19 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
 
   <main>
     <div id="demoBox"></div>
+    <div id="topo-m">
+      <button class="tm-av" id="tmAv" onclick="abrirConta()" title="Sua conta">?</button>
+      <div class="tm-logo" onclick="nav(primeiraAba())" title="Início"><span class="tm-img"></span><small>PAINEL DA CASA</small></div>
+      <div class="tm-grupo"><button class="tm-b" onclick="abrirAvisos(event)" title="Pendências">⚠<span class="tm-n" id="tmWarnN" style="display:none"></span></button><button class="tm-b" onclick="toggleTema()" title="Claro/escuro" data-lua>☾</button></div>
+    </div>
     <div class="topbar">
       <div><h1 id="ptitle">Painel</h1><div class="h1sub" id="psub">—</div></div>
-      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+      <div class="top-r" style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;position:relative">
         <div class="robo-box gestao-only" id="roboBox"><button class="btn btn-sm btn-ghost robo-btn" id="roboBtn" onclick="menuRobo(event)" title="Atualiza faturamento de hoje, confirmações, pós-atendimento e horários vagos (1 a 2 min)">↻ Atualizar agora</button><div class="robo-menu" id="roboMenu"></div></div>
         <div class="fresh" id="fresh"><span class="dot"></span><span id="freshTxt">Carregando…</span></div>
+        <button class="warnbtn" id="warnBtn" onclick="abrirAvisos(event)" title="Pendências">⚠<span class="warn-n" id="warnN"></span></button>
         <button class="luabtn" onclick="toggleTema()" title="Alternar tema" data-lua>☾</button>
+        <div class="avisos-pop" id="avisosPop" onclick="event.stopPropagation()"></div>
       </div>
     </div>
 
@@ -983,11 +1055,11 @@ function toast(msg, tipo, acao){
 // ---------------------------------------------------------------- auth
 function authErroTxt(e){
   var c=(e&&e.code)||'';
-  if(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-login-credentials') return 'E-mail ou senha incorretos.';
+  if(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-login-credentials') return 'E-mail ou senha não conferem.';
   if(c==='auth/invalid-email') return 'E-mail inválido.';
-  if(c==='auth/too-many-requests') return 'Muitas tentativas. Espere uns minutos ou use "Esqueci a senha".';
+  if(c==='auth/too-many-requests') return 'Muitas tentativas. Espere alguns minutos.';
   if(c==='auth/user-disabled') return 'Este usuário está desativado.';
-  if(c==='auth/network-request-failed') return 'Sem internet. Tente de novo.';
+  if(c==='auth/network-request-failed') return 'Sem conexão.';
   return 'Não foi possível entrar ('+(c||(e&&e.message)||'erro')+').';
 }
 function login(){
@@ -1353,6 +1425,7 @@ function aplicarUI(){
       if(sec) sec.style.display=vis?'':'none';
     }
     contarCfg();
+    prepararBarraCel();
     var hash=(location.hash||'').replace('#','');
     nav(ehProf ? 'minha' : TITULOS[hash] ? hash : (viewAtual || primeiraAba()));
   } else {
@@ -4246,6 +4319,79 @@ function renderGuia(){
   h+='</div>';
   document.getElementById('page-guia').innerHTML=h;
 }
+
+// ================================================================ CELULAR (formato novo) + ⚠ PENDÊNCIAS
+// telas da barra de baixo: as 4 primeiras que a pessoa pode ver, nesta ordem (o resto fica em "Mais")
+var CEL_PRIOR=['painel','conf','fila','vagas','reativ','retorno','pos','aniv','vip','cli','minha'];
+var CEL_CURTO={painel:'Painel', semana:'Semana', envios:'Contatos', prof:'Profiss.', metas:'Metas', agenda:'Agenda', serv:'Serviços', sat:'Satisfação', vendas:'Mês a mês',
+  fin:'Financeiro', lanc:'Lançam.', pagar:'A pagar', com:'Comissões', marg:'Margem', conc:'Conferência', cgs:'Contas', cli:'Clientes', base:'Base', conf:'Confirmar',
+  falt:'Faltosas', fila:'Fila', vagas:'Vagos', pos:'Pós', reativ:'Reativar', retorno:'Voltar', oport:'Oportun.', aniv:'Aniver.', pac:'Pacotes', indic:'Indique',
+  vip:'VIP', cupom:'Códigos', guia:'Guia', config:'Config.', minha:'Meu painel', acessos:'Acessos'};
+function navVisivel(b){ return b && b.style.display!=='none'; }
+function prepararBarraCel(){
+  Array.prototype.forEach.call(document.querySelectorAll('#sidebar .navbtn[data-p]'), function(b){
+    if(!b.querySelector('.lab-m')){ var sp=document.createElement('span'); sp.className='lab-m'; sp.textContent=CEL_CURTO[b.getAttribute('data-p')]||((b.querySelector('.lbl')||{}).textContent||''); b.insertBefore(sp, b.querySelector('.cnt')); }
+    b.classList.remove('tab-cel');
+  });
+  var n=0;
+  CEL_PRIOR.forEach(function(p){ if(n>=4) return; var b=document.querySelector('#sidebar .navbtn[data-p="'+p+'"]'); if(navVisivel(b) && podeVer(p)){ b.classList.add('tab-cel'); n++; } });
+  if(n<4) Array.prototype.forEach.call(document.querySelectorAll('#sidebar .navbtn[data-p]'), function(b){ if(n<4 && !b.classList.contains('tab-cel') && navVisivel(b) && podeVer(b.getAttribute('data-p'))){ b.classList.add('tab-cel'); n++; } });
+  var av=document.getElementById('tmAv'); if(av) av.textContent=(String(nome||email||'?').charAt(0)||'?').toUpperCase();
+  pintarAvisos();
+}
+function fecharMais(){ document.getElementById('maisFundo').classList.remove('show'); document.getElementById('maisSheet').classList.remove('show'); }
+function abrirSheet(h){ var sh=document.getElementById('maisSheet'); sh.innerHTML=h; document.getElementById('maisFundo').classList.add('show'); sh.classList.add('show'); }
+function abrirMais(){
+  var h='', sec='', grid=[];
+  function fechaGrupo(){ if(grid.length) h+='<div class="mais-h">'+esc(sec||'Telas')+'</div><div class="mais-grid">'+grid.join('')+'</div>'; grid=[]; }
+  Array.prototype.forEach.call(document.querySelectorAll('#sidebar .side-sec, #sidebar .navbtn[data-p]'), function(el){
+    if(el.classList.contains('side-sec')){ fechaGrupo(); sec=el.textContent.trim(); return; }
+    var p=el.getAttribute('data-p'); if(!navVisivel(el) || !podeVer(p)) return;
+    var ico=el.querySelector('.side-ico'), lb=el.querySelector('.lbl'), c=el.querySelector('.cnt');
+    grid.push('<button class="mais-it'+(p===viewAtual?' on':'')+'" onclick="fecharMais();nav(\''+p+'\')"><span class="side-ico">'+(ico?ico.innerHTML:'')+'</span><span>'+esc(lb?lb.textContent:p)+'</span>'+(c && c.style.display!=='none' && c.textContent.trim()?'<span class="cnt">'+esc(c.textContent)+'</span>':'')+'</button>');
+  });
+  fechaGrupo();
+  h+='<div class="mais-pe"><span>'+esc(nome||'')+'</span><button class="btn btn-sm btn-ghost" onclick="fecharMais();logout()">Sair</button></div>';
+  abrirSheet(h);
+}
+function abrirConta(){
+  var f=document.getElementById('freshTxt');
+  abrirSheet('<div class="mais-h">'+esc(nome||'')+' · '+esc(document.getElementById('urole').textContent||'')+'</div><div class="conta-l">'
+    +'<button class="conta-b" onclick="toggleTema();fecharMais()">'+(modoAtual()==='escuro'?'☀ Modo claro':'☾ Modo escuro')+'</button>'
+    +(podePainel()?'<button class="conta-b" onclick="fecharMais();dispararRobo(\'rapido\')">↻ Atualizar agora</button>':'')
+    +'<button class="conta-b" onclick="fecharMais();nav(\'guia\')">? Guia de uso</button>'
+    +'<button class="conta-b" onclick="fecharMais();trocarSenha()">Trocar senha</button>'
+    +'<button class="conta-b sair" onclick="fecharMais();logout()">Sair</button></div>'
+    +'<div class="mais-pe"><span>'+esc(f?f.textContent:'')+'</span></div>');
+}
+// pendências = os números dos itens do menu, com uma frase do que fazer
+var AVISO_TXT={conf:'confirmações para mandar', pos:'pós-atendimento para mandar', reativ:'clientes para chamar na Reativação', retorno:'clientes na hora de voltar', aniv:'aniversariantes sem mensagem',
+  fila:'clientes esperando na fila', falt:'faltosas com horário marcado', vip:'VIP sumindo', pac:'pacotes acabando', pagar:'contas a pagar vencendo', cfg:'pedidos de acesso', config:'pedidos de acesso'};
+var AVISO_COR={pagar:'var(--red)', vip:'var(--red)', falt:'var(--red)'};
+function listaAvisos(){
+  var L=[];
+  Array.prototype.forEach.call(document.querySelectorAll('#sidebar .navbtn[data-p]'), function(b){
+    var p=b.getAttribute('data-p'), c=b.querySelector('.cnt'); if(!navVisivel(b) || !podeVer(p) || !c || c.style.display==='none') return;
+    var n=String(c.textContent||'').trim(); if(!n || n==='0') return;
+    L.push({p:p, n:n, t:(AVISO_TXT[p]||((b.querySelector('.lbl')||{}).textContent||p)), lb:(b.querySelector('.lbl')||{}).textContent||p});
+  });
+  return L;
+}
+function pintarAvisos(){
+  var n=listaAvisos().length, a=document.getElementById('warnN'), b=document.getElementById('tmWarnN');
+  if(a) a.textContent=n||''; if(b){ b.textContent=n||''; b.style.display=n?'':'none'; }
+}
+function abrirAvisos(ev){
+  if(ev) ev.stopPropagation();
+  var L=listaAvisos();
+  var h=L.length?L.map(function(x){ return '<button class="av-it" onclick="fecharAvisos();fecharMais();nav(\''+x.p+'\')"><span class="av-dot" style="background:'+(AVISO_COR[x.p]||'var(--amber)')+'"></span><span><b>'+esc(x.n)+' '+esc(x.t)+'</b><small>'+esc(x.lb)+'</small></span><span style="margin-left:auto;color:var(--muted)">›</span></button>'; }).join(''):'<div class="av-vazio">Tudo em dia. ✓</div>';
+  if(window.innerWidth<=900){ abrirSheet('<div class="mais-h">Pendências</div>'+h); return; }
+  var p=document.getElementById('avisosPop'); p.innerHTML='<div class="mais-h" style="margin:4px 6px 6px">Pendências</div>'+h; p.classList.toggle('show');
+}
+function fecharAvisos(){ var p=document.getElementById('avisosPop'); if(p) p.classList.remove('show'); }
+document.addEventListener('click', function(){ fecharAvisos(); });
+// os contadores do menu mudam o tempo todo: atualiza o ⚠ quando algum muda
+(function(){ if(!window.MutationObserver) return; var t=null; new MutationObserver(function(){ clearTimeout(t); t=setTimeout(pintarAvisos, 150); }).observe(document.getElementById('sidebar')||document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style']}); })();
 
 // ================================================================ utilidades de período (Margem, Satisfação)
 var PRESETS_P = [['30','30 dias'],['mes','Este mês'],['mespass','Mês anterior'],['90','90 dias'],['ano','Este ano'],['12m','12 meses']];
