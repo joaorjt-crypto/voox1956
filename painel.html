@@ -803,6 +803,66 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
 .mt-pos{font-size:28px;font-weight:800;color:var(--primary);line-height:1}
 .mt-pos small{font-size:12px;color:var(--muted);font-weight:500}
 @media(max-width:600px){.podio{grid-template-columns:1fr}}
+
+/* ===== TELA HOJE no formato dos apps da MC (nov/2026): brilho dourado no topo, saudação, pílula de ferramentas,
+   ações em bolinhas, "Para fazer hoje" com ícones coloridos. Ícones do menu em traço. ===== */
+.side-ico svg{width:18px;height:18px;display:block}
+.ico-aviso{display:inline-flex;align-items:center}
+.ico-aviso svg{width:18px;height:18px}
+.acoes-cel{margin:2px 0 18px;max-width:520px}
+.ac-aba{display:flex;justify-content:space-between;align-items:flex-start;width:calc(100% - 24px);margin:0 12px;height:44px;padding:11px 16px 0;
+  border-radius:16px 16px 0 0;border:1px solid var(--border);border-bottom:0;background:var(--card-2);box-shadow:inset 0 2px 0 var(--primary);
+  color:var(--text);font:600 13.5px 'Archivo',sans-serif;cursor:pointer}
+.ac-aba span:last-child{color:var(--muted);font-weight:600}
+.ac-card{display:flex;justify-content:space-around;margin-top:-12px;position:relative;border-radius:20px;background:var(--card);border:1px solid var(--border);padding:14px 4px 12px;box-shadow:var(--shadow)}
+.ac-b{display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:0;color:var(--text);font:600 12.5px 'Archivo',sans-serif;cursor:pointer;width:84px;padding:0}
+.ac-b i{width:48px;height:48px;border-radius:50%;background:var(--card-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text);transition:transform .12s}
+.ac-b:hover i{transform:translateY(-2px)}
+.ac-b.p i{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 8px 20px var(--prim-sombra)}
+.hj-kpis{margin-bottom:18px}
+.kclick{cursor:pointer;transition:border-color .12s}
+.kclick:hover{border-color:var(--primary)}
+.hj-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.hj-card{padding:18px 20px;border-radius:20px}
+.hj-tit{display:flex;justify-content:space-between;align-items:baseline;font-size:16px;font-weight:700;margin-bottom:8px}
+.hj-tit a{font-size:12.5px;font-weight:600;color:var(--primary);cursor:pointer}
+.hj-it{display:flex;align-items:center;gap:12px;width:100%;padding:10px 6px;border:0;border-top:1px solid var(--border);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer;border-radius:0}
+.hj-it:first-of-type{border-top:0}
+.hj-it:hover{background:var(--card-2)}
+.hj-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.hj-ic svg{width:18px;height:18px}
+.hj-ic.bad{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red)}
+.hj-ic.warn{background:color-mix(in srgb,var(--amber) 16%,transparent);color:var(--amber)}
+.hj-ic.info{background:color-mix(in srgb,var(--primary) 16%,transparent);color:var(--primary)}
+.hj-ic.ok{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.hj-it b{display:block;font-size:13.5px;font-weight:600}
+.hj-it small{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+.hj-it .seta{margin-left:auto;color:var(--muted);display:flex}
+.hj-dia{min-width:76px}
+.hj-barra-oc{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.hj-barra-oc .pq-b{flex:1}
+@media(min-width:901px){
+  body[data-pg="hoje"]{background:radial-gradient(70% 380px at 62% -90px, rgba(var(--area-rgb),.28) 0%, rgba(var(--area-rgb),.09) 50%, rgba(var(--area-rgb),0) 78%) no-repeat, var(--bg)}
+  html[data-theme="light"] body[data-pg="hoje"]{background:radial-gradient(70% 380px at 62% -90px, rgba(var(--area-rgb),.20) 0%, rgba(var(--area-rgb),0) 75%) no-repeat, var(--bg)}
+  body[data-pg="hoje"] .topbar h1{font-size:28px;font-weight:800;letter-spacing:-.7px}
+  body[data-pg="hoje"] .topbar .h1sub{font-size:14px}
+  body[data-pg="hoje"] .topbar .top-r{height:46px;padding:0 6px 0 14px;gap:4px!important;flex-wrap:nowrap!important;border-radius:23px;border:1px solid var(--border);background:var(--card)}
+  body[data-pg="hoje"] .topbar .top-r .robo-btn{border:0;background:transparent}
+  body[data-pg="hoje"] .topbar .top-r .luabtn,body[data-pg="hoje"] .topbar .top-r .warnbtn{width:36px;height:36px;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:50%}
+  body[data-pg="hoje"] .topbar .top-r .luabtn:hover,body[data-pg="hoje"] .topbar .top-r .warnbtn:hover{background:var(--card-2)!important}
+}
+@media(max-width:1100px){ .hj-cols{grid-template-columns:1fr} }
+@media(max-width:900px){
+  body[data-pg="hoje"] .topbar{text-align:center;justify-content:center}
+  body[data-pg="hoje"] .topbar > div:first-child{width:100%}
+  body[data-pg="hoje"] .topbar h1{font-size:30px}
+  .acoes-cel{max-width:none}
+  .ac-aba{width:calc(100% - 20px);margin:0 10px;height:50px;padding:13px 16px 0;border-radius:18px 18px 0 0;font-size:14.5px}
+  .ac-card{margin-top:-14px;border-radius:22px;padding:15px 4px 13px}
+  .ac-b{width:78px}
+  .ac-b i{width:56px;height:56px}
+  .side .navbtn .side-ico svg{width:22px;height:22px}
+}
 </style>
 </head>
 <body>
@@ -830,11 +890,12 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
 <div class="shell">
   <nav class="side" id="sidebar">
     <button class="pinbtn" onclick="togglePin(event)" title="Fixar menu aberto">◨</button>
-    <div class="side-logo" onclick="nav(podePainel()?'painel':'reativ')">
+    <div class="side-logo" onclick="nav('hoje')">
       <span class="side-ico logo-mini"><i class="logomini"></i></span>
       <div class="logoimg" role="img" aria-label="Voox 1956"></div>
       <div class="brand-cap">Painel da casa</div>
     </div>
+    <button class="navbtn" data-p="hoje" onclick="nav('hoje')"><span class="side-ico">⌂</span><span class="lbl">Hoje</span></button>
     <div class="side-sec lbl gestao-only">Gestão</div>
     <button class="navbtn prof-only" data-p="minha" onclick="nav('minha')" style="display:none"><span class="side-ico">◉</span><span class="lbl">Meu painel</span></button>
     <button class="navbtn gestao-only" data-p="painel" onclick="nav('painel')"><span class="side-ico">◷</span><span class="lbl">Painel</span></button>
@@ -892,19 +953,21 @@ html[data-theme] .cf-nomeinp:focus{background:var(--card-2);border-color:var(--p
     <div id="topo-m">
       <button class="tm-av" id="tmAv" onclick="abrirConta()" title="Sua conta">?</button>
       <div class="tm-logo" onclick="nav(primeiraAba())" title="Início"><span class="tm-img"></span><small>PAINEL DA CASA</small></div>
-      <div class="tm-grupo"><button class="tm-b" onclick="abrirAvisos(event)" title="Pendências">⚠<span class="tm-n" id="tmWarnN" style="display:none"></span></button><button class="tm-b" onclick="toggleTema()" title="Claro/escuro" data-lua>☾</button></div>
+      <div class="tm-grupo"><button class="tm-b" onclick="abrirAvisos(event)" title="Pendências"><span class="ico-aviso">⚠</span><span class="tm-n" id="tmWarnN" style="display:none"></span></button><button class="tm-b" onclick="toggleTema()" title="Claro/escuro" data-lua>☾</button></div>
     </div>
     <div class="topbar">
       <div><h1 id="ptitle">Painel</h1><div class="h1sub" id="psub">—</div></div>
       <div class="top-r" style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;position:relative">
         <div class="robo-box gestao-only" id="roboBox"><button class="btn btn-sm btn-ghost robo-btn" id="roboBtn" onclick="menuRobo(event)" title="Atualiza faturamento de hoje, confirmações, pós-atendimento e horários vagos (1 a 2 min)">↻ Atualizar agora</button><div class="robo-menu" id="roboMenu"></div></div>
         <div class="fresh" id="fresh"><span class="dot"></span><span id="freshTxt">Carregando…</span></div>
-        <button class="warnbtn" id="warnBtn" onclick="abrirAvisos(event)" title="Pendências">⚠<span class="warn-n" id="warnN"></span></button>
+        <button class="warnbtn" id="warnBtn" onclick="abrirAvisos(event)" title="Pendências"><span class="ico-aviso">⚠</span><span class="warn-n" id="warnN"></span></button>
         <button class="luabtn" onclick="toggleTema()" title="Alternar tema" data-lua>☾</button>
         <div class="avisos-pop" id="avisosPop" onclick="event.stopPropagation()"></div>
       </div>
     </div>
 
+    <!-- HOJE -->
+    <div class="page" id="page-hoje"></div>
     <!-- PAINEL -->
     <div class="page" id="page-painel"><div class="empty">Carregando indicadores…</div></div>
 
@@ -1111,7 +1174,7 @@ function assinar(){
   if(nivel==='admin'||nivel==='gerente'){
     unsubs.push(db.collection('voox_painel').doc('resumo').onSnapshot(function(snap){
       resumo = snap.exists ? snap.data() : null;
-      renderPainel(); renderVendas(); frescor();
+      renderPainel(); renderVendas(); frescor(); if(viewAtual==='hoje') renderHoje();
     }, function(err){
       document.getElementById('page-painel').innerHTML='<div class="card empty">Sem permissão para ler os indicadores ('+esc(err.code||err.message)+').<br>Confira as regras do Firestore.</div>';
       toast('Indicadores: '+(err.code||err.message),'err');
@@ -1173,7 +1236,7 @@ function assinar(){
     unsubs.push(db.collection('voox_notas').where('nota','>=',0).limit(4000).onSnapshot(function(snap){
       NOTAS={}; snap.forEach(function(d){ NOTAS[d.id]=d.data(); }); renderSat();
     }, function(err){ document.getElementById('page-sat').innerHTML='<div class="card empty">Sem permissão para ler as notas ('+esc(err.code||err.message)+'). Confira as regras do Firestore.</div>'; }));
-    unsubs.push(db.collection('voox_previsao').doc('agenda').onSnapshot(function(snap){ PREV=snap.exists?snap.data():null; if(viewAtual==='painel') renderPainel(); }, function(err){ console.warn('previsão:', err.code||err.message); }));
+    unsubs.push(db.collection('voox_previsao').doc('agenda').onSnapshot(function(snap){ PREV=snap.exists?snap.data():null; if(viewAtual==='painel') renderPainel(); if(viewAtual==='hoje') renderHoje(); }, function(err){ console.warn('previsão:', err.code||err.message); }));
     unsubs.push(db.collection('voox_config').doc('metas').onSnapshot(function(snap){
       metas = snap.exists ? snap.data() : {}; renderAtual();
     }, function(err){ toast('Metas: '+(err.code||err.message),'err'); }));
@@ -1361,11 +1424,13 @@ function togglePin(e){
   PIN_PREF=on;
   try{ localStorage.setItem('voox_painel_pin', on?'1':'0'); }catch(err){}
   if(viewAtual==='painel') setTimeout(renderPainel, 180);
+  pintarIcones();
 }
 function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 function podePainel(){ return nivel==='admin' || nivel==='gerente'; }
 
 var TITULOS = {
+  hoje:   ['Hoje', ''],
   painel: ['Painel', 'Vendas e movimento da casa'],
   vendas: ['Mês a mês', 'Resumo de vendas do Zelo, últimos 13 meses'],
   reativ: ['Reativação', 'Clientes que vieram 2+ vezes nos últimos 24 meses e pararam de vir'],
@@ -1445,6 +1510,8 @@ function nav(v){
   document.getElementById('psub').textContent=TITULOS[v][1];
   if(history.replaceState) history.replaceState(null,'', '#'+v);
   frescor();
+  document.body.setAttribute('data-pg', v);
+  if(v==='hoje') renderHoje();
   if(v==='painel') renderPainel();
   if(v==='vendas') renderVendas();
   if(v==='reativ') renderReativ();
@@ -4114,7 +4181,7 @@ function assinarFila(){
   if(DEMO) return;
   var lim=addDias(hojeISO(),-60);
   unsubs.push(db.collection('voox_fila').where('criadoEm','>=',lim).limit(3000).onSnapshot(function(s){
-    FILA.L=[]; s.forEach(function(d){ FILA.L.push(Object.assign({id:d.id}, d.data())); }); FILA.ok=true; contarFila(); if(viewAtual==='fila') renderFila(); if(viewAtual==='vagas') renderVagas();
+    FILA.L=[]; s.forEach(function(d){ FILA.L.push(Object.assign({id:d.id}, d.data())); }); FILA.ok=true; contarFila(); if(viewAtual==='fila') renderFila(); if(viewAtual==='vagas') renderVagas(); if(viewAtual==='hoje') renderHoje();
   }, function(e){ FILA.erro=e.code||e.message; FILA.ok=true; if(viewAtual==='fila') renderFila(); }));
 }
 function contarFila(){ var n=FILA.L.filter(function(x){ return x.st==='esperando' && filaValida(x); }).length, c=document.getElementById('cntFila'); if(c){ c.textContent=n; c.style.display=n?'':'none'; } }
@@ -4322,8 +4389,8 @@ function renderGuia(){
 
 // ================================================================ CELULAR (formato novo) + ⚠ PENDÊNCIAS
 // telas da barra de baixo: as 4 primeiras que a pessoa pode ver, nesta ordem (o resto fica em "Mais")
-var CEL_PRIOR=['painel','conf','fila','vagas','reativ','retorno','pos','aniv','vip','cli','minha'];
-var CEL_CURTO={painel:'Painel', semana:'Semana', envios:'Contatos', prof:'Profiss.', metas:'Metas', agenda:'Agenda', serv:'Serviços', sat:'Satisfação', vendas:'Mês a mês',
+var CEL_PRIOR=['hoje','painel','conf','fila','vagas','reativ','retorno','pos','aniv','vip','cli','minha'];
+var CEL_CURTO={hoje:'Hoje', painel:'Painel', semana:'Semana', envios:'Contatos', prof:'Profiss.', metas:'Metas', agenda:'Agenda', serv:'Serviços', sat:'Satisfação', vendas:'Mês a mês',
   fin:'Financeiro', lanc:'Lançam.', pagar:'A pagar', com:'Comissões', marg:'Margem', conc:'Conferência', cgs:'Contas', cli:'Clientes', base:'Base', conf:'Confirmar',
   falt:'Faltosas', fila:'Fila', vagas:'Vagos', pos:'Pós', reativ:'Reativar', retorno:'Voltar', oport:'Oportun.', aniv:'Aniver.', pac:'Pacotes', indic:'Indique',
   vip:'VIP', cupom:'Códigos', guia:'Guia', config:'Config.', minha:'Meu painel', acessos:'Acessos'};
@@ -4338,6 +4405,7 @@ function prepararBarraCel(){
   if(n<4) Array.prototype.forEach.call(document.querySelectorAll('#sidebar .navbtn[data-p]'), function(b){ if(n<4 && !b.classList.contains('tab-cel') && navVisivel(b) && podeVer(b.getAttribute('data-p'))){ b.classList.add('tab-cel'); n++; } });
   var av=document.getElementById('tmAv'); if(av) av.textContent=(String(nome||email||'?').charAt(0)||'?').toUpperCase();
   pintarAvisos();
+  pintarIcones();
 }
 function fecharMais(){ document.getElementById('maisFundo').classList.remove('show'); document.getElementById('maisSheet').classList.remove('show'); }
 function abrirSheet(h){ var sh=document.getElementById('maisSheet'); sh.innerHTML=h; document.getElementById('maisFundo').classList.add('show'); sh.classList.add('show'); }
@@ -4380,6 +4448,7 @@ function listaAvisos(){
 function pintarAvisos(){
   var n=listaAvisos().length, a=document.getElementById('warnN'), b=document.getElementById('tmWarnN');
   if(a) a.textContent=n||''; if(b){ b.textContent=n||''; b.style.display=n?'':'none'; }
+  if(viewAtual==='hoje') renderHoje();
 }
 function abrirAvisos(ev){
   if(ev) ev.stopPropagation();
@@ -4392,6 +4461,98 @@ function fecharAvisos(){ var p=document.getElementById('avisosPop'); if(p) p.cla
 document.addEventListener('click', function(){ fecharAvisos(); });
 // os contadores do menu mudam o tempo todo: atualiza o ⚠ quando algum muda
 (function(){ if(!window.MutationObserver) return; var t=null; new MutationObserver(function(){ clearTimeout(t); t=setTimeout(pintarAvisos, 150); }).observe(document.getElementById('sidebar')||document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style']}); })();
+
+
+// ================================================================ HOJE (tela inicial no formato novo) + ÍCONES DE TRAÇO
+var ICO={
+  hoje:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  painel:'<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/>',
+  semana:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  envios:'<path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4z"/>',
+  prof:'<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.9"/>',
+  metas:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  agenda:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
+  serv:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/>',
+  sat:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/>',
+  vendas:'<path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-4"/>',
+  fin:'<rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="16" cy="15" r="1.5"/>',
+  lanc:'<path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4"/>',
+  pagar:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v3l2 1"/>',
+  com:'<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>',
+  marg:'<path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
+  conc:'<path d="m17 2 4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
+  cgs:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  cli:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  base:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/>',
+  conf:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+  falt:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  fila:'<path d="M10 6h11M10 12h11M10 18h11"/><path d="M4 6h1v4M4 10h2M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
+  vagas:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  pos:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',
+  reativ:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  retorno:'<path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  oport:'<path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="m19 16 .7 1.8L21.5 18.5l-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7z"/>',
+  aniv:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
+  pac:'<path d="m7.5 4.3 9 5.2M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/>',
+  indic:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>',
+  vip:'<path d="m2 7 4.5 4L12 4l5.5 7L22 7l-2 12H4z"/>',
+  cupom:'<path d="M2 9a3 3 0 0 0 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 0 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 11v2M13 17v2"/>',
+  guia:'<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
+  config:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  minha:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  acessos:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M15 8l2 2"/>',
+  mais:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  aviso:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  mais1:'<path d="M12 5v14M5 12h14"/>', check:'<path d="M20 6 9 17l-5-5"/>', seta:'<path d="m9 18 6-6-6-6"/>'
+};
+function svgIco(k, w){ return '<svg width="'+(w||18)+'" height="'+(w||18)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(ICO[k]||ICO.guia)+'</svg>'; }
+function pintarIcones(){
+  Array.prototype.forEach.call(document.querySelectorAll('#sidebar .navbtn'), function(b){ var p=b.getAttribute('data-p')||(b.id==='tab-mais'?'mais':''), s=b.querySelector('.side-ico'); if(s && ICO[p] && !s.querySelector('svg')) s.innerHTML=svgIco(p); });
+  Array.prototype.forEach.call(document.querySelectorAll('.ico-aviso'), function(e){ if(!e.querySelector('svg')) e.innerHTML=svgIco('aviso', 18); });
+  var pb=document.querySelector('.pinbtn'), sd=document.getElementById('sidebar'); if(pb && sd) pb.textContent=sd.classList.contains('pin')?'⇤':'⇥';
+}
+function saudacao(){ var h=new Date().getHours(); return h<12?'Bom dia':h<18?'Boa tarde':'Boa noite'; }
+function dataExtenso(){ var d=new Date(), dia=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][d.getDay()]; return dia+', '+d.getDate()+' de '+['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][d.getMonth()]; }
+var HJ_SEV={pagar:'bad', vip:'bad', falt:'bad', conf:'warn', pos:'warn', fila:'info', reativ:'info', retorno:'info', aniv:'warn', pac:'warn', config:'warn'};
+var HJ_SUB={conf:'Mandar a confirmação para quem tem horário amanhã', pos:'Mensagem de avaliação para quem foi atendida', fila:'Avisar quando abrir vaga — VIP primeiro', reativ:'20 a 30 por dia, com código de desconto',
+  retorno:'Clientes chegando no tempo de repetir o serviço', aniv:'Parabéns com o código de aniversário', vip:'Chamar com mensagem pessoal', pac:'Avisar que as sessões estão acabando',
+  pagar:'Contas vencendo ou vencidas', falt:'Confirmar com mais cuidado', config:'Pessoas esperando liberação no painel'};
+function renderHoje(){
+  if(viewAtual!=='hoje') return;
+  var el=document.getElementById('page-hoje'), gest=podePainel();
+  document.getElementById('ptitle').textContent=saudacao()+', '+String(nome||'').split(' ')[0];
+  document.getElementById('psub').textContent=dataExtenso();
+  var nf=FILA.L.filter(function(x){ return x.st==='esperando' && filaValida(x); }).length;
+  var h='<div class="acoes-cel"><button class="ac-aba" onclick="nav(\'fila\')"><span>Fila de espera ›</span><span>'+n0(nf)+' esperando</span></button><div class="ac-card">'
+    +'<button class="ac-b p" onclick="nav(\'fila\');setTimeout(function(){ var d=document.getElementById(\'fila-novo\'); if(d){ d.open=true; d.scrollIntoView({behavior:\'smooth\'}); } },60)"><i>'+svgIco('mais1',22)+'</i>Pôr na fila</button>'
+    +'<button class="ac-b" onclick="nav(\'conf\')"><i>'+svgIco('conf',21)+'</i>Confirmar</button>'
+    +'<button class="ac-b" onclick="nav(\'cupom\')"><i>'+svgIco('cupom',21)+'</i>Código</button>'
+    +'<button class="ac-b" onclick="nav(\'reativ\')"><i>'+svgIco('reativ',21)+'</i>Reativar</button></div></div>';
+  if(gest) h+=hojeResumo();
+  var L=listaAvisos();
+  h+='<div class="hj-cols"><div class="card hj-card"><div class="hj-tit">Para fazer hoje</div>';
+  h+=L.length?L.map(function(x){ var sev=HJ_SEV[x.p]||'info'; return '<button class="hj-it" onclick="nav(\''+x.p+'\')"><span class="hj-ic '+sev+'">'+svgIco(ICO[x.p]?x.p:'aviso')+'</span><span><b>'+esc(x.n)+' '+esc(x.t)+'</b><small>'+esc(HJ_SUB[x.p]||x.lb)+'</small></span><span class="seta">'+svgIco('seta',16)+'</span></button>'; }).join('')
+    :'<div class="hj-it" style="cursor:default"><span class="hj-ic ok">'+svgIco('check')+'</span><span><b>Tudo em dia</b><small>Nenhuma pendência agora.</small></span></div>';
+  h+='</div>'+(gest?hojeAgenda():'<div class="card hj-card"><div class="hj-tit">Atalhos</div>'+['vagas','aniv','vip','retorno','guia'].filter(podeVer).map(function(p){ var b=document.querySelector('#sidebar .navbtn[data-p="'+p+'"]'); return '<button class="hj-it" onclick="nav(\''+p+'\')"><span class="hj-ic info">'+svgIco(p)+'</span><span><b>'+esc(b?(b.querySelector('.lbl')||{}).textContent:p)+'</b></span><span class="seta">'+svgIco('seta',16)+'</span></button>'; }).join('')+'</div>')+'</div>';
+  el.innerHTML=h;
+}
+function hojeResumo(){
+  var k=hojeISO().slice(0,7), m=((resumo||{}).meses||{})[k]||null, h='<div class="grid kpis k4 hj-kpis">';
+  if(m){ var ant=(resumo.mesAtualAnoAnteriorAteHoje||{}).fat||0, v=ant?(m.fat-ant)/ant:null;
+    h+='<div class="card kclick" onclick="nav(\'painel\')"><div class="klabel">Faturamento de '+MESES[+k.slice(5)-1]+'</div><div class="kval">'+brl(m.fat)+'</div><div class="khint">'+(v==null?'até hoje':'<span class="'+(v>=0?'up':'down')+'">'+(v>=0?'▲ ':'▼ ')+pct(Math.abs(v))+'</span> vs. mesmo período do ano passado')+'</div></div>';
+    h+='<div class="card kclick" onclick="nav(\'painel\')"><div class="klabel">Ticket médio</div><div class="kval">'+brl2(m.ticket||0)+'</div><div class="khint">'+n0(m.comandas||0)+' comandas no mês</div></div>'; }
+  if(PREV && PREV.dias){ var sg=segunda(hojeISO()), a=somaPrev(sg, addDias(sg,6)), b=somaPrev(addDias(sg,7), addDias(sg,13));
+    h+='<div class="card kclick" onclick="nav(\'painel\')"><div class="klabel">Agenda desta semana</div><div class="kval" style="color:'+corOc(a.oc)+'">'+(a.oc==null?'—':pct(a.oc))+'</div><div class="khint">preenchida · '+n0(Math.max(0,Math.round((a.cap-a.m)/60)))+'h livres</div></div>';
+    h+='<div class="card kclick" onclick="nav(\'vagas\')"><div class="klabel">Próxima semana</div><div class="kval" style="color:'+corOc(b.oc)+'">'+(b.oc==null?'—':pct(b.oc))+'</div><div class="khint">preenchida · '+n0(Math.max(0,Math.round((b.cap-b.m)/60)))+'h livres</div></div>'; }
+  return h+'</div>';
+}
+function hojeAgenda(){
+  if(!PREV || !PREV.dias) return '<div class="card hj-card"><div class="hj-tit">Agenda dos próximos dias</div><div class="khint">Aparece depois da próxima rodada do robô.</div></div>';
+  var h='<div class="card hj-card"><div class="hj-tit">Agenda dos próximos dias<a onclick="nav(\'painel\')">Ver previsão</a></div>';
+  for(var i=0;i<7;i++){ var d=addDias(hojeISO(),i), r=somaPrev(d,d); if(!r.cap) continue;
+    h+='<button class="hj-it" onclick="nav(\'vagas\')"><span class="hj-dia"><b>'+(i===0?'Hoje':i===1?'Amanhã':['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][s2d(d).getDay()])+'</b><small>'+dataBR(d)+'</small></span><span class="hj-barra-oc">'+barOc(r.oc)+'</span><span class="khint" style="white-space:nowrap">'+n0(r.q)+' atend.</span></button>'; }
+  return h+'</div>';
+}
 
 // ================================================================ utilidades de período (Margem, Satisfação)
 var PRESETS_P = [['30','30 dias'],['mes','Este mês'],['mespass','Mês anterior'],['90','90 dias'],['ano','Este ano'],['12m','12 meses']];
