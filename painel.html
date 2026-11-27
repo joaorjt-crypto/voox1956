@@ -1491,8 +1491,8 @@ function aplicarUI(){
     }
     contarCfg();
     prepararBarraCel();
-    var hash=(location.hash||'').replace('#','');
-    nav(ehProf ? 'minha' : TITULOS[hash] ? hash : (viewAtual || primeiraAba()));
+    // sempre abre no Hoje; se o app já estava aberto (ex.: renovou o login), fica na tela onde estava
+    nav(ehProf ? 'minha' : (viewAtual || (podeVer('hoje') ? 'hoje' : primeiraAba())));
   } else {
     ov.style.display='flex'; app.style.display='none';
   }
